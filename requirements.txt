@@ -1,0 +1,35 @@
+# ── Core ML ────────────────────────────────────────────────────────────────
+torch>=2.2
+torchvision>=0.17
+transformers>=4.40
+multilingual-clip>=1.0.0
+open_clip_torch>=2.24
+peft>=0.10            # LoRA
+
+# ── Vector DB ──────────────────────────────────────────────────────────────
+chromadb>=0.5
+
+# ── Scraping ───────────────────────────────────────────────────────────────
+playwright>=1.44
+playwright-stealth>=1.0.6
+
+# ── Data / Utils ───────────────────────────────────────────────────────────
+Pillow>=10.0
+requests>=2.31
+aiohttp>=3.9
+aiofiles>=23.0
+tqdm>=4.66
+pandas>=2.0
+datasets>=2.19          # HuggingFace (yedek)
+
+# ── Evaluation ─────────────────────────────────────────────────────────────
+numpy>=1.26
+matplotlib>=3.8
+scikit-learn>=1.4
+
+# ── UI ─────────────────────────────────────────────────────────────────────
+streamlit>=1.35
+
+# ── Chatbot (opsiyonel) ────────────────────────────────────────────────────
+# google-generativeai>=0.5    # Gemini API
+# accelerate>=0.28            # Gemma local inference
