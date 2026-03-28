@@ -103,9 +103,20 @@ def parse_json_listings(data: dict | list) -> list[dict]:
         elif isinstance(obj, dict):
             lid = obj.get('id') or obj.get('listingId') or obj.get('listing_id')
             title = obj.get('title') or obj.get('name')
-            if lid and title:
+            # Gerçek ilan tespiti: price VEYA listing-spesifik alan içermeli
+            # → şehir/kategori objelerini (sadece id+name) dışlar
+            has_price = bool(
+                obj.get('price') or obj.get('salePrice') or obj.get('rentPrice')
+                or obj.get('priceText') or obj.get('formattedPrice')
+            )
+            has_listing_field = any(k in obj for k in [
+                'roomCount', 'grossSize', 'netSize', 'buildingAge',
+                'propertyType', 'tradeType', 'slug', 'photos', 'images',
+                'coverImage', 'thumbnailUrl', 'listingId',
+            ])
+            if lid and title and (has_price or has_listing_field):
                 results.append(obj)
-                return
+                return   # alt dallara inme
             for v in obj.values():
                 if isinstance(v, (dict, list)):
                     walk(v, depth + 1)
@@ -275,14 +286,13 @@ class EmlakjetScraper:
             saved = 0
 
             # FIX 2: XHR race condition için asyncio.Event
-            # Her sayfa için yeni bir event + liste
+            # pending counter list olarak tutulur — async closure içinde
+            # nonlocal int mutasyonu Python'da güvenilmez olabiliyor.
             xhr_results: list[dict] = []
             xhr_done_event = asyncio.Event()
-
-            pending_xhr: int = 0  # kaç handler hâlâ çalışıyor
+            pending_xhr = [0]  # [0] = mutable counter
 
             async def on_response(response: Response):
-                nonlocal pending_xhr
                 url = response.url
                 ct = response.headers.get('content-type', '')
                 if 'json' not in ct:
@@ -293,8 +303,14 @@ class EmlakjetScraper:
                     'emlakjet.com/search', 'emlakjet.com/listing',
                 ]):
                     return
+                # Konum/kategori API'lerini atla — ilan verisi içermiyor
+                if any(skip in url for skip in [
+                    '/location/', '/city', '/district', '/neighborhood',
+                    '/category', '/filter/', '/autocomplete',
+                ]):
+                    return
 
-                pending_xhr += 1
+                pending_xhr[0] += 1
                 try:
                     data = await response.json()
                     items = parse_json_listings(data)
@@ -304,11 +320,11 @@ class EmlakjetScraper:
                             xhr_results.append(rec)
                     if items:
                         print(f"    [XHR] {url[:80]} → {len(items)} listing")
-                except Exception as ex:
+                except Exception:
                     pass
                 finally:
-                    pending_xhr -= 1
-                    if pending_xhr <= 0:
+                    pending_xhr[0] -= 1
+                    if pending_xhr[0] <= 0:
                         xhr_done_event.set()
 
             page.on('response', lambda r: asyncio.ensure_future(on_response(r)))
@@ -328,74 +344,124 @@ class EmlakjetScraper:
                     html = await detail_page.content()
                     image_urls = extract_images_from_html(html)
 
-                    # FIX 4: Başlık: h1 önce, sonra OG meta
-                    title = ''
+                    # ── 1. window.dataLayer — en zengin kaynak ────────────
+                    # {ilan_fiyat, city, town, neighborhood, district,
+                    #  oda_sayisi, property_subcategory, property_status, ...}
+                    dl: dict = {}
                     try:
-                        title = await detail_page.locator('h1').first.inner_text(timeout=3000)
-                        title = title.strip()
+                        dl = await detail_page.evaluate("""
+                            () => {
+                                const layers = window.dataLayer || [];
+                                const obj = {};
+                                for (const item of layers) {
+                                    if (item && typeof item === 'object') {
+                                        Object.assign(obj, item);
+                                    }
+                                }
+                                return obj;
+                            }
+                        """) or {}
                     except Exception:
                         pass
+
+                    # ── 2. JSON-LD Product schema ─────────────────────────
+                    ld_product: dict = {}
+                    try:
+                        ld_scripts = await detail_page.evaluate("""
+                            () => Array.from(
+                                document.querySelectorAll('script[type="application/ld+json"]')
+                            ).map(s => s.textContent)
+                        """)
+                        for ld_text in (ld_scripts or []):
+                            try:
+                                ld = json.loads(ld_text)
+                                if isinstance(ld, dict) and ld.get('@type') == 'Product':
+                                    ld_product = ld
+                                    break
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+
+                    # ── Başlık ────────────────────────────────────────────
+                    title = str(ld_product.get('name') or dl.get('item_name') or '').strip()
                     if not title:
                         try:
-                            title = await detail_page.get_attribute('meta[property="og:title"]', 'content', timeout=1500) or ''
+                            title = await detail_page.locator('h1').first.inner_text(timeout=3000)
+                            title = title.strip()
+                        except Exception:
+                            pass
+                    if not title:
+                        try:
+                            title = await detail_page.get_attribute(
+                                'meta[property="og:title"]', 'content', timeout=1500) or ''
                         except Exception:
                             pass
 
-                    # FIX 4: Fiyat — OG description veya meta keywords'den çıkar
-                    price = ''
-                    # Önce JSON-LD dene
-                    try:
-                        ld_text = await detail_page.locator('script[type="application/ld+json"]').first.inner_text(timeout=1500)
-                        ld = json.loads(ld_text)
-                        price = str(ld.get('offers', {}).get('price', '') or
-                                    ld.get('price', '') or '')
-                    except Exception:
-                        pass
-                    if not price:
-                        # Sayfadaki herhangi bir fiyat benzeri metin (TL içeren)
-                        try:
-                            price_el = detail_page.locator(
-                                "span:has-text('TL'), div:has-text('TL'), p:has-text('TL')"
-                            ).first
-                            price = await price_el.inner_text(timeout=1500)
-                            price = price.strip().split('\n')[0]
-                        except Exception:
-                            pass
+                    # ── Fiyat ─────────────────────────────────────────────
+                    price_raw = (dl.get('ilan_fiyat') or
+                                 ld_product.get('offers', {}).get('price') or
+                                 dl.get('price') or '')
+                    if isinstance(price_raw, (int, float)) and price_raw:
+                        price = f"{int(price_raw):,} TL".replace(',', '.')
+                    elif price_raw:
+                        price = f"{price_raw} TL" if not str(price_raw).endswith('TL') else str(price_raw)
+                    else:
+                        price = ''
 
-                    # FIX 4: Lokasyon — breadcrumb veya OG meta
-                    district = ''
-                    try:
-                        bc = await detail_page.locator('nav[aria-label*="breadcrumb"], [class*="breadcrumb"]').first.inner_text(timeout=1500)
-                        district = bc.strip()
-                    except Exception:
-                        pass
-                    if not district:
-                        try:
-                            district = await detail_page.get_attribute('meta[property="og:locality"]', 'content', timeout=1000) or ''
-                        except Exception:
-                            pass
+                    # ── Konum ─────────────────────────────────────────────
+                    city = str(dl.get('city') or '').replace('-', ' ').title()
+                    town = str(dl.get('town') or '').replace('-', ' ').title()
+                    nbhd = str(dl.get('neighborhood') or '').replace('-', ' ').title()
+                    district = ' - '.join(filter(None, [city, town, nbhd]))
+
+                    # ── Açıklama ──────────────────────────────────────────
+                    description = str(ld_product.get('description') or '').strip()[:500]
+
+                    # ── Attributes ────────────────────────────────────────
+                    attrs: dict = {}
+                    if dl.get('oda_sayisi'):
+                        attrs['roomCount'] = dl['oda_sayisi']
+                    if dl.get('property_subcategory'):
+                        attrs['propertyType'] = dl['property_subcategory']
+                    if dl.get('property_status'):
+                        attrs['tradeType'] = dl['property_status']
+                    if dl.get('property_category'):
+                        attrs['category'] = dl['property_category']
+                    # dataLayer'da alan m2 gibi alanlar varsa ekle
+                    for dl_key, attr_key in [
+                        ('gross_m2', 'grossSize'), ('net_m2', 'netSize'),
+                        ('building_age', 'buildingAge'), ('floor', 'floor'),
+                        ('ilan_yayinlanma_tarihi', 'publishedAt'),
+                    ]:
+                        if dl.get(dl_key):
+                            attrs[attr_key] = dl[dl_key]
 
                     if not title:
                         return None
 
                     m = ID_RE.search(listing_url)
-                    lid = m.group(1) if m else listing_url[-12:]
+                    lid = (m.group(1) if m else
+                           str(dl.get('item_id') or listing_url[-12:]))
+
+                    final_images = list(dict.fromkeys(image_urls))
 
                     return {
                         'id': lid,
                         'url': listing_url,
                         'title': title,
                         'price': price,
-                        'description': '',
+                        'description': description,
                         'district': district,
-                        'image_urls': image_urls[:15],
-                        'image_count': len(image_urls),
-                        'attributes': {},
+                        'image_urls': final_images[:20],
+                        'image_count': len(final_images),
+                        'attributes': attrs,
                         'scraped_at': time.strftime('%Y-%m-%dT%H:%M:%S'),
                     }
                 except Exception as e:
                     print(f"    [Detay] Hata: {e}")
                     return None
+
 
             async with aiofiles.open(self.jsonl_path, 'a', encoding='utf-8') as out_f:
 
