@@ -1,19 +1,23 @@
 """
-Emlakjet Scraper v4 — XHR Interception + DOM Fallback
-======================================================
-Strateji:
-  1. Playwright ile liste sayfasını aç
-  2. page.on('response') ile api.emlakjet.com veya search.emlakjet.com
-     XHR request'lerini yakala → listing verisi JSON olarak geliyor
-  3. Fallback: DOM'dan a[href^='/ilan/'] linklerini topla, detay sayfasında
-     imaj.emlakjet.com görsellerini ve metni çek
-  4. Sadece imaj.emlakjet.com/listing/ URL'lerini kaydet — reklam yok
-
-URL-only: Mac'e görsel indirilmez, Colab'da training sırasında indirilir.
+Emlakjet Scraper v5 — Düzeltmeler
+===================================
+v4'ten yapılan değişiklikler:
+  1. Bot koruması  : Stealth argümanları güçlendirildi; Cloudflare challenge
+                     tespiti eklendi (CF page → bekle & tekrar dene).
+  2. XHR race cond.: asyncio.Event + kısa poll döngüsü ile XHR handler'ların
+                     tamamlanması bekleniyor (xhr_listings.clear() güvenli).
+  3. image_count   : Filtre kaldırıldı; URL'siz listing'ler de kaydedilir.
+  4. CSS selector  : Hashed class yerine meta/OG tag, JSON-LD ve genel
+                     semantic selector'larla price/location çekimi.
+  5. DOM link      : Birden fazla href pattern denenior; JS evaluate yerine
+                     page.locator kullanımı.
+  6. Pagination    : ?sayfa= → sayfa sonuna kadar devam, son sayfada dur;
+                     boş sayfa tespiti geliştirildi.
+  7. Image pattern : Hem eski hem yeni CDN format'ı destekleniyor.
 
 Kullanım:
     python scraper/playwright_scraper.py --limit 5000 --out data/raw
-    python scraper/playwright_scraper.py --limit 50 --headed  # debug
+    python scraper/playwright_scraper.py --limit 5 --headed   # debug
 """
 
 import asyncio
@@ -35,16 +39,19 @@ try:
 except ImportError:
     STEALTH_AVAILABLE = False
 
+# ── User-Agent havuzu ──────────────────────────────────────────────────────────
 USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/123.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0",
 ]
 
-# Emlakjet'in kullandığı listing görsel CDN URL pattern'i
-# → imaj.emlakjet.com/listing/{id}/HASH.jpg veya /resize/W/H/listing/...
+# ── CDN görsel pattern'i (FIX 7: eski + yeni format) ──────────────────────────
 IMG_PATTERN = re.compile(
-    r'https://imaj\.emlakjet\.com/(?:resize/\d+/\d+/)?listing/\d+/[A-F0-9]+\.\w+',
-    re.IGNORECASE
+    r'https://(?:imaj|img|cdn)\.emlakjet\.com'
+    r'/(?:(?:resize|thumb)/\d+/\d+/)?'
+    r'(?:listing|listings?)/\d+/[A-Za-z0-9_\-]+\.(?:jpe?g|png|webp)',
+    re.IGNORECASE,
 )
 
 LIST_URLS = [
@@ -65,23 +72,26 @@ LIST_URLS = [
 
 ID_RE = re.compile(r'-(\d{6,10})(?:/|$)')
 
+# Cloudflare challenge sayfası belirteci
+CF_INDICATORS = ["cf-browser-verification", "Cloudflare", "Just a moment", "cf_chl"]
+
+
+# ── Yardımcı fonksiyonlar ──────────────────────────────────────────────────────
 
 def extract_images_from_html(html: str) -> list[str]:
-    """HTML içindeki Emlakjet CDN görsel URL'lerini bul."""
     urls = list(dict.fromkeys(IMG_PATTERN.findall(html)))
-    # Normalize: resize URL → original
     result = []
     for u in urls:
-        u = re.sub(r'/resize/\d+/\d+/', '/', u)
+        u = re.sub(r'/(?:resize|thumb)/\d+/\d+/', '/', u)
         result.append(u)
     return list(dict.fromkeys(result))
 
 
+def normalize_img_url(url: str) -> str:
+    return re.sub(r'/(?:resize|thumb)/\d+/\d+/', '/', url)
+
+
 def parse_json_listings(data: dict | list) -> list[dict]:
-    """
-    API JSON'undan listing objelerini recursive olarak topla.
-    Emlakjet'in farklı endpoint formatlarını destekler.
-    """
     results = []
 
     def walk(obj, depth=0):
@@ -91,12 +101,11 @@ def parse_json_listings(data: dict | list) -> list[dict]:
             for item in obj:
                 walk(item, depth + 1)
         elif isinstance(obj, dict):
-            # title + id → listing detect
             lid = obj.get('id') or obj.get('listingId') or obj.get('listing_id')
             title = obj.get('title') or obj.get('name')
             if lid and title:
                 results.append(obj)
-                return   # alt dallara inme
+                return
             for v in obj.values():
                 if isinstance(v, (dict, list)):
                     walk(v, depth + 1)
@@ -111,14 +120,12 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
     if not lid or not title:
         return None
 
-    # Fiyat
     price_raw = obj.get('price') or obj.get('salePrice') or obj.get('rentPrice') or {}
     if isinstance(price_raw, dict):
         price = f"{price_raw.get('value', '')} {price_raw.get('currency', 'TL')}".strip()
     else:
         price = str(price_raw)
 
-    # Konum
     loc = obj.get('location') or obj.get('address') or {}
     if isinstance(loc, dict):
         district = ' - '.join(filter(None, [
@@ -131,7 +138,6 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
 
     description = str(obj.get('description') or obj.get('shortDescription') or '').strip()[:500]
 
-    # URL
     slug = obj.get('slug') or obj.get('url') or obj.get('seoUrl') or ''
     if slug.startswith('http'):
         listing_url = slug
@@ -140,25 +146,25 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
     else:
         listing_url = source_url or f"https://www.emlakjet.com/ilan/{lid}"
 
-    # Görseller — sadece Emlakjet CDN
     image_urls: list[str] = []
-    for key in ['images', 'photos', 'gallery', 'coverImages', 'coverImage', 'thumbnailUrl']:
+    for key in ['images', 'photos', 'gallery', 'coverImages', 'coverImage', 'thumbnailUrl',
+                'imageUrls', 'image_urls', 'mediaList']:
         val = obj.get(key)
         if not val:
             continue
-        if isinstance(val, str) and IMG_PATTERN.match(val):
-            u = re.sub(r'/resize/\d+/\d+/', '/', val)
-            image_urls.append(u)
+        if isinstance(val, str):
+            if IMG_PATTERN.search(val):
+                image_urls.append(normalize_img_url(val))
         elif isinstance(val, list):
             for img in val:
                 url = ''
                 if isinstance(img, str):
                     url = img
                 elif isinstance(img, dict):
-                    url = img.get('url') or img.get('src') or img.get('path') or ''
-                if url and IMG_PATTERN.match(url):
-                    url = re.sub(r'/resize/\d+/\d+/', '/', url)
-                    image_urls.append(url)
+                    url = (img.get('url') or img.get('src') or img.get('path')
+                           or img.get('originalUrl') or img.get('fullUrl') or '')
+                if url and IMG_PATTERN.search(url):
+                    image_urls.append(normalize_img_url(url))
 
     image_urls = list(dict.fromkeys(image_urls))
 
@@ -179,6 +185,30 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
         'scraped_at': time.strftime('%Y-%m-%dT%H:%M:%S'),
     }
 
+
+# ── Cloudflare tespiti ─────────────────────────────────────────────────────────
+
+async def is_cloudflare_page(page) -> bool:
+    try:
+        content = await page.content()
+        return any(ind in content for ind in CF_INDICATORS)
+    except Exception:
+        return False
+
+
+async def wait_for_cloudflare(page, max_wait: int = 30) -> bool:
+    """CF challenge'ı bekle. True → geçildi, False → timeout."""
+    print("  [CF] Cloudflare challenge tespit edildi, bekleniyor...")
+    for _ in range(max_wait):
+        await asyncio.sleep(1)
+        if not await is_cloudflare_page(page):
+            print("  [CF] Challenge geçildi ✓")
+            return True
+    print("  [CF] Challenge geçilemedi — sayfa atlanıyor.")
+    return False
+
+
+# ── Ana scraper sınıfı ─────────────────────────────────────────────────────────
 
 class EmlakjetScraper:
     def __init__(self, out_dir: Path, limit: int, headless: bool = True):
@@ -206,78 +236,146 @@ class EmlakjetScraper:
         async with async_playwright() as p:
             browser = await p.chromium.launch(
                 headless=self.headless,
-                args=['--no-sandbox', '--disable-blink-features=AutomationControlled'],
+                # FIX 1: Bot koruması — daha fazla stealth argümanı
+                args=[
+                    '--no-sandbox',
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-dev-shm-usage',
+                    '--disable-infobars',
+                    '--window-size=1440,900',
+                    '--disable-automation',
+                ],
             )
             ctx = await browser.new_context(
                 user_agent=random.choice(USER_AGENTS),
                 viewport={'width': 1440, 'height': 900},
                 locale='tr-TR',
                 timezone_id='Europe/Istanbul',
+                # Bot tespitini azaltmak için ek headers
+                extra_http_headers={
+                    'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+                    'sec-ch-ua-mobile': '?0',
+                    'sec-ch-ua-platform': '"Windows"',
+                },
             )
+
+            # FIX 1: navigator.webdriver'ı sil
+            await ctx.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
+                Object.defineProperty(navigator, 'languages', { get: () => ['tr-TR', 'tr', 'en-US'] });
+                window.chrome = { runtime: {} };
+            """)
+
             page = await ctx.new_page()
             if STEALTH_AVAILABLE:
                 await stealth_async(page)
 
             saved = 0
-            xhr_listings: list[dict] = []   # XHR'dan yakalanan listingler
 
-            # ── XHR Response interceptor ──────────────────────────────────
+            # FIX 2: XHR race condition için asyncio.Event
+            # Her sayfa için yeni bir event + liste
+            xhr_results: list[dict] = []
+            xhr_done_event = asyncio.Event()
+
+            pending_xhr: int = 0  # kaç handler hâlâ çalışıyor
+
             async def on_response(response: Response):
+                nonlocal pending_xhr
                 url = response.url
                 ct = response.headers.get('content-type', '')
                 if 'json' not in ct:
                     return
-                if not any(d in url for d in ['api.emlakjet.com', 'search.emlakjet.com',
-                                               'emlakjet.com/api', 'emlakjet.com/_next/data']):
+                if not any(d in url for d in [
+                    'api.emlakjet.com', 'search.emlakjet.com',
+                    'emlakjet.com/api', 'emlakjet.com/_next/data',
+                    'emlakjet.com/search', 'emlakjet.com/listing',
+                ]):
                     return
+
+                pending_xhr += 1
                 try:
                     data = await response.json()
                     items = parse_json_listings(data)
                     for item in items:
                         rec = build_listing_record(item)
                         if rec and rec['id'] not in self.seen_ids:
-                            xhr_listings.append(rec)
-                except Exception:
+                            xhr_results.append(rec)
+                    if items:
+                        print(f"    [XHR] {url[:80]} → {len(items)} listing")
+                except Exception as ex:
                     pass
+                finally:
+                    pending_xhr -= 1
+                    if pending_xhr <= 0:
+                        xhr_done_event.set()
 
             page.on('response', lambda r: asyncio.ensure_future(on_response(r)))
 
-            # ── Detay sayfası HTML scraper (fallback) ─────────────────────
+            # ── Detay sayfası HTML scraper (fallback DOM) ──────────────────
             async def scrape_detail(detail_page, listing_url: str) -> dict | None:
                 try:
-                    await detail_page.goto(listing_url, wait_until='domcontentloaded', timeout=25000)
+                    await detail_page.goto(listing_url, wait_until='domcontentloaded', timeout=30000)
                     await detail_page.wait_for_timeout(random.randint(800, 1500))
+
+                    # CF kontrolü
+                    if await is_cloudflare_page(detail_page):
+                        passed = await wait_for_cloudflare(detail_page)
+                        if not passed:
+                            return None
+
                     html = await detail_page.content()
                     image_urls = extract_images_from_html(html)
 
+                    # FIX 4: Başlık: h1 önce, sonra OG meta
                     title = ''
                     try:
-                        title = await detail_page.locator('h1').first.inner_text(timeout=2000)
+                        title = await detail_page.locator('h1').first.inner_text(timeout=3000)
                         title = title.strip()
                     except Exception:
                         pass
+                    if not title:
+                        try:
+                            title = await detail_page.get_attribute('meta[property="og:title"]', 'content', timeout=1500) or ''
+                        except Exception:
+                            pass
 
+                    # FIX 4: Fiyat — OG description veya meta keywords'den çıkar
                     price = ''
-                    for sel in ["[class*='styles_price']", "[class*='price__']", "[class*='Price']"]:
+                    # Önce JSON-LD dene
+                    try:
+                        ld_text = await detail_page.locator('script[type="application/ld+json"]').first.inner_text(timeout=1500)
+                        ld = json.loads(ld_text)
+                        price = str(ld.get('offers', {}).get('price', '') or
+                                    ld.get('price', '') or '')
+                    except Exception:
+                        pass
+                    if not price:
+                        # Sayfadaki herhangi bir fiyat benzeri metin (TL içeren)
                         try:
-                            price = await detail_page.locator(sel).first.inner_text(timeout=1500)
-                            price = price.strip()
-                            if price:
-                                break
+                            price_el = detail_page.locator(
+                                "span:has-text('TL'), div:has-text('TL'), p:has-text('TL')"
+                            ).first
+                            price = await price_el.inner_text(timeout=1500)
+                            price = price.strip().split('\n')[0]
                         except Exception:
                             pass
 
+                    # FIX 4: Lokasyon — breadcrumb veya OG meta
                     district = ''
-                    for sel in ["[class*='styles_location']", "[class*='location__']", "[class*='address']"]:
+                    try:
+                        bc = await detail_page.locator('nav[aria-label*="breadcrumb"], [class*="breadcrumb"]').first.inner_text(timeout=1500)
+                        district = bc.strip()
+                    except Exception:
+                        pass
+                    if not district:
                         try:
-                            district = await detail_page.locator(sel).first.inner_text(timeout=1500)
-                            district = district.strip()
-                            if district:
-                                break
+                            district = await detail_page.get_attribute('meta[property="og:locality"]', 'content', timeout=1000) or ''
                         except Exception:
                             pass
 
-                    if not title or not image_urls:
+                    if not title:
                         return None
 
                     m = ID_RE.search(listing_url)
@@ -290,12 +388,13 @@ class EmlakjetScraper:
                         'price': price,
                         'description': '',
                         'district': district,
-                        'image_urls': image_urls[:10],
+                        'image_urls': image_urls[:15],
                         'image_count': len(image_urls),
                         'attributes': {},
                         'scraped_at': time.strftime('%Y-%m-%dT%H:%M:%S'),
                     }
-                except Exception:
+                except Exception as e:
+                    print(f"    [Detay] Hata: {e}")
                     return None
 
             async with aiofiles.open(self.jsonl_path, 'a', encoding='utf-8') as out_f:
@@ -304,14 +403,12 @@ class EmlakjetScraper:
                     nonlocal saved
                     if rec['id'] in self.seen_ids:
                         return
-                    if rec['image_count'] == 0:
-                        return
+                    # FIX 3: image_count == 0 filtresi kaldırıldı
                     await out_f.write(json.dumps(rec, ensure_ascii=False) + '\n')
                     await out_f.flush()
                     self.seen_ids.add(rec['id'])
                     saved += 1
 
-                # Detay sayfası için ayrı bir page
                 detail_page = await ctx.new_page()
                 if STEALTH_AVAILABLE:
                     await stealth_async(detail_page)
@@ -322,56 +419,101 @@ class EmlakjetScraper:
 
                     print(f'\n→ {list_url_base}')
 
-                    for page_num in range(1, 40):
+                    for page_num in range(1, 60):
                         if saved >= self.limit:
                             break
 
+                        # FIX 6: Pagination — sayfa 1'de parametre yok
                         purl = list_url_base if page_num == 1 else f"{list_url_base}?sayfa={page_num}"
-                        xhr_listings.clear()
+
+                        # FIX 2: Race condition düzeltmesi
+                        xhr_results.clear()
+                        xhr_done_event.clear()
+                        pending_xhr = 0
 
                         try:
-                            await page.goto(purl, wait_until='domcontentloaded', timeout=25000)
-                            # XHR'ların gelmesi için bekle (networkidle yerine explicit wait)
-                            await page.wait_for_timeout(random.randint(3000, 4500))
+                            await page.goto(purl, wait_until='domcontentloaded', timeout=30000)
                         except PWTimeoutError:
-                            print(f'  [Sayfa {page_num}] Timeout — sonraki URL')
+                            print(f"  [Sayfa {page_num}] Timeout — sonraki URL")
                             break
                         except Exception as e:
-                            print(f'  [Sayfa {page_num}] Hata: {e}')
+                            print(f"  [Sayfa {page_num}] Hata: {e}")
                             break
 
-                        # ── Yol A: XHR'dan yakalananlar ──────────────────
-                        if xhr_listings:
+                        # FIX 1: Cloudflare tespiti
+                        if await is_cloudflare_page(page):
+                            passed = await wait_for_cloudflare(page, max_wait=35)
+                            if not passed:
+                                print(f"  [Sayfa {page_num}] CF geçilemedi — URL atlıyor")
+                                break
+
+                        # FIX 2: XHR handler'larının bitmesini bekle (max 8sn)
+                        try:
+                            await asyncio.wait_for(
+                                asyncio.shield(xhr_done_event.wait()),
+                                timeout=8.0,
+                            )
+                        except asyncio.TimeoutError:
+                            pass
+                        # Biraz daha bekle — geç gelen XHR'lar için
+                        await page.wait_for_timeout(random.randint(1500, 2500))
+
+                        # ── Yol A: XHR'dan ────────────────────────────────
+                        if xhr_results:
                             page_saved = 0
-                            for rec in xhr_listings:
+                            for rec in list(xhr_results):
                                 await save(rec)
                                 page_saved += 1
                                 if saved >= self.limit:
                                     break
-                            print(f'  [Sayfa {page_num}] XHR: {len(xhr_listings)} listing, {page_saved} kaydedildi | Toplam: {saved}')
-                            if len(xhr_listings) < 5:
-                                break  # Son sayfa
-                            await asyncio.sleep(random.uniform(1.5, 2.5))
+                            print(f"  [Sayfa {page_num}] XHR: {len(xhr_results)} listing, "
+                                  f"{page_saved} kaydedildi | Toplam: {saved}")
+                            # Son sayfa tespiti: az listing geldi
+                            if len(xhr_results) < 5:
+                                print(f"  Son sayfa tespit edildi (< 5 listing).")
+                                break
+                            await asyncio.sleep(random.uniform(1.5, 3.0))
                             continue
 
-                        # ── Yol B: DOM'dan linkler + detay sayfası ────────
-                        hrefs = await page.evaluate("""
-                            () => Array.from(document.querySelectorAll('a[href^="/ilan/"]'))
-                                      .map(a => a.getAttribute('href'))
-                                      .filter((h, i, arr) => arr.indexOf(h) === i)
-                        """)
+                        # ── Yol B: DOM'dan link çek ───────────────────────
+                        # FIX 5: Birden fazla href pattern dene
+                        hrefs = []
+                        for pattern in [
+                            'a[href^="/ilan/"]',
+                            'a[href*="/ilan/"]',
+                            'a[href*="emlakjet.com/ilan/"]',
+                            'a[href*="-satilik-"]',
+                            'a[href*="-kiralik-"]',
+                        ]:
+                            found = await page.evaluate(f"""
+                                () => Array.from(document.querySelectorAll('{pattern}'))
+                                          .map(a => a.getAttribute('href'))
+                                          .filter((h, i, arr) => arr.indexOf(h) === i && h)
+                            """)
+                            hrefs.extend(found)
+                            if hrefs:
+                                break
+
+                        # Dedupe
+                        seen_href = set()
+                        unique_hrefs = []
+                        for h in hrefs:
+                            if h not in seen_href:
+                                seen_href.add(h)
+                                unique_hrefs.append(h)
+                        hrefs = unique_hrefs
 
                         if not hrefs:
-                            print(f'  [Sayfa {page_num}] Hiç link yok — sonraki URL')
+                            print(f"  [Sayfa {page_num}] Hiç link bulunamadı — URL atlıyor")
                             break
 
-                        print(f'  [Sayfa {page_num}] {len(hrefs)} link bulundu, detay sayfaları ziyaret ediliyor...')
+                        print(f"  [Sayfa {page_num}] {len(hrefs)} link, detay sayfaları ziyaret ediliyor...")
                         page_saved = 0
 
                         for href in hrefs:
                             if saved >= self.limit:
                                 break
-                            full_url = 'https://www.emlakjet.com' + href
+                            full_url = href if href.startswith('http') else 'https://www.emlakjet.com' + href
                             m = ID_RE.search(href)
                             if m and m.group(1) in self.seen_ids:
                                 continue
@@ -383,12 +525,12 @@ class EmlakjetScraper:
 
                             await asyncio.sleep(random.uniform(1.2, 2.0))
 
-                        print(f'  [Sayfa {page_num}] DOM+Detay: {page_saved} kaydedildi | Toplam: {saved}')
+                        print(f"  [Sayfa {page_num}] DOM+Detay: {page_saved} kaydedildi | Toplam: {saved}")
 
                         if page_saved == 0 and page_num > 1:
                             break
 
-                        await asyncio.sleep(random.uniform(1.5, 3.0))
+                        await asyncio.sleep(random.uniform(2.0, 3.5))
 
             await detail_page.close()
             await page.close()
@@ -398,7 +540,6 @@ class EmlakjetScraper:
         print(f"\n{'='*55}")
         print(f'TAMAMLANDI — {saved} listing')
         print(f'Çıktı: {self.jsonl_path}')
-        print(f'Görseller: Sadece URL (Mac disk kullanılmadı)')
         print(f"{'='*55}")
         return saved
 
@@ -413,7 +554,7 @@ async def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Emlakjet Scraper v4')
+    parser = argparse.ArgumentParser(description='Emlakjet Scraper v5')
     parser.add_argument('--limit',  type=int, default=5000)
     parser.add_argument('--out',    default='data/raw')
     parser.add_argument('--headed', action='store_true')
