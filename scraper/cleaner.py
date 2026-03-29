@@ -9,7 +9,7 @@ Görevler:
   5. İstatistik raporu yaz
 
 Kullanım:
-    python scraper/cleaner.py --raw data/raw --out data/processed
+    python scraper/cleaner.py --raw data/raw --images data/images --out data/processed
 """
 
 import json
@@ -137,7 +137,7 @@ def image_hash(image_path: str) -> str | None:
 
 
 # ─── Ana Temizleme Fonksiyonu ──────────────────────────────────────────────────
-def clean_dataset(raw_dir: Path, out_dir: Path) -> dict:
+def clean_dataset(raw_dir: Path, out_dir: Path, images_dir: Path | None = None) -> dict:
     """
     Ham JSONL verisini temizle, fine-tuning dataseti oluştur.
     Returns: İstatistik sözlüğü
@@ -145,6 +145,10 @@ def clean_dataset(raw_dir: Path, out_dir: Path) -> dict:
     raw_jsonl = raw_dir / "listings.jsonl"
     if not raw_jsonl.exists():
         raise FileNotFoundError(f"Ham veri bulunamadı: {raw_jsonl}")
+
+    # İndirilen görsellerin kök dizini (varsayılan: raw_dir/../images)
+    if images_dir is None:
+        images_dir = raw_dir.parent / "images"
 
     out_dir.mkdir(parents=True, exist_ok=True)
     out_jsonl = out_dir / "dataset.jsonl"
@@ -185,7 +189,12 @@ def clean_dataset(raw_dir: Path, out_dir: Path) -> dict:
             seen_urls.add(url)
 
             # ── Görsel kontrolü ─────────────────────────────────────────
-            local_images = raw.get("local_images", [])
+            # İndirilen görseller data/images/{listing_id}/ klasöründe
+            lid = raw.get("id", "")
+            listing_img_dir = images_dir / lid
+            local_images = sorted(listing_img_dir.glob("*")) if listing_img_dir.exists() else []
+            local_images = [str(p) for p in local_images if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}]
+
             if not local_images:
                 stats["skipped_no_image"] += 1
                 continue
@@ -221,10 +230,12 @@ def clean_dataset(raw_dir: Path, out_dir: Path) -> dict:
                 "id": raw.get("id", ""),
                 "url": url,
                 "image_path": primary_image,
+                "all_image_paths": local_images,
                 "text": text,
                 "title": normalize_text(raw.get("title", "")),
                 "price": normalize_price(raw.get("price", "")),
                 "district": normalize_text(raw.get("district", "")),
+                "attributes": raw.get("attributes", {}),
                 "scraped_at": raw.get("scraped_at", ""),
             }
             out_f.write(json.dumps(clean_record, ensure_ascii=False) + "\n")
@@ -241,11 +252,12 @@ def clean_dataset(raw_dir: Path, out_dir: Path) -> dict:
 # ─── Entrypoint ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scraping Verisi Temizleyici")
-    parser.add_argument("--raw", default="data/raw",       help="Ham veri dizini")
-    parser.add_argument("--out", default="data/processed", help="Temizlenmiş veri dizini")
+    parser.add_argument("--raw",    default="data/raw",       help="Ham veri dizini")
+    parser.add_argument("--images", default="data/images",    help="İndirilen görsel kök dizini")
+    parser.add_argument("--out",    default="data/processed", help="Temizlenmiş veri dizini")
     args = parser.parse_args()
 
-    stats = clean_dataset(Path(args.raw), Path(args.out))
+    stats = clean_dataset(Path(args.raw), Path(args.out), Path(args.images))
 
     print("\n" + "=" * 50)
     print("TEMİZLEME RAPORU")

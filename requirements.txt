@@ -1,7 +1,7 @@
 # ── Core ML ────────────────────────────────────────────────────────────────
 torch>=2.2
 torchvision>=0.17
-transformers>=4.40
+transformers>=4.40,<5.0    # multilingual_clip transformers 5.x ile uyumsuz
 multilingual-clip>=1.0.0
 open_clip_torch>=2.24
 peft>=0.10            # LoRA

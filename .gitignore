@@ -4,5 +4,7 @@ __pycache__/
 
 data/raw/
 data/processed/
+data/images/
+model/checkpoints/
 *.ipynb_checkpoints/
 .DS_Store

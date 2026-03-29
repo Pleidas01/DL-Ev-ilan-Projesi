@@ -1,0 +1,29 @@
+{
+  "image": {
+    "Recall@1": 1.0,
+    "Recall@5": 1.0,
+    "Recall@10": 1.0,
+    "MRR": 1.0
+  },
+  "text": {
+    "Recall@1": 0.5,
+    "Recall@5": 1.0,
+    "Recall@10": 1.0,
+    "MRR": 0.75
+  },
+  "multimodal": {
+    "Recall@1": 1.0,
+    "Recall@5": 1.0,
+    "Recall@10": 1.0,
+    "MRR": 1.0
+  },
+  "config": {
+    "k_list": [
+      1,
+      5,
+      10
+    ],
+    "lam": 0.5,
+    "checkpoint": null
+  }
+}
