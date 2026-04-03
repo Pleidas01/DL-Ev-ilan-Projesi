@@ -193,7 +193,13 @@ def clean_dataset(raw_dir: Path, out_dir: Path, images_dir: Path | None = None) 
             lid = raw.get("id", "")
             listing_img_dir = images_dir / lid
             local_images = sorted(listing_img_dir.glob("*")) if listing_img_dir.exists() else []
-            local_images = [str(p) for p in local_images if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}]
+            # Sadece bu ilana ait görseller: dosya adında kendi listing ID'si geçmeli.
+            # Emlakjet sayfasındaki "benzer ilanlar" thumbnail'leri farklı ID içeriyor.
+            local_images = [
+                str(p) for p in local_images
+                if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
+                and lid in p.stem
+            ]
 
             if not local_images:
                 stats["skipped_no_image"] += 1

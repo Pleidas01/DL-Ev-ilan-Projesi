@@ -111,7 +111,12 @@ async def download_listing(
     Geri dönüş: {listing_id, ok, fail, skipped} istatistikleri
     """
     lid        = listing["id"]
-    image_urls = listing.get("image_urls", [])
+    # Sadece bu ilana ait URL'ler: /listing/{lid}/ yolunu içerenleri al.
+    # Geri kalanlar Emlakjet'in "benzer ilanlar" bölümünden geliyor.
+    image_urls = [
+        url for url in listing.get("image_urls", [])
+        if f"/listing/{lid}/" in url
+    ]
     listing_dir = out_dir / lid
 
     stats = {"id": lid, "ok": 0, "fail": 0, "skipped": 0}
