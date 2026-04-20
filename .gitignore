@@ -6,5 +6,8 @@ data/raw/
 data/processed/
 data/images/
 model/checkpoints/
+model/checkpoints_smoke/
+data/chroma/
+notebooks/figures/
 *.ipynb_checkpoints/
 .DS_Store

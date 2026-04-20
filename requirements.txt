@@ -1,6 +1,8 @@
 # ── Core ML ────────────────────────────────────────────────────────────────
-torch>=2.2
-torchvision>=0.17
+# NOT: RTX 5070 Ti (Blackwell / sm_120) için torch>=2.6 + CUDA 12.8 wheel gerekli:
+#   pip install --upgrade torch torchvision --index-url https://download.pytorch.org/whl/cu128
+torch>=2.6
+torchvision>=0.21
 transformers>=4.40,<5.0    # multilingual_clip transformers 5.x ile uyumsuz
 multilingual-clip>=1.0.0
 open_clip_torch>=2.24
@@ -29,6 +31,18 @@ scikit-learn>=1.4
 
 # ── UI ─────────────────────────────────────────────────────────────────────
 streamlit>=1.35
+
+# ── Notebook / Rapor ───────────────────────────────────────────────────────
+jupyter>=1.0
+ipykernel>=6.29
+nbformat>=5.10
+plotly>=5.20              # parallel_coordinates (business data lineage)
+seaborn>=0.13             # EDA heatmap / distribution plots
+graphviz>=0.20            # cognitive map (Digraph) — sistem binary de gerekir
+
+# ── Shallow retrieval baseline'ları ────────────────────────────────────────
+rank-bm25>=0.2.2          # BM25 lexical retrieval
+opencv-python>=4.9        # HSV color histogram + ORB keypoint
 
 # ── Chatbot (opsiyonel) ────────────────────────────────────────────────────
 # google-generativeai>=0.5    # Gemini API

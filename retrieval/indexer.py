@@ -55,18 +55,31 @@ def load_models(checkpoint_path: str | None, device: torch.device):
 
     if checkpoint_path and Path(checkpoint_path).exists():
         print(f"[Checkpoint] {checkpoint_path} yükleniyor...")
-        ckpt = torch.load(checkpoint_path, map_location="cpu")
-        # LoRA ağırlıkları varsa PeftModel olarak yükle
-        try:
-            text_model = PeftModel.from_pretrained(text_model, checkpoint_path)
-        except Exception:
-            text_model.load_state_dict(ckpt.get("model_state", ckpt), strict=False)
+        ckpt   = torch.load(checkpoint_path, map_location="cpu")
+        state  = ckpt.get("model_state", ckpt)
+        merged = ckpt.get("merged", False)
+        if merged:
+            missing, unexpected = text_model.load_state_dict(state, strict=False)
+            print(f"[Checkpoint] merged ağırlıklar yüklendi — missing={len(missing)} unexpected={len(unexpected)}")
+        else:
+            # Geriye dönük uyumluluk: PEFT dizini varsa onu kullan, yoksa non-strict load
+            try:
+                text_model = PeftModel.from_pretrained(text_model, checkpoint_path)
+                print("[Checkpoint] PEFT dizininden yüklendi")
+            except Exception:
+                missing, unexpected = text_model.load_state_dict(state, strict=False)
+                if any("lora" in k.lower() for k in state.keys()):
+                    print("[Checkpoint] UYARI: state_dict PEFT formatında görünüyor ama merge edilmemiş — "
+                          "LoRA ağırlıkları atlandı. fine_tune.save_merged_checkpoint ile yeniden kaydedin.")
+                else:
+                    print(f"[Checkpoint] state_dict yüklendi — missing={len(missing)} unexpected={len(unexpected)}")
     else:
         print("[Model] Checkpoint bulunamadı, base model kullanılıyor.")
 
-    # XLM-R MPS'te bazı op'ları desteklemiyor — text encoder CPU'da çalışır
-    text_device = torch.device("cpu")
+    # XLM-R MPS'te bazı op'ları desteklemiyor → MPS ise CPU; CUDA varsa GPU
+    text_device = torch.device("cpu") if device.type == "mps" else device
     text_model = text_model.to(text_device).eval()
+    print(f"[Device] text_encoder → {text_device}, image_encoder → {device}")
 
     image_model, _, preprocess = create_model_and_transforms("ViT-B-32", pretrained="openai")
     image_model = image_model.to(device).eval()
@@ -82,9 +95,13 @@ def encode_batch_images(image_model, images: list[Image.Image], preprocess, devi
 
 
 def encode_batch_texts(text_model, tokenizer, texts: list[str], device) -> torch.Tensor:
-    # mCLIP forward(txt, tokenizer) — raw metin + tokenizer alır
+    # mCLIP forward'i replica — tokenizer CPU tensor döner, elle device'a taşıyoruz
+    tok = tokenizer(texts, padding=True, return_tensors='pt').to(device)
     with torch.no_grad():
-        feats = text_model(texts, tokenizer)
+        embs = text_model.transformer(**tok)[0]
+        att  = tok['attention_mask']
+        embs = (embs * att.unsqueeze(2)).sum(dim=1) / att.sum(dim=1)[:, None]
+        feats = text_model.LinearTransformation(embs)
     return F.normalize(feats.float(), dim=-1).cpu()
 
 
@@ -107,15 +124,17 @@ def build_index(args: argparse.Namespace) -> None:
 
     text_model, image_model, tokenizer, preprocess, text_device = load_models(args.checkpoint, device)
 
+    collection_name = getattr(args, "collection_name", COLLECTION_NAME)
+
     # ChromaDB bağlantısı
     client = chromadb.PersistentClient(path=args.chroma_dir)
 
-    if args.reset and COLLECTION_NAME in [c.name for c in client.list_collections()]:
-        client.delete_collection(COLLECTION_NAME)
-        print(f"[ChromaDB] '{COLLECTION_NAME}' koleksiyonu silindi.")
+    if args.reset and collection_name in [c.name for c in client.list_collections()]:
+        client.delete_collection(collection_name)
+        print(f"[ChromaDB] '{collection_name}' koleksiyonu silindi.")
 
     collection = client.get_or_create_collection(
-        name=COLLECTION_NAME,
+        name=collection_name,
         metadata={"hnsw:space": "cosine"},
     )
 
@@ -169,10 +188,12 @@ def build_index(args: argparse.Namespace) -> None:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="mCLIP ChromaDB Indexer")
-    p.add_argument("--data",       default="data/processed/dataset.jsonl")
-    p.add_argument("--chroma_dir", default=CHROMA_DIR)
-    p.add_argument("--checkpoint", default=None, help="Fine-tuned model checkpoint")
-    p.add_argument("--reset",      action="store_true", help="Koleksiyonu sıfırla")
+    p.add_argument("--data",            default="data/processed/dataset.jsonl")
+    p.add_argument("--chroma_dir",      default=CHROMA_DIR)
+    p.add_argument("--checkpoint",      default=None, help="Fine-tuned model checkpoint")
+    p.add_argument("--reset",           action="store_true", help="Koleksiyonu sıfırla")
+    p.add_argument("--collection_name", default=COLLECTION_NAME,
+                   help="ChromaDB koleksiyon adı (base vs smoke ayrımı için)")
     return p.parse_args()
 
 

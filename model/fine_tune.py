@@ -224,6 +224,29 @@ def save_checkpoint(text_model, optimizer, epoch: int, loss: float, out_dir: Pat
     return path
 
 
+def save_merged_checkpoint(text_model, epoch: int, loss: float, path: Path) -> Path:
+    """
+    LoRA adapter'ları base ağırlıklara merge eder ve vanilla MultilingualCLIP
+    state_dict'i olarak kaydeder. Retriever (PEFT tanımaz) bu checkpoint'i
+    load_state_dict ile doğrudan yükleyebilir.
+
+    Eğitimin ortasında çağrıldığında orijinal text_model'i bozmamak için
+    deepcopy üzerinde merge yapar.
+    """
+    import copy
+    model_cpu = copy.deepcopy(text_model).to("cpu")
+    merged = model_cpu.merge_and_unload()
+    base_state = merged.state_dict()
+    torch.save({
+        "epoch":       epoch,
+        "val_loss":    loss,
+        "model_state": base_state,
+        "merged":      True,
+    }, path)
+    del model_cpu, merged
+    return path
+
+
 def load_checkpoint(path: Path, text_model, optimizer) -> int:
     ckpt  = torch.load(path, map_location="cpu")
     text_model.load_state_dict(ckpt["model_state"])
@@ -310,8 +333,8 @@ def main(args: argparse.Namespace) -> None:
         if val_loss < best_loss:
             best_loss = val_loss
             best_path = out_dir / "best.pt"
-            torch.save(torch.load(ckpt_path), best_path)
-            print(f"  ✓ Best model kaydedildi: {best_path}")
+            save_merged_checkpoint(text_model, epoch, val_loss, best_path)
+            print(f"  ✓ Best model (merged) kaydedildi: {best_path}")
 
     print("\n" + "=" * 60)
     print(f"Eğitim tamamlandı. En iyi val_loss={best_loss:.4f}  →  {best_path}")

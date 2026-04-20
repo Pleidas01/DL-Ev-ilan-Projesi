@@ -46,6 +46,7 @@ class Retriever:
         self,
         chroma_dir: str = CHROMA_DIR,
         checkpoint: str | None = None,
+        collection_name: str = COLLECTION_NAME,
     ) -> None:
         self.device = get_device()
 
@@ -55,10 +56,16 @@ class Retriever:
 
         if checkpoint and Path(checkpoint).exists():
             ckpt = torch.load(checkpoint, map_location="cpu")
-            self.text_model.load_state_dict(ckpt.get("model_state", ckpt), strict=False)
+            state = ckpt.get("model_state", ckpt)
+            missing, unexpected = self.text_model.load_state_dict(state, strict=False)
+            if missing or unexpected:
+                print(f"[Retriever] ckpt load — missing={len(missing)} unexpected={len(unexpected)}")
+            if not ckpt.get("merged", False) and any("lora" in k.lower() for k in state.keys()):
+                print("[Retriever] UYARI: checkpoint PEFT formatında (LoRA merged değil) — "
+                      "LoRA ağırlıkları yüklenmedi. fine_tune.save_merged_checkpoint ile yeniden kaydedin.")
 
-        # XLM-R MPS'te bazı op'ları desteklemiyor — text encoder CPU'da
-        self.text_device = torch.device("cpu")
+        # XLM-R MPS'te bazı op'ları desteklemiyor → MPS ise CPU; CUDA varsa GPU
+        self.text_device = torch.device("cpu") if self.device.type == "mps" else self.device
         self.text_model = self.text_model.to(self.text_device).eval()
 
         self.image_model, _, self.preprocess = create_model_and_transforms(
@@ -68,14 +75,19 @@ class Retriever:
 
         # ChromaDB
         client = chromadb.PersistentClient(path=chroma_dir)
-        self.collection = client.get_collection(COLLECTION_NAME)
+        self.collection = client.get_collection(collection_name)
+        self.collection_name = collection_name
 
     # ── Encode yardımcıları ──────────────────────────────────────────────────
 
     def _encode_text(self, query: str) -> list[float]:
-        # mCLIP forward(txt, tokenizer) — raw metin + tokenizer alır
+        # mCLIP forward'i replica — tokenizer CPU tensor döner, elle device'a taşıyoruz
+        tok = self.tokenizer([query], padding=True, return_tensors='pt').to(self.text_device)
         with torch.no_grad():
-            emb = self.text_model([query], self.tokenizer)
+            embs = self.text_model.transformer(**tok)[0]
+            att  = tok['attention_mask']
+            embs = (embs * att.unsqueeze(2)).sum(dim=1) / att.sum(dim=1)[:, None]
+            emb  = self.text_model.LinearTransformation(embs)
         return F.normalize(emb.float(), dim=-1).squeeze(0).cpu().tolist()
 
     def _encode_image(self, image: Image.Image | str | Path) -> list[float]:
@@ -170,7 +182,7 @@ class Retriever:
         return self._search(query_emb, k, lam)
 
     def _search(self, query_emb: list[float], k: int, lam: float) -> list[dict]:
-        n_fetch = min(k * FETCH_MULT, self.collection.count())
+        n_fetch = k * FETCH_MULT
         results = self.collection.query(
             query_embeddings=[query_emb],
             n_results=max(n_fetch, k),
