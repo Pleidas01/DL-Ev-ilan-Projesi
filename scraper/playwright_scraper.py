@@ -1,23 +1,17 @@
 """
-Emlakjet Scraper v5 — Düzeltmeler
-===================================
-v4'ten yapılan değişiklikler:
-  1. Bot koruması  : Stealth argümanları güçlendirildi; Cloudflare challenge
-                     tespiti eklendi (CF page → bekle & tekrar dene).
-  2. XHR race cond.: asyncio.Event + kısa poll döngüsü ile XHR handler'ların
-                     tamamlanması bekleniyor (xhr_listings.clear() güvenli).
-  3. image_count   : Filtre kaldırıldı; URL'siz listing'ler de kaydedilir.
-  4. CSS selector  : Hashed class yerine meta/OG tag, JSON-LD ve genel
-                     semantic selector'larla price/location çekimi.
-  5. DOM link      : Birden fazla href pattern denenior; JS evaluate yerine
-                     page.locator kullanımı.
-  6. Pagination    : ?sayfa= → sayfa sonuna kadar devam, son sayfada dur;
-                     boş sayfa tespiti geliştirildi.
-  7. Image pattern : Hem eski hem yeni CDN format'ı destekleniyor.
+Emlakjet Scraper v6 — Filtre Desteği
+======================================
+v5'ten yapılan değişiklikler:
+  8. Filtreler: --tip, --sehir, --ilce, --mahalle, --oda, --ilan-yasi
+     argümanları eklendi. URL'ler dinamik olarak oluşturulur.
+     Oda sayısı ve ilan yaşı için kayıt düzeyinde post-filtre de uygulanır.
 
 Kullanım:
-    python scraper/playwright_scraper.py --limit 5000 --out data/raw
-    python scraper/playwright_scraper.py --limit 5 --headed   # debug
+    python scraper/playwright_scraper.py --limit 200 --out data/raw
+    python scraper/playwright_scraper.py --limit 500 --tip satilik --sehir istanbul
+    python scraper/playwright_scraper.py --limit 200 --tip kiralik --sehir ankara --ilce cankaya
+    python scraper/playwright_scraper.py --limit 300 --oda 3+1 --ilan-yasi 30
+    python scraper/playwright_scraper.py --limit 5 --headed  # debug
 """
 
 import asyncio
@@ -54,7 +48,8 @@ IMG_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-LIST_URLS = [
+# Filtre verilmediğinde varsayılan URL listesi
+DEFAULT_LIST_URLS = [
     "https://www.emlakjet.com/satilik-konut/",
     "https://www.emlakjet.com/kiralik-konut/",
     "https://www.emlakjet.com/satilik-konut/istanbul/",
@@ -69,6 +64,63 @@ LIST_URLS = [
     "https://www.emlakjet.com/kiralik-konut/ankara/",
     "https://www.emlakjet.com/kiralik-konut/izmir/",
 ]
+
+# Oda sayısı → Emlakjet URL slug eşlemesi
+ODA_SLUG_MAP = {
+    "1+0": "1_0", "1+1": "1_1", "2+0": "2_0", "2+1": "2_1",
+    "3+1": "3_1", "3+2": "3_2", "4+1": "4_1", "4+2": "4_2",
+    "5+1": "5_1", "5+2": "5_2",
+}
+
+
+def build_list_urls(tip: str, sehir: str, ilce: str, mahalle: str,
+                    oda: str, ilan_yasi: int) -> list[str]:
+    """CLI argümanlarından Emlakjet arama URL'lerini oluşturur."""
+    tips = ['satilik', 'kiralik'] if tip == 'hepsi' else [tip]
+    urls = []
+    for t in tips:
+        path = f"https://www.emlakjet.com/{t}-konut/"
+        if sehir:
+            path += f"{sehir}/"
+        if ilce:
+            path += f"{ilce}/"
+        if mahalle:
+            path += f"{mahalle}/"
+
+        params: list[str] = []
+        if oda:
+            slug = ODA_SLUG_MAP.get(oda, oda.replace('+', '_'))
+            params.append(f"oda-sayisi[]={slug}")
+        if ilan_yasi:
+            params.append(f"ilanYasi={ilan_yasi}")
+        if params:
+            path += "?" + "&".join(params)
+        urls.append(path)
+    return urls
+
+
+def record_matches_filters(rec: dict, oda: str, ilan_yasi: int) -> bool:
+    """Scrape edilen kaydı filtre kriterlerine göre kontrol eder (post-filtre)."""
+    if oda:
+        room = str(rec.get('attributes', {}).get('roomCount', ''))
+        oda_norm = oda.replace(' ', '').lower()
+        room_norm = room.replace(' ', '').lower()
+        if room_norm and oda_norm not in room_norm:
+            return False
+
+    if ilan_yasi:
+        published = str(rec.get('attributes', {}).get('publishedAt', ''))
+        if published:
+            try:
+                from datetime import datetime, timezone
+                pub_dt = datetime.fromisoformat(published.replace('Z', '+00:00'))
+                now = datetime.now(timezone.utc)
+                delta_days = (now - pub_dt).days
+                if delta_days > ilan_yasi:
+                    return False
+            except Exception:
+                pass
+    return True
 
 ID_RE = re.compile(r'-(\d{6,10})(?:/|$)')
 
@@ -222,11 +274,16 @@ async def wait_for_cloudflare(page, max_wait: int = 30) -> bool:
 # ── Ana scraper sınıfı ─────────────────────────────────────────────────────────
 
 class EmlakjetScraper:
-    def __init__(self, out_dir: Path, limit: int, headless: bool = True):
+    def __init__(self, out_dir: Path, limit: int, headless: bool = True,
+                 list_urls: list[str] | None = None,
+                 filter_oda: str = '', filter_ilan_yasi: int = 0):
         self.out_dir = out_dir
         self.jsonl_path = out_dir / 'listings.jsonl'
         self.limit = limit
         self.headless = headless
+        self.list_urls = list_urls or DEFAULT_LIST_URLS
+        self.filter_oda = filter_oda
+        self.filter_ilan_yasi = filter_ilan_yasi
         self.seen_ids: set[str] = set()
         out_dir.mkdir(parents=True, exist_ok=True)
         self._load_existing()
@@ -469,7 +526,8 @@ class EmlakjetScraper:
                     nonlocal saved
                     if rec['id'] in self.seen_ids:
                         return
-                    # FIX 3: image_count == 0 filtresi kaldırıldı
+                    if not record_matches_filters(rec, self.filter_oda, self.filter_ilan_yasi):
+                        return
                     await out_f.write(json.dumps(rec, ensure_ascii=False) + '\n')
                     await out_f.flush()
                     self.seen_ids.add(rec['id'])
@@ -479,13 +537,15 @@ class EmlakjetScraper:
                 if STEALTH_AVAILABLE:
                     await stealth_async(detail_page)
 
-                for list_url_base in LIST_URLS:
+                for list_url_base in self.list_urls:
                     if saved >= self.limit:
                         break
 
                     print(f'\n→ {list_url_base}')
 
-                    for page_num in range(1, 60):
+                    consecutive_empty = 0  # ardışık sıfır-kayıt sayfa sayacı
+
+                    for page_num in range(1, 300):
                         if saved >= self.limit:
                             break
 
@@ -495,7 +555,7 @@ class EmlakjetScraper:
                         # FIX 2: Race condition düzeltmesi
                         xhr_results.clear()
                         xhr_done_event.clear()
-                        pending_xhr = 0
+                        pending_xhr[0] = 0
 
                         try:
                             await page.goto(purl, wait_until='domcontentloaded', timeout=30000)
@@ -534,9 +594,16 @@ class EmlakjetScraper:
                                     break
                             print(f"  [Sayfa {page_num}] XHR: {len(xhr_results)} listing, "
                                   f"{page_saved} kaydedildi | Toplam: {saved}")
-                            # Son sayfa tespiti: az listing geldi
-                            if len(xhr_results) < 5:
-                                print(f"  Son sayfa tespit edildi (< 5 listing).")
+                            if page_saved == 0:
+                                consecutive_empty += 1
+                            else:
+                                consecutive_empty = 0
+                            # Gerçek son sayfa: XHR az döndü VE zaten hepsi görülmüş
+                            if len(xhr_results) < 5 and consecutive_empty >= 2:
+                                print(f"  Son sayfa tespit edildi.")
+                                break
+                            if consecutive_empty >= 5:
+                                print(f"  5 ardışık boş sayfa — URL atlıyor.")
                                 break
                             await asyncio.sleep(random.uniform(1.5, 3.0))
                             continue
@@ -570,19 +637,35 @@ class EmlakjetScraper:
                         hrefs = unique_hrefs
 
                         if not hrefs:
-                            print(f"  [Sayfa {page_num}] Hiç link bulunamadı — URL atlıyor")
-                            break
+                            # Gerçek boş sayfa: site bu sayfayı gösteremiyor
+                            consecutive_empty += 1
+                            print(f"  [Sayfa {page_num}] Hiç link bulunamadı ({consecutive_empty}/3)")
+                            if consecutive_empty >= 3:
+                                print(f"  Son sayfa tespit edildi — URL atlıyor.")
+                                break
+                            await asyncio.sleep(random.uniform(2.0, 3.5))
+                            continue
 
-                        print(f"  [Sayfa {page_num}] {len(hrefs)} link, detay sayfaları ziyaret ediliyor...")
+                        # Sayfadaki linklerden kaçı yeni (henüz scraplanmamış)?
+                        new_hrefs = []
+                        for h in hrefs:
+                            m = ID_RE.search(h)
+                            if not m or m.group(1) not in self.seen_ids:
+                                new_hrefs.append(h)
+
+                        if not new_hrefs:
+                            # Tüm linkler zaten scraplanmış — sayfayı geç, sayacı artırma
+                            print(f"  [Sayfa {page_num}] {len(hrefs)} link, tümü zaten indirilmiş — geçiliyor")
+                            await asyncio.sleep(random.uniform(1.0, 2.0))
+                            continue
+
+                        print(f"  [Sayfa {page_num}] {len(hrefs)} link ({len(new_hrefs)} yeni), detay sayfaları ziyaret ediliyor...")
                         page_saved = 0
 
-                        for href in hrefs:
+                        for href in new_hrefs:
                             if saved >= self.limit:
                                 break
                             full_url = href if href.startswith('http') else 'https://www.emlakjet.com' + href
-                            m = ID_RE.search(href)
-                            if m and m.group(1) in self.seen_ids:
-                                continue
 
                             rec = await scrape_detail(detail_page, full_url)
                             if rec:
@@ -593,7 +676,13 @@ class EmlakjetScraper:
 
                         print(f"  [Sayfa {page_num}] DOM+Detay: {page_saved} kaydedildi | Toplam: {saved}")
 
-                        if page_saved == 0 and page_num > 1:
+                        if page_saved == 0:
+                            consecutive_empty += 1
+                        else:
+                            consecutive_empty = 0
+
+                        if consecutive_empty >= 3:
+                            print(f"  3 ardışık gerçek boş sayfa — URL atlıyor.")
                             break
 
                         await asyncio.sleep(random.uniform(2.0, 3.5))
@@ -611,18 +700,71 @@ class EmlakjetScraper:
 
 
 async def main(args):
+    # Filtre verilmişse dinamik URL oluştur, verilmemişse varsayılan listeyi kullan
+    herhangi_filtre = any([args.tip != 'hepsi', args.sehir, args.ilce,
+                           args.mahalle, args.oda, args.ilan_yasi])
+    if herhangi_filtre:
+        list_urls = build_list_urls(
+            tip=args.tip,
+            sehir=args.sehir,
+            ilce=args.ilce,
+            mahalle=args.mahalle,
+            oda=args.oda,
+            ilan_yasi=args.ilan_yasi,
+        )
+        print("\n[Filtreler]")
+        print(f"  Tip      : {args.tip}")
+        print(f"  Şehir    : {args.sehir or '—'}")
+        print(f"  İlçe     : {args.ilce or '—'}")
+        print(f"  Mahalle  : {args.mahalle or '—'}")
+        print(f"  Oda      : {args.oda or '—'}")
+        print(f"  İlan yaşı: {f'son {args.ilan_yasi} gün' if args.ilan_yasi else '—'}")
+        print(f"  URL(ler) : {list_urls}")
+    else:
+        list_urls = None
+        print("\n[Filtre yok — varsayılan URL listesi kullanılıyor]")
+
     scraper = EmlakjetScraper(
         out_dir=Path(args.out),
         limit=args.limit,
         headless=not args.headed,
+        list_urls=list_urls,
+        filter_oda=args.oda,
+        filter_ilan_yasi=args.ilan_yasi,
     )
     await scraper.run()
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Emlakjet Scraper v5')
-    parser.add_argument('--limit',  type=int, default=5000)
-    parser.add_argument('--out',    default='data/raw')
-    parser.add_argument('--headed', action='store_true')
+    parser = argparse.ArgumentParser(
+        description='Emlakjet Scraper v6',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""Örnekler:
+  python scraper/playwright_scraper.py --limit 200
+  python scraper/playwright_scraper.py --limit 500 --tip satilik --sehir istanbul
+  python scraper/playwright_scraper.py --limit 200 --tip kiralik --sehir ankara --ilce cankaya
+  python scraper/playwright_scraper.py --limit 300 --oda 3+1
+  python scraper/playwright_scraper.py --limit 300 --oda 2+1 --ilan-yasi 30 --sehir izmir
+"""
+    )
+    parser.add_argument('--limit', type=int, default=5000,
+                        help='Kaç ilan toplanacak (varsayılan: 5000)')
+    parser.add_argument('--out', default='data/raw',
+                        help='Çıktı klasörü (varsayılan: data/raw)')
+    parser.add_argument('--headed', action='store_true',
+                        help='Tarayıcıyı görünür aç (debug için)')
+    parser.add_argument('--tip', default='hepsi',
+                        choices=['satilik', 'kiralik', 'hepsi'],
+                        help='İlan tipi (varsayılan: hepsi)')
+    parser.add_argument('--sehir', default='',
+                        help='Şehir slug (istanbul, ankara, izmir, bursa ...)')
+    parser.add_argument('--ilce', default='',
+                        help='İlçe slug (kadikoy, besiktas, cankaya ...)')
+    parser.add_argument('--mahalle', default='',
+                        help='Mahalle slug (moda, etiler ...)')
+    parser.add_argument('--oda', default='',
+                        help='Oda sayısı (1+1, 2+1, 3+1, 4+1 ...)')
+    parser.add_argument('--ilan-yasi', type=int, default=0, dest='ilan_yasi',
+                        help='Son kaç günde yayınlanan ilanlar (örn: 30)')
     args = parser.parse_args()
     asyncio.run(main(args))

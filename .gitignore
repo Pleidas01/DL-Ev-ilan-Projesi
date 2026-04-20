@@ -11,3 +11,4 @@ data/chroma/
 notebooks/figures/
 *.ipynb_checkpoints/
 .DS_Store
+.claude/
