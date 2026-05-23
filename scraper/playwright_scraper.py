@@ -199,7 +199,7 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
     else:
         district = str(loc)
 
-    description = str(obj.get('description') or obj.get('shortDescription') or '').strip()[:500]
+    description = str(obj.get('description') or obj.get('shortDescription') or '').strip()[:2000]
 
     slug = obj.get('slug') or obj.get('url') or obj.get('seoUrl') or ''
     if slug.startswith('http'):
@@ -473,7 +473,7 @@ class EmlakjetScraper:
                     district = ' - '.join(filter(None, [city, town, nbhd]))
 
                     # ── Açıklama ──────────────────────────────────────────
-                    description = str(ld_product.get('description') or '').strip()[:500]
+                    description = str(ld_product.get('description') or '').strip()[:2000]
 
                     # ── Attributes ────────────────────────────────────────
                     attrs: dict = {}

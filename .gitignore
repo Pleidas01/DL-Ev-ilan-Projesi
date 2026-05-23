@@ -1,10 +1,12 @@
 .venv/
+.env
 __pycache__/
 *.pyc
 
 data/raw/
 data/processed/
 data/images/
+data/timeseries/
 model/checkpoints/
 model/checkpoints_smoke/
 data/chroma/

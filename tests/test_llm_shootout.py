@@ -1,0 +1,87 @@
+from llm.clients import CANDIDATES, _openai_chat_temperature, candidate_by_id, estimate_cost_usd
+from llm.shootout import choose_winners, run_text_slot_benchmark, score_expected_slots
+
+
+def test_feasibility_first_candidate_set_excludes_prohibitive_models():
+    candidate_ids = {candidate.id for candidate in CANDIDATES}
+
+    assert candidate_ids == {
+        "deepseek_v4_flash",
+        "kimi_k2_6",
+        "gemini_3_5_flash",
+        "glm_4_6",
+        "gemma_4_local",
+    }
+    assert not any("gpt" in candidate.id or "claude" in candidate.id for candidate in CANDIDATES)
+
+
+def test_100k_listing_projection_stays_under_feasibility_threshold():
+    projected_costs = {
+        candidate.id: estimate_cost_usd(candidate, input_tokens=700 * 100_000, output_tokens=200 * 100_000)
+        for candidate in CANDIDATES
+    }
+
+    assert projected_costs["deepseek_v4_flash"] < 50
+    assert projected_costs["kimi_k2_6"] < 500
+    assert projected_costs["gemini_3_5_flash"] < 500
+    assert projected_costs["gemma_4_local"] == 0
+
+
+def test_choose_winners_requires_feasible_quality_and_modality_fit():
+    rows = [
+        {"model_id": "deepseek_v4_flash", "supports_vision": False, "quality_score": 0.86, "cost_100k_usd": 13},
+        {"model_id": "glm_4_6", "supports_vision": False, "quality_score": 0.84, "cost_100k_usd": 35},
+        {"model_id": "kimi_k2_6", "supports_vision": True, "quality_score": 0.85, "cost_100k_usd": 220},
+        {"model_id": "gemini_3_5_flash", "supports_vision": True, "quality_score": 0.88, "cost_100k_usd": 430},
+        {"model_id": "gemma_4_local", "supports_vision": True, "quality_score": 0.72, "cost_100k_usd": 0},
+    ]
+
+    winners = choose_winners(rows)
+
+    assert winners["text_model"] == "deepseek_v4_flash"
+    assert winners["vision_model"] == "gemini_3_5_flash"
+
+
+def test_openai_chat_temperature_for_moonshot_is_one():
+    assert _openai_chat_temperature(candidate_by_id("kimi_k2_6")) == 1.0
+    assert _openai_chat_temperature(candidate_by_id("deepseek_v4_flash")) == 0.0
+
+
+def test_score_expected_slots_accepts_scalar_actual_for_list_fields():
+    parsed = {
+        "hard_filters": {"rooms": "1+1", "districts": "Kadıköy", "max_price_tl": 30000},
+        "soft_features": {"image": {}, "text_extracted": {}},
+        "free_form_tr": "test",
+    }
+    expected = {"rooms": ["1+1"], "districts": ["Kadıköy"], "max_price_tl": 30000}
+
+    score = score_expected_slots(parsed, expected)
+
+    assert score == 1.0
+
+
+def test_score_expected_slots_does_not_crash_on_int_list_mismatch():
+    parsed = {
+        "hard_filters": {"rooms": 1},
+        "soft_features": {"image": {}, "text_extracted": {}},
+        "free_form_tr": "test",
+    }
+
+    score = score_expected_slots(parsed, {"rooms": ["1+1"]})
+
+    assert 0.0 <= score <= 1.0
+
+
+def test_run_text_slot_benchmark_records_provider_errors(monkeypatch):
+    monkeypatch.setenv("OLLAMA_HOST", "http://localhost:11434")
+
+    def fail_call(*_args, **_kwargs):
+        raise RuntimeError("ollama unavailable")
+
+    monkeypatch.setattr("llm.shootout.complete_json", fail_call)
+
+    rows = run_text_slot_benchmark(["gemma_4_local"])
+
+    assert rows[0]["model_id"] == "gemma_4_local"
+    assert rows[0]["quality_score"] == 0.0
+    assert rows[0]["status"].startswith("error:")

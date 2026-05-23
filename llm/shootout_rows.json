@@ -1,0 +1,47 @@
+[
+  {
+    "model_id": "deepseek_v4_flash",
+    "supports_vision": false,
+    "quality_score": 0.0,
+    "json_score": 0.0,
+    "slot_score": 0.0,
+    "cost_100k_usd": 15.400000000000002,
+    "status": "missing_env:DEEPSEEK_API_KEY"
+  },
+  {
+    "model_id": "kimi_k2_6",
+    "supports_vision": true,
+    "quality_score": 0.8266666666666667,
+    "json_score": 0.9666666666666667,
+    "slot_score": 0.7333333333333333,
+    "cost_100k_usd": 146.5,
+    "status": "ok"
+  },
+  {
+    "model_id": "gemini_3_5_flash",
+    "supports_vision": true,
+    "quality_score": 0.0,
+    "json_score": 0.0,
+    "slot_score": 0.0,
+    "cost_100k_usd": 285.0,
+    "status": "missing_env:GEMINI_API_KEY"
+  },
+  {
+    "model_id": "glm_4_6",
+    "supports_vision": false,
+    "quality_score": 0.0,
+    "json_score": 0.0,
+    "slot_score": 0.0,
+    "cost_100k_usd": 31.0,
+    "status": "missing_env:OPENROUTER_API_KEY"
+  },
+  {
+    "model_id": "gemma_4_local",
+    "supports_vision": true,
+    "quality_score": 0.8600000000000001,
+    "json_score": 1.0,
+    "slot_score": 0.7666666666666668,
+    "cost_100k_usd": 0.0,
+    "status": "ok"
+  }
+]

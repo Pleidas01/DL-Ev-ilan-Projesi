@@ -1,0 +1,11 @@
+[
+  {
+    "model_id": "kimi_k2_6",
+    "supports_vision": true,
+    "quality_score": 0.88,
+    "json_score": 1.0,
+    "slot_score": 0.8,
+    "cost_100k_usd": 146.5,
+    "status": "ok"
+  }
+]
