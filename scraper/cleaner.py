@@ -17,6 +17,7 @@ import hashlib
 import argparse
 import unicodedata
 import re
+import sys
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
@@ -27,6 +28,7 @@ from tqdm import tqdm
 MIN_IMAGE_W = 200   # piksel — minimum genişlik
 MIN_IMAGE_H = 150   # piksel — minimum yükseklik
 MAX_TEXT_LEN = 256  # karakter — fine-tuning text maksimum uzunluğu
+MAX_DESCRIPTION_LEN = 4000  # ham açıklama — M3 LLM için tam metin
 
 # Temizlenecek HTML kalıpları
 HTML_PATTERN = re.compile(r"<[^>]+>")
@@ -41,8 +43,9 @@ def normalize_text(text: str) -> str:
     """Türkçe metin normalizasyonu."""
     if not text:
         return ""
-    # HTML tag'lerini temizle
+    # HTML tag'lerini temizle (tam tag'ler + sonda kesik açılış tag'i)
     text = HTML_PATTERN.sub(" ", text)
+    text = re.sub(r'<[^<]*$', '', text)
     # Unicode normalize (NFC — Türkçe karakterler için)
     text = unicodedata.normalize("NFC", text)
     # Fazla boşlukları temizle
@@ -101,6 +104,108 @@ def build_text_description(listing: dict) -> str:
     return full_text[:MAX_TEXT_LEN]
 
 
+def _parse_tl(value: object) -> int | None:
+    """Parse Turkish lira strings such as '60.000 TL' to integer kuruş-free TL."""
+    if value is None:
+        return None
+    digits = re.sub(r"[^\d]", "", str(value))
+    return int(digits) if digits else None
+
+
+def _parse_int(value: object) -> int | None:
+    if value is None:
+        return None
+    match = re.search(r"\d+", str(value).replace(".", ""))
+    return int(match.group(0)) if match else None
+
+
+def _normalize_blob(value: object) -> str:
+    # Türkçe karakter haritası lower()'dan ÖNCE uygulanır:
+    # Python "İ".lower() → "i̇" (U+0069 + U+0307 combining), sonradan translate edemez.
+    text = normalize_text(str(value or ""))
+    table = str.maketrans({
+        "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u",
+        "Ç": "c", "Ğ": "g", "İ": "i", "I": "i", "Ö": "o", "Ş": "s", "Ü": "u",
+        "â": "a", "Â": "a",
+    })
+    return text.translate(table).lower()
+
+
+def _split_location(location: object) -> tuple[str, str, str]:
+    parts = [normalize_text(part) for part in str(location or "").split(" - ")]
+    parts = [part for part in parts if part]
+    city = parts[0] if len(parts) > 0 else ""
+    district = parts[1] if len(parts) > 1 else ""
+    neighborhood = parts[2] if len(parts) > 2 else ""
+    return city, district, neighborhood
+
+
+def _parse_yes_no(value: object) -> bool | None:
+    norm = _normalize_blob(value)
+    if norm in {"evet", "var", "yes", "true", "1"}:
+        return True
+    if norm in {"hayir", "hayir.", "yok", "no", "false", "0"}:
+        return False
+    return None
+
+
+def _feature_blob(attrs: dict, raw: dict) -> str:
+    features = attrs.get("propertyFeatures") or []
+    if not isinstance(features, list):
+        features = [features]
+    return _normalize_blob(" ".join(str(item) for item in features) + " " + str(raw.get("title", "")))
+
+
+def _normalize_heating(value: object) -> str | None:
+    norm = _normalize_blob(value)
+    if "yerden" in norm:
+        return "yerden_isitma"
+    if "kombi" in norm:
+        return "kombi"
+    if "dogalgaz" in norm or "dogal gaz" in norm:
+        return "dogalgaz"
+    if "merkezi" in norm:
+        return "merkezi"
+    if "klima" in norm:
+        return "klima"
+    return None
+
+
+def _parse_furnished(value: object) -> bool | None:
+    """Parse 'Eşya Durumu' attribute. Returns True/False/None."""
+    norm = _normalize_blob(value)
+    if not norm:
+        return None
+    if "esyasiz" in norm:
+        return False
+    if "esyali" in norm or "mobilyali" in norm:
+        return True
+    return None
+
+
+def _detect_aircon(attrs: dict, feature_blob: str) -> bool | None:
+    """has_aircon: property_features veya heating tipi 'klima' içeriyorsa True."""
+    if "klima" in feature_blob:
+        return True
+    if "klima" in _normalize_blob(attrs.get("heating", "")):
+        return True
+    return None
+
+
+def _infer_kitchen_type(blob: str) -> str | None:
+    if "amerikan" in blob or "acik mutfak" in blob:
+        return "amerikan_acik"
+    if "yari acik" in blob:
+        return "yari_acik"
+    if "kapali mutfak" in blob or "ayri mutfak" in blob:
+        return "kapali_ayri"
+    return None
+
+
+def _contains_any(blob: str, needles: tuple[str, ...]) -> bool | None:
+    return True if any(needle in blob for needle in needles) else None
+
+
 # ─── Görsel Doğrulama ─────────────────────────────────────────────────────────
 def validate_image(image_path: str) -> tuple[bool, str | None]:
     """
@@ -122,6 +227,58 @@ def validate_image(image_path: str) -> tuple[bool, str | None]:
         return False, "Tanımsız görsel formatı"
     except Exception as e:
         return False, str(e)
+
+
+def clean_record(raw: dict, *, image_path: str, all_image_paths: list[str]) -> dict:
+    """Ham listing kaydını M3-ready dataset satırına dönüştürür."""
+    attrs = raw.get("attributes") or {}
+    text = build_text_description(raw)
+    city, district, neighborhood = _split_location(raw.get("district", ""))
+    features = attrs.get("propertyFeatures") or []
+    feature_blob = _feature_blob(attrs, raw)
+    furnished_attr = _parse_furnished(attrs.get("furnishedStatus"))
+    is_furnished_value = (
+        furnished_attr
+        if furnished_attr is not None
+        else _contains_any(feature_blob, ("esyali", "mobilyali", "full esyali", "ful esyali"))
+    )
+    return {
+        "id": raw.get("id", ""),
+        "url": raw.get("url", ""),
+        "image_path": image_path,
+        "all_image_paths": all_image_paths,
+        "text": text,
+        "title": normalize_text(raw.get("title", "")),
+        "price": normalize_price(raw.get("price", "")),
+        "city": city,
+        "district": district,
+        "neighborhood": neighborhood,
+        "price_tl": _parse_tl(raw.get("price", "")),
+        "room_count": attrs.get("roomCount"),
+        "gross_size_m2": _parse_int(attrs.get("grossSize")),
+        "net_size_m2": _parse_int(attrs.get("netSize")),
+        "building_age": attrs.get("buildingAge", "") or "",
+        "floor": attrs.get("floor", "") or "",
+        "total_floors": _parse_int(attrs.get("totalFloors")),
+        "heating_type": _normalize_heating(attrs.get("heating")),
+        "kitchen_type": _infer_kitchen_type(feature_blob),
+        "has_balcony": _contains_any(feature_blob, ("balkon", "teras")),
+        "has_elevator": _contains_any(feature_blob, ("asansor",)),
+        "has_aircon": _detect_aircon(attrs, feature_blob),
+        "is_furnished": is_furnished_value,
+        "deposit_tl": _parse_tl(attrs.get("deposit")),
+        "has_parking": _contains_any(feature_blob, ("otopark", "garaj", "park yeri")),
+        "in_gated_complex": _parse_yes_no(attrs.get("inGatedComplex")),
+        "near_metro": None,
+        "near_metrobus": None,
+        "title_deed_status": attrs.get("titleDeedStatus") or None,
+        "description": normalize_text(raw.get("description", ""))[:MAX_DESCRIPTION_LEN],
+        "heating": attrs.get("heating", "") or "",
+        "property_features": features,
+        "visual_qualities": {},
+        "attributes": attrs,
+        "scraped_at": raw.get("scraped_at", ""),
+    }
 
 
 def image_hash(image_path: str) -> str | None:
@@ -232,19 +389,12 @@ def clean_dataset(raw_dir: Path, out_dir: Path, images_dir: Path | None = None) 
                 continue
 
             # ── Temiz kaydı yaz ─────────────────────────────────────────
-            clean_record = {
-                "id": raw.get("id", ""),
-                "url": url,
-                "image_path": primary_image,
-                "all_image_paths": local_images,
-                "text": text,
-                "title": normalize_text(raw.get("title", "")),
-                "price": normalize_price(raw.get("price", "")),
-                "district": normalize_text(raw.get("district", "")),
-                "attributes": raw.get("attributes", {}),
-                "scraped_at": raw.get("scraped_at", ""),
-            }
-            out_f.write(json.dumps(clean_record, ensure_ascii=False) + "\n")
+            record = clean_record(
+                {**raw, "url": url},
+                image_path=primary_image,
+                all_image_paths=local_images,
+            )
+            out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
             stats["saved"] += 1
 
     # ─── Rapor ────────────────────────────────────────────────────────────────
@@ -257,6 +407,9 @@ def clean_dataset(raw_dir: Path, out_dir: Path, images_dir: Path | None = None) 
 
 # ─── Entrypoint ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     parser = argparse.ArgumentParser(description="Scraping Verisi Temizleyici")
     parser.add_argument("--raw",    default="data/raw",       help="Ham veri dizini")
     parser.add_argument("--images", default="data/images",    help="İndirilen görsel kök dizini")

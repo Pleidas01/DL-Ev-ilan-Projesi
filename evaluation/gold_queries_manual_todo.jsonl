@@ -1,30 +1,30 @@
-{"query":"Kadıköy'de 45 bin TL altı eşyalı 2+1","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Bostancı sahile yakın temiz 3+1","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"metroya yakın eşyalı 1+1 öğrenciye uygun daire","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"asansörlü ferah 3+1 aile dairesi","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"deniz manzaralı 1+1 Tuzla tarafında kiralık","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Sarıyer'de geniş 2+1 60 bin TL civarı","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"site içinde güvenlikli 2+1 uygun fiyatlı daire","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"yeni bina 2+1 Kağıthane civarında","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Başakşehir'de 1+1 temiz kiralık daire","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Pendik'te 30 bin TL altı 2+1","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"balkonlu 2+1 ulaşımı kolay ev","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"ful eşyalı merkezi lokasyonda 2+1","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"orman manzaralı veya yeşil manzaralı lüks daire","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Marmaray yakını sıfır 2+1 daire","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Aile için güvenli 3+1 50 bin TL altı","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"öğrenciye uygun stüdyo veya 1+1 Esenyurt","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Kadıköy Moda'da eşyalı büyük daire","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Avcılar'da deniz veya göl manzaralı 2+1","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Üsküdar'da 2+1 belediye veya merkeze yakın","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Ataşehir'de Yeditepe Üniversitesi yakını 2+1","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"lüks rezidans 4+1 Maslak civarı","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"bahçe katı eşyalı 2+1 uygun fiyatlı","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"okula yakın 2+1 aileye uygun daire","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"ferah salonlu geniş 2+1 Avrupa yakası","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"kapalı veya açık otoparklı site dairesi","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Küçükçekmece'de 1+0 veya stüdyo uygun kiralık","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Sancaktepe'de site içinde 2+1","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"Maltepe minibüs yoluna yakın 2+1","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"denize yakın asansörlü 2+1 maksimum 40 bin","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
-{"query":"temiz bakımlı 1+1 35 bin TL civarı","expected_listing_ids":[],"todo":"Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Kadıköy'de 45 bin TL altı eşyalı 2+1", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Bostancı sahile yakın temiz 3+1", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "metroya yakın eşyalı 1+1 öğrenciye uygun daire", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "asansörlü ferah 3+1 aile dairesi", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "deniz manzaralı 1+1 Tuzla tarafında kiralık", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Sarıyer'de geniş 2+1 60 bin TL civarı", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "site içinde güvenlikli 2+1 uygun fiyatlı daire", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "yeni bina 2+1 Kağıthane civarında", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Başakşehir'de 1+1 temiz kiralık daire", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Pendik'te 30 bin TL altı 2+1", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "balkonlu 2+1 ulaşımı kolay ev", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "ful eşyalı merkezi lokasyonda 2+1", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "orman manzaralı veya yeşil manzaralı lüks daire", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Marmaray yakını sıfır 2+1 daire", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Aile için güvenli 3+1 50 bin TL altı", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "öğrenciye uygun stüdyo veya 1+1 Esenyurt", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Kadıköy Moda'da eşyalı büyük daire", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Avcılar'da deniz veya göl manzaralı 2+1", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Üsküdar'da 2+1 belediye veya merkeze yakın", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Ataşehir'de Yeditepe Üniversitesi yakını 2+1", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "lüks rezidans 4+1 Maslak civarı", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "bahçe katı eşyalı 2+1 uygun fiyatlı", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "okula yakın 2+1 aileye uygun daire", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "ferah salonlu geniş 2+1 Avrupa yakası", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "kapalı veya açık otoparklı site dairesi", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Küçükçekmece'de 1+0 veya stüdyo uygun kiralık", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Sancaktepe'de site içinde 2+1", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "Maltepe minibüs yoluna yakın 2+1", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "denize yakın asansörlü 2+1 maksimum 40 bin", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}
+{"query": "temiz bakımlı 1+1 35 bin TL civarı", "expected_listing_ids": [], "todo": "Fill 1-3 relevant listing IDs manually from data/processed/dataset.jsonl."}

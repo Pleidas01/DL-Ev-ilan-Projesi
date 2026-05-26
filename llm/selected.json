@@ -1,23 +1,22 @@
 {
-  "text_model": "gemma_4_local",
-  "vision_model": "gemma_4_local",
-  "decision_status": "provisional_text_slot_only",
+  "text_model": "kimi_k2_6",
+  "vision_model": "kimi_k2_6",
   "candidate_rows": [
     {
       "model_id": "deepseek_v4_flash",
       "supports_vision": false,
-      "quality_score": 0.0,
-      "json_score": 0.0,
-      "slot_score": 0.0,
+      "quality_score": 0.8733333333333333,
+      "json_score": 1.0,
+      "slot_score": 0.7888888888888889,
       "cost_100k_usd": 15.400000000000002,
-      "status": "missing_env:DEEPSEEK_API_KEY"
+      "status": "ok"
     },
     {
       "model_id": "kimi_k2_6",
       "supports_vision": true,
-      "quality_score": 0.8266666666666667,
-      "json_score": 0.9666666666666667,
-      "slot_score": 0.7333333333333333,
+      "quality_score": 0.8966666666666666,
+      "json_score": 1.0,
+      "slot_score": 0.8277777777777777,
       "cost_100k_usd": 146.5,
       "status": "ok"
     },
@@ -28,28 +27,19 @@
       "json_score": 0.0,
       "slot_score": 0.0,
       "cost_100k_usd": 285.0,
-      "status": "missing_env:GEMINI_API_KEY"
-    },
-    {
-      "model_id": "glm_4_6",
-      "supports_vision": false,
-      "quality_score": 0.0,
-      "json_score": 0.0,
-      "slot_score": 0.0,
-      "cost_100k_usd": 31.0,
-      "status": "missing_env:OPENROUTER_API_KEY"
+      "status": "error:ClientError:429 RESOURCE_EXHAUSTED (free tier daily cap 20 req/model; full 30-query benchmark not completed)"
     },
     {
       "model_id": "gemma_4_local",
       "supports_vision": true,
-      "quality_score": 0.8600000000000001,
+      "quality_score": 0.8833333333333333,
       "json_score": 1.0,
-      "slot_score": 0.7666666666666668,
+      "slot_score": 0.8055555555555556,
       "cost_100k_usd": 0.0,
       "status": "ok"
     }
   ],
   "cost_budget_usd": 100,
   "max_100k_listing_cost_usd": 500,
-  "notes_tr": "GPT-5.5 ve Claude Opus 4.7 aday seti dışında bırakıldı: TR erişim ve production maliyeti uygun değil. Bu karar şimdilik yalnızca text slot extraction shootout'una dayanıyor; image labeling winner'ı Milestone 2 manuel gold seti sonrası doğrulanacak."
+  "notes_tr": "GPT-5.5 ve Claude Opus 4.7 aday seti dışında bırakıldı: TR erişim ve production maliyeti uygun değil."
 }

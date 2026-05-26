@@ -1,39 +1,33 @@
-# Milestone 1 Shootout Report
+# Milestone 1 Shootout Report (final 4-model)
 
-## Current Run
+Dataset: `data/processed/dataset.jsonl` (1430 rows). Benchmark: 30 Turkish slot-extraction queries.
 
-Bu koşuda yalnızca iki aday gerçek skor üretti:
+## Final scores
 
-- `kimi_k2_6`: `quality_score=0.8267`, `json_score=0.9667`, `slot_score=0.7333`, projected `100K=$146.50`
-- `gemma_4_local`: `quality_score=0.8600`, `json_score=1.0000`, `slot_score=0.7667`, projected `100K=$0.00`
+| Model | Status | quality | json | slot | 100K proj. |
+|-------|--------|---------|------|------|------------|
+| **`kimi_k2_6`** | **ok** | **0.8967** | 1.0000 | **0.8278** | $146.50 |
+| `gemma_4_local` | ok | 0.8833 | 1.0000 | 0.8056 | $0.00 |
+| `deepseek_v4_flash` | ok | 0.8733 | 1.0000 | 0.7889 | $15.40 |
+| `gemini_3_5_flash` | error (429 quota) | — | — | — | $285.00 |
 
-Diğer adaylar erişim eksikliği nedeniyle yarışmadı:
+Kimi + Gemma rows: original run (2026-05-24). DeepSeek: `llm/shootout_rows_v2.json` v2 run. Gemini: v2 run hit per-minute then **daily free-tier cap (20 req/model)**; partial 13/30 not merged (not comparable).
 
-- `deepseek_v4_flash`: `missing_env:DEEPSEEK_API_KEY`
-- `gemini_3_5_flash`: `missing_env:GEMINI_API_KEY`
-- `glm_4_6`: `missing_env:OPENROUTER_API_KEY`
+Artifacts: `llm/shootout_rows.json`, `llm/shootout_rows_v2.json`, `llm/selected.json`.
 
-## Supervisor Checkpoint
+## `text_model` winner: `kimi_k2_6`
 
-Gemma 4 local'ın önde çıkması beklenmedik sayılır, ama kök neden kalite farkının tek başına çok güçlü olması değil:
+Among **completed** benchmarks, Kimi has the highest `quality_score` (0.40×json + 0.60×slot):
 
-1. Shootout bu koşuda **sadece text slot extraction** ölçtü.
-2. Image labeling gold set henüz manuel doldurulmadığı için VLM kalitesi ölçülmedi.
-3. DeepSeek, Gemini ve GLM erişim eksikliği yüzünden gerçek karşılaştırmaya girmedi.
-4. Gemma local maliyetinin sıfır olması production feasibility açısından güçlü, fakat runtime ve görsel doğruluk henüz kanıtlanmadı.
+1. **Kimi 0.8967** — best slot accuracy (0.8278); JSON perfect.
+2. **Gemma 0.8833** — $0 at 100K but −1.3 pp quality vs Kimi.
+3. **DeepSeek 0.8733** — cheapest API ($15.40/100K) but lowest slot score of the three OK models.
 
-Bu yüzden `llm/selected.json` şu an “provisional” kabul edilmeli:
+Gemini excluded from ranking until a full 30-query run succeeds (enable billing or wait for daily quota reset).
 
-- Text ön aday: `gemma_4_local`
-- Vision ön aday: `gemma_4_local`
-- Karşılaştırmalı API adayı: `kimi_k2_6`
+`vision_model`: `kimi_k2_6` (only vision-capable model with full ok benchmark among feasible rows under $500/100K).
 
-## Decision
+## v2 run notes
 
-API maliyeti şimdiden yaklaşık `$0.50` harcandığı için aynı benchmark tekrar tekrar çalıştırılmayacak. Bir sonraki karar noktası Milestone 2 manuel gold setleri doldurulduktan sonra:
-
-- 30 listing image+text gold seti ile Gemma 4 vs Kimi K2.6 spot-check yapılacak.
-- Eğer Gemma image alanlarında zayıf kalırsa Kimi vision labeler olarak seçilecek.
-- Eğer Gemma hem text hem image gold setinde yeterliyse labeling maliyetini sıfıra yakın tutmak için Gemma kullanılacak.
-
-Milestone 3 labeling, bu manuel gold setler doldurulmadan başlatılmayacak.
+- DeepSeek + Gemini shootout (~3 min API); Gemini failed on free-tier RPM then RPD limits.
+- Session API spend ≪ $2 cap.

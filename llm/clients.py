@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import base64
+import mimetypes
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 
@@ -173,3 +176,87 @@ def complete_json(candidate: ModelCandidate, system_prompt: str, user_prompt: st
         return (getattr(message, "content", None) if message is not None else None) or "{}"
 
     raise ValueError(f"Unsupported provider: {candidate.provider}")
+
+
+def _image_data_url(image_path: str) -> str:
+    path = Path(image_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Image not found: {image_path}")
+    mime_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def complete_vision_json(
+    candidate: ModelCandidate,
+    system_prompt: str,
+    user_prompt: str,
+    image_path: str,
+) -> str:
+    """Call a vision-capable candidate with one local image and JSON output."""
+    if not candidate.supports_vision:
+        raise ValueError(f"Candidate {candidate.id} does not support vision")
+
+    data_url = _image_data_url(image_path)
+
+    if candidate.provider in {"moonshot", "openrouter"}:
+        from openai import OpenAI
+
+        api_key = os.environ[candidate.env_keys[0]]
+        client = OpenAI(api_key=api_key, base_url=candidate.base_url)
+        response = client.chat.completions.create(
+            model=candidate.model_name,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": user_prompt},
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                    ],
+                },
+            ],
+            response_format={"type": "json_object"},
+            temperature=_openai_chat_temperature(candidate),
+        )
+        return response.choices[0].message.content or "{}"
+
+    if candidate.provider == "gemini":
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        image_bytes = Path(image_path).read_bytes()
+        mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+        response = client.models.generate_content(
+            model=candidate.model_name,
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                f"{system_prompt}\n\n{user_prompt}",
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0,
+            ),
+        )
+        return response.text or "{}"
+
+    if candidate.provider == "ollama":
+        from ollama import Client
+
+        client = Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
+        response = client.chat(
+            model=candidate.model_name,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt, "images": [data_url]},
+            ],
+            format="json",
+            options={"temperature": 0},
+        )
+        if isinstance(response, dict):
+            return response.get("message", {}).get("content") or "{}"
+        message = getattr(response, "message", None)
+        return (getattr(message, "content", None) if message is not None else None) or "{}"
+
+    raise ValueError(f"Unsupported vision provider: {candidate.provider}")

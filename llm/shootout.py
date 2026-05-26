@@ -6,66 +6,114 @@ from pathlib import Path
 from typing import Any
 
 from llm.clients import CANDIDATES, candidate_by_id, complete_json, estimate_cost_usd, missing_environment
+from llm.gold_benchmark import FACTS_GOLD_FIELDS, VISUAL_GOLD_FIELDS
 
 
-SLOT_SYSTEM_PROMPT = """Sen Türkçe emlak arama sorgularını JSON slotlarına ayıran bir asistansın.
-Sadece geçerli JSON döndür. Açıklama yazma."""
+SLOT_SYSTEM_PROMPT = """Sen Turkce emlak arama sorgularini JSON slotlarina ayiran bir asistansin.
+Sadece gecerli JSON dondur. Aciklama yazma."""
 
 
-BENCHMARK_QUERIES: list[dict[str, Any]] = [
-    {"query": "Kadıköy'de 30 bin altı 1+1 öğrenciye uygun daire", "expected": {"rooms": ["1+1"], "districts": ["Kadıköy"], "max_price_tl": 30000}},
-    {"query": "geniş salonlu denize yakın 2+1 asansörlü ev", "expected": {"rooms": ["2+1"], "elevator": True, "salon_size": "genis"}},
-    {"query": "Beşiktaş 3+1 60 bin TL altı site içinde", "expected": {"rooms": ["3+1"], "districts": ["Beşiktaş"], "max_price_tl": 60000, "in_gated_complex": True}},
-    {"query": "metroya yakın eşyalı 1+1 kiralık", "expected": {"rooms": ["1+1"], "near_transit": True, "furnished_text": True}},
-    {"query": "ankastre mutfaklı modern 2+1", "expected": {"rooms": ["2+1"], "kitchen_type": "ankastre", "modernity": "modern"}},
-    {"query": "otoparklı güvenlikli aileye uygun 3+1", "expected": {"rooms": ["3+1"], "parking": "acik", "security": True}},
-    {"query": "Bostancı sahile yakın deniz manzaralı daire", "expected": {"districts": ["Bostancı"], "sea_view_mentioned": True}},
-    {"query": "35 bin altı kombili 2+1", "expected": {"rooms": ["2+1"], "max_price_tl": 35000, "heating": "kombi"}},
-    {"query": "ferah aydınlık parke zeminli ev", "expected": {"spaciousness": "ferah", "natural_light": "high", "floor_material": "parke"}},
-    {"query": "çocuklu aile için site içinde güvenlikli 4+1", "expected": {"rooms": ["4+1"], "in_gated_complex": True, "security": True}},
-    {"query": "Pendik'te 25 bin TL altı 1+1", "expected": {"rooms": ["1+1"], "districts": ["Pendik"], "max_price_tl": 25000}},
-    {"query": "klimalı eşyalı stüdyo ya da 1+1", "expected": {"rooms": ["1+1"], "heating": "klima", "furnished_text": True}},
-    {"query": "yeni tadilatlı ferah 3+1 daire", "expected": {"rooms": ["3+1"], "overall_condition": "tadilatli", "spaciousness": "ferah"}},
-    {"query": "kapalı otoparklı lüks rezidans", "expected": {"parking": "kapali"}},
-    {"query": "okula yakın güvenli 2+1", "expected": {"rooms": ["2+1"], "school_nearby": True, "security": True}},
-    {"query": "evcil hayvana uygun bahçeli kiralık", "expected": {"pet_friendly": True}},
-    {"query": "Suadiye'de deniz gören modern daire", "expected": {"districts": ["Suadiye"], "view": "deniz", "modernity": "modern"}},
-    {"query": "Başakşehir site içinde 4+1 otoparklı", "expected": {"rooms": ["4+1"], "districts": ["Başakşehir"], "in_gated_complex": True}},
-    {"query": "asansörlü doğalgazlı uygun fiyatlı 2+1", "expected": {"rooms": ["2+1"], "elevator": True, "heating": "dogalgaz"}},
-    {"query": "amerikan mutfaklı 1+1 modern daire", "expected": {"rooms": ["1+1"], "kitchen_type": "amerikan", "modernity": "modern"}},
-    {"query": "manzarası güzel yüksek kat 3+1", "expected": {"rooms": ["3+1"], "view": "sehir"}},
-    {"query": "merkezi ısıtmalı büyük salonlu ev", "expected": {"heating": "merkezi", "salon_size": "genis"}},
-    {"query": "öğrenci için metro yakını ucuz 1+1", "expected": {"rooms": ["1+1"], "near_transit": True}},
-    {"query": "temiz bakımlı laminat zeminli 2+1", "expected": {"rooms": ["2+1"], "floor_material": "laminat", "overall_condition": "temiz"}},
-    {"query": "bahçe katı sakin güvenlikli site", "expected": {"in_gated_complex": True, "security": True}},
-    {"query": "Avcılar 3+1 50 bin altı", "expected": {"rooms": ["3+1"], "districts": ["Avcılar"], "max_price_tl": 50000}},
-    {"query": "deniz manzaralı balkonlu ferah daire", "expected": {"view": "deniz", "balcony_visual": True, "spaciousness": "ferah"}},
-    {"query": "ankastreli parke zeminli yeni ev", "expected": {"kitchen_type": "ankastre", "floor_material": "parke", "overall_condition": "yeni"}},
-    {"query": "site içinde otoparklı güvenlikli 2+1", "expected": {"rooms": ["2+1"], "in_gated_complex": True, "security": True}},
-    {"query": "Kadıköy sahile yakın 2+1 maksimum 45 bin", "expected": {"rooms": ["2+1"], "districts": ["Kadıköy"], "max_price_tl": 45000}},
+def _empty_soft_features() -> dict[str, Any]:
+    return {
+        "visual_gold": {field: None for field in VISUAL_GOLD_FIELDS},
+        "facts_gold": {field: None for field in FACTS_GOLD_FIELDS[10:]},
+    }
+
+
+FEW_SHOT_SLOT_EXAMPLES: list[dict[str, Any]] = [
+    {
+        "query": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire",
+        "output": {
+            "hard_filters": {"rooms": ["1+1"], "districts": ["Kadikoy"], "max_price_tl": 30000, "min_size_m2": None},
+            "soft_features": _empty_soft_features(),
+            "free_form_tr": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire",
+        },
+    },
+    {
+        "query": "metroya yakin esyali 1+1 kiralik",
+        "output": {
+            "hard_filters": {"rooms": ["1+1"], "districts": None, "max_price_tl": None, "min_size_m2": None},
+            "soft_features": {
+                **_empty_soft_features(),
+                "facts_gold": {**_empty_soft_features()["facts_gold"], "near_metro": True, "is_furnished": True},
+            },
+            "free_form_tr": "metroya yakin esyali 1+1 kiralik",
+        },
+    },
+    {
+        "query": "genis salonlu denize yakin 2+1 asansorlu ev",
+        "output": {
+            "hard_filters": {"rooms": ["2+1"], "districts": None, "max_price_tl": None, "min_size_m2": None},
+            "soft_features": {
+                **_empty_soft_features(),
+                "facts_gold": {**_empty_soft_features()["facts_gold"], "has_elevator": True},
+                "visual_gold": {**_empty_soft_features()["visual_gold"], "manzara": ["deniz"], "salon_ozellikleri": ["acik_plan_genis"]},
+            },
+            "free_form_tr": "genis salonlu denize yakin 2+1 asansorlu ev",
+        },
+    },
 ]
 
 
-def build_slot_prompt(query: str) -> str:
-    return f"""Sorgu: {query}
+BENCHMARK_QUERIES: list[dict[str, Any]] = [
+    {"query": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire", "expected": {"rooms": ["1+1"], "districts": ["Kadikoy"], "max_price_tl": 30000}},
+    {"query": "genis salonlu denize yakin 2+1 asansorlu ev", "expected": {"rooms": ["2+1"], "has_elevator": True, "salon_ozellikleri": ["acik_plan_genis"], "manzara": ["deniz"]}},
+    {"query": "Besiktas 3+1 60 bin TL alti site icinde", "expected": {"rooms": ["3+1"], "districts": ["Besiktas"], "max_price_tl": 60000, "in_gated_complex": True}},
+    {"query": "metroya yakin esyali 1+1 kiralik", "expected": {"rooms": ["1+1"], "near_metro": True, "is_furnished": True}},
+    {"query": "amerikan mutfakli modern 2+1", "expected": {"rooms": ["2+1"], "kitchen_type": "amerikan_acik", "mutfak_tipi": "amerikan_acik"}},
+    {"query": "otoparkli guvenlikli aileye uygun 3+1", "expected": {"rooms": ["3+1"], "has_parking": True, "site_imkanlari": ["guvenlik_kabini"]}},
+    {"query": "Bostanci sahile yakin deniz manzarali daire", "expected": {"districts": ["Bostanci"], "manzara": ["deniz"]}},
+    {"query": "35 bin alti kombili 2+1", "expected": {"rooms": ["2+1"], "max_price_tl": 35000, "heating_type": "kombi"}},
+    {"query": "parke zeminli ev", "expected": {"zemin_tipi": "parke"}},
+    {"query": "cocuklu aile icin site icinde guvenlikli 4+1", "expected": {"rooms": ["4+1"], "in_gated_complex": True, "site_imkanlari": ["guvenlik_kabini", "cocuk_parki"]}},
+    {"query": "Pendik'te 25 bin TL alti 1+1", "expected": {"rooms": ["1+1"], "districts": ["Pendik"], "max_price_tl": 25000}},
+    {"query": "klimali esyali studyo ya da 1+1", "expected": {"rooms": ["1+1"], "heating_type": "klima", "is_furnished": True}},
+    {"query": "terasli 3+1 daire", "expected": {"rooms": ["3+1"], "teras_tipi": "normal_teras"}},
+    {"query": "kapali otoparkli luks rezidans", "expected": {"has_parking": True, "site_imkanlari": ["kapali_otopark"]}},
+    {"query": "cam balkonlu 2+1", "expected": {"rooms": ["2+1"], "balkon_tipi": "cam_balkon", "has_balcony": True}},
+    {"query": "bahce cikisli kiralik", "expected": {"teras_tipi": "bahce_cikisli"}},
+    {"query": "Suadiye'de deniz goren daire", "expected": {"districts": ["Suadiye"], "manzara": ["deniz"]}},
+    {"query": "Basaksehir site icinde 4+1 otoparkli", "expected": {"rooms": ["4+1"], "districts": ["Basaksehir"], "in_gated_complex": True, "has_parking": True}},
+    {"query": "asansorlu dogalgazli uygun fiyatli 2+1", "expected": {"rooms": ["2+1"], "has_elevator": True, "heating_type": "dogalgaz"}},
+    {"query": "amerikan mutfakli 1+1 daire", "expected": {"rooms": ["1+1"], "kitchen_type": "amerikan_acik", "mutfak_tipi": "amerikan_acik"}},
+    {"query": "manzarasi guzel yuksek kat 3+1", "expected": {"rooms": ["3+1"], "manzara": ["sehir_panorama"]}},
+    {"query": "merkezi isitma buyuk salonlu ev", "expected": {"heating_type": "merkezi", "salon_ozellikleri": ["acik_plan_genis"]}},
+    {"query": "ogrenci icin metro yakini ucuz 1+1", "expected": {"rooms": ["1+1"], "near_metro": True}},
+    {"query": "laminat zeminli 2+1", "expected": {"rooms": ["2+1"], "zemin_tipi": "laminat"}},
+    {"query": "bahce kati sakin guvenlikli site", "expected": {"in_gated_complex": True, "site_imkanlari": ["guvenlik_kabini"]}},
+    {"query": "Avcilar 3+1 50 bin alti", "expected": {"rooms": ["3+1"], "districts": ["Avcilar"], "max_price_tl": 50000}},
+    {"query": "deniz manzarali balkonlu ferah daire", "expected": {"manzara": ["deniz"], "has_balcony": True}},
+    {"query": "ankastreli parke zeminli yeni ev", "expected": {"mutfak_ozellikleri": ["ankastre"], "zemin_tipi": "parke"}},
+    {"query": "site icinde otoparkli guvenlikli 2+1", "expected": {"rooms": ["2+1"], "in_gated_complex": True, "has_parking": True, "site_imkanlari": ["guvenlik_kabini"]}},
+    {"query": "Kadikoy sahile yakin 2+1 maksimum 45 bin", "expected": {"rooms": ["2+1"], "districts": ["Kadikoy"], "max_price_tl": 45000}},
+]
 
-Beklenen JSON şeması:
-{{
-  "hard_filters": {{"rooms": null, "districts": null, "max_price_tl": null, "min_size_m2": null}},
-  "soft_features": {{
-    "image": {{"salon_size": null, "view": null, "natural_light": null, "kitchen_type": null, "floor_material": null, "overall_condition": null, "modernity": null, "spaciousness": null, "balcony_visual": null}},
-    "text_extracted": {{"elevator": null, "in_gated_complex": null, "security": null, "furnished_text": null, "heating": null, "parking": null, "near_transit": null, "sea_view_mentioned": null, "school_nearby": null, "pet_friendly": null}}
-  }},
-  "free_form_tr": "{query}"
-}}"""
+
+def build_slot_prompt(query: str, *, include_few_shot: bool = True) -> str:
+    sections: list[str] = []
+    if include_few_shot:
+        for index, example in enumerate(FEW_SHOT_SLOT_EXAMPLES, start=1):
+            sections.append(
+                f"Ornek {index}:\n"
+                f"Sorgu: {example['query']}\n"
+                f"Beklenen cikti:\n{json.dumps(example['output'], ensure_ascii=False, indent=2)}"
+            )
+        sections.append("---")
+    schema = {
+        "hard_filters": {"rooms": None, "districts": None, "max_price_tl": None, "min_size_m2": None},
+        "soft_features": _empty_soft_features(),
+        "free_form_tr": query,
+    }
+    sections.append(f"Sorgu: {query}\n\nBeklenen JSON semasi:\n{json.dumps(schema, ensure_ascii=False, indent=2)}")
+    return "\n\n".join(sections)
 
 
 def flatten_slots(parsed: dict[str, Any]) -> dict[str, Any]:
     hard = parsed.get("hard_filters") or {}
     soft = parsed.get("soft_features") or {}
-    image = soft.get("image") or {}
-    text = soft.get("text_extracted") or {}
-    return {**hard, **image, **text}
+    image = soft.get("visual_gold") or soft.get("image") or {}
+    facts = soft.get("facts_gold") or soft.get("text_extracted") or {}
+    return {**hard, **image, **facts}
 
 
 def score_json_adherence(raw_response: str) -> tuple[float, dict[str, Any] | None]:
@@ -78,7 +126,6 @@ def score_json_adherence(raw_response: str) -> tuple[float, dict[str, Any] | Non
 
 
 def _actual_values_for_list_match(actual: Any) -> set[str]:
-    """Normalize LLM slot values so list expectations never crash on scalars."""
     if actual is None:
         return set()
     if isinstance(actual, list):
@@ -184,7 +231,7 @@ def write_selected(rows: list[dict[str, Any]], out_path: Path) -> dict[str, Any]
         "candidate_rows": rows,
         "cost_budget_usd": 100,
         "max_100k_listing_cost_usd": 500,
-        "notes_tr": "GPT-5.5 ve Claude Opus 4.7 aday seti dışında bırakıldı: TR erişim ve production maliyeti uygun değil.",
+        "notes_tr": "GPT-5.5 ve Claude Opus 4.7 aday seti disinda birakildi: TR erisim ve production maliyeti uygun degil.",
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

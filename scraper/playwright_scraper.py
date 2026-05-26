@@ -15,6 +15,7 @@ Kullanım:
 """
 
 import asyncio
+import html as html_module
 import json
 import random
 import re
@@ -44,7 +45,7 @@ USER_AGENTS = [
 IMG_PATTERN = re.compile(
     r'https://(?:imaj|img|cdn)\.emlakjet\.com'
     r'/(?:(?:resize|thumb)/\d+/\d+/)?'
-    r'(?:listing|listings?)/\d+/[A-Za-z0-9_\-]+\.(?:jpe?g|png|webp)',
+    r'(?:listing|listings?)/\d+/[A-Za-z0-9_\-]+(?:\.[A-Za-z0-9_\-+=]+)?',
     re.IGNORECASE,
 )
 
@@ -123,6 +124,54 @@ def record_matches_filters(rec: dict, oda: str, ilan_yasi: int) -> bool:
     return True
 
 ID_RE = re.compile(r'-(\d{6,10})(?:/|$)')
+MAX_DESCRIPTION_LEN = 4000
+
+# İlan Bilgileri tablosu: <li><span>key</span><span>value</span></li>
+INFO_ITEM_RE = re.compile(
+    r'<li>\s*<span[^>]*>(?P<key>[^<]+)</span>\s*<span[^>]*>(?P<val>[^<]*)</span>\s*</li>',
+    re.IGNORECASE,
+)
+
+INFO_FIELD_MAP = {
+    'net metrekare': 'netSize',
+    'brut metrekare': 'grossSize',
+    'isitma tipi': 'heating',
+    'bulundugu kat': 'floor',
+    'binanin yasi': 'buildingAge',
+    'oda sayisi': 'roomCount',
+    'binanin kat sayisi': 'totalFloors',
+    'site icerisinde': 'inGatedComplex',
+    'kullanim durumu': 'occupancy',
+    'aidat': 'maintenanceFee',
+    'depozito': 'deposit',
+    'tapu durumu': 'titleDeedStatus',
+    'takas': 'tradeAccepted',
+    'banyo sayisi': 'bathroomCount',
+    'fiyat durumu': 'priceStatus',
+    'esya durumu': 'furnishedStatus',
+}
+
+
+def _info_label_key(label: str) -> str:
+    """Türkçe etiketleri ASCII-benzeri anahtara çevir (Windows locale güvenli)."""
+    text = label.strip()
+    try:
+        text = text.encode('latin1').decode('utf-8')
+    except UnicodeError:
+        pass
+    text = text.lower()
+    for src, dst in (
+        ('ı', 'i'), ('ş', 's'), ('ğ', 'g'), ('ü', 'u'), ('ö', 'o'), ('ç', 'c'),
+        ('İ', 'i'), ('I', 'i'),
+    ):
+        text = text.replace(src, dst)
+    for src, dst in (
+        ('ı', 'i'), ('ş', 's'), ('ğ', 'g'), ('ü', 'u'), ('ö', 'o'), ('ç', 'c'),
+        ('İ', 'i'), ('I', 'i'),
+    ):
+        text = text.replace(src, dst)
+    text = text.replace('\u0307', '')
+    return text
 
 # Cloudflare challenge sayfası belirteci
 CF_INDICATORS = ["cf-browser-verification", "Cloudflare", "Just a moment", "cf_chl"]
@@ -130,13 +179,128 @@ CF_INDICATORS = ["cf-browser-verification", "Cloudflare", "Just a moment", "cf_c
 
 # ── Yardımcı fonksiyonlar ──────────────────────────────────────────────────────
 
-def extract_images_from_html(html: str) -> list[str]:
+def extract_images_from_html(html: str, listing_id: str = '') -> list[str]:
     urls = list(dict.fromkeys(IMG_PATTERN.findall(html)))
     result = []
     for u in urls:
         u = re.sub(r'/(?:resize|thumb)/\d+/\d+/', '/', u)
         result.append(u)
-    return list(dict.fromkeys(result))
+    result = list(dict.fromkeys(result))
+    if listing_id:
+        needle = f'/listing/{listing_id}/'
+        result = [u for u in result if needle in u]
+    return result
+
+
+def _html_section(html: str, start_marker: str, end_markers: list[str], max_len: int = 20000) -> str:
+    start = html.find(start_marker)
+    if start < 0:
+        return ''
+    chunk = html[start:]
+    end = min(len(chunk), max_len)
+    for marker in end_markers:
+        pos = chunk.find(marker, len(start_marker))
+        if pos > 0:
+            end = min(end, pos)
+    return chunk[:end]
+
+
+def _strip_html_text(fragment: str) -> str:
+    text = re.sub(r'<script[^>]*>.*?</script>', ' ', fragment, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<style[^>]*>.*?</style>', ' ', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', ' ', text)
+    text = re.sub(r'<.*$', '', text, flags=re.DOTALL)
+    return html_module.unescape(re.sub(r'\s+', ' ', text).strip())
+
+
+def parse_listing_info_table(html: str) -> dict[str, str]:
+    """İlan Bilgileri (#ilan-hakkinda) key/value çiftlerini çıkarır."""
+    section = _html_section(html, 'İlan Bilgileri', ['İlan Özellikleri', ' Açıklaması'])
+    if not section:
+        section = _html_section(html, 'id="ilan-hakkinda"', ['İlan Özellikleri', ' Açıklaması'])
+    if not section and INFO_ITEM_RE.search(html):
+        section = html
+    attrs: dict[str, str] = {}
+    for match in INFO_ITEM_RE.finditer(section):
+        key = match.group('key').strip()
+        val = match.group('val').strip()
+        attr_key = INFO_FIELD_MAP.get(_info_label_key(key))
+        if attr_key and val:
+            attrs[attr_key] = val
+    return attrs
+
+
+def parse_description_from_dom_html(html: str) -> str:
+    """'{Title} Açıklaması' h2 başlığının altındaki gerçek açıklama metni."""
+    match = re.search(
+        r'<h2[^>]*>[^<]*Açıklaması</h2>(.*?)(?:'
+        r'id="konum-bilgisi"|'
+        r'>İlan Özellikleri<|'
+        r'>Fiyat Bilgisi<|'
+        r'>Bölge Raporu<|'
+        r'>Firma Künyesi<|'
+        r'<strong[^>]*>\s*İlan Özellikleri|'
+        r'<strong[^>]*>\s*Fiyat Bilgisi)',
+        html,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if not match:
+        return ''
+    return _strip_html_text(match.group(1))[:MAX_DESCRIPTION_LEN]
+
+
+def parse_property_features(html: str) -> list[str]:
+    """İlan Özellikleri sekmesindeki tüm madde işaretli özellikler."""
+    section = _html_section(
+        html,
+        'İlan Özellikleri',
+        ['Fiyat Bilgisi', 'Bölge Raporu', 'Firma Künyesi', 'Benzer İlanlar'],
+        max_len=30000,
+    )
+    features: list[str] = []
+    for match in re.finditer(r'<li>([^<]+)</li>', section):
+        feat = html_module.unescape(match.group(1).strip())
+        if feat and feat not in features:
+            features.append(feat)
+    return features
+
+
+def is_template_description(text: str) -> bool:
+    """JSON-LD şablon açıklaması (ajans + m² + fiyat özeti) mi?"""
+    if not text:
+        return True
+    return bool(re.search(r'Emlakjet\s*-\s*#\d{6,10}\s*$', text.strip()))
+
+
+def _description_from_sources(html: str, ld_product: dict) -> str:
+    description = parse_description_from_dom_html(html)
+    if not description:
+        ld_desc = str(ld_product.get('description') or '').strip()
+        if ld_desc and not is_template_description(ld_desc):
+            description = ld_desc
+    return description[:MAX_DESCRIPTION_LEN]
+
+
+async def _resolve_description(detail_page, html: str, ld_product: dict) -> tuple[str, str]:
+    """DOM açıklaması; boşsa bekle, genişlet, HTML'i yenile ve tekrar dene."""
+    description = _description_from_sources(html, ld_product)
+    if description:
+        return description, html
+
+    try:
+        await detail_page.wait_for_selector(
+            'h2:has-text("Açıklaması")', timeout=8000,
+        )
+        expand = detail_page.get_by_text('Daha Fazla Gör', exact=False).first
+        if await expand.count() > 0:
+            await expand.click(timeout=2500)
+            await detail_page.wait_for_timeout(1000)
+        html = await detail_page.content()
+        description = _description_from_sources(html, ld_product)
+    except Exception:
+        pass
+
+    return description, html
 
 
 def normalize_img_url(url: str) -> str:
@@ -199,7 +363,7 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
     else:
         district = str(loc)
 
-    description = str(obj.get('description') or obj.get('shortDescription') or '').strip()[:2000]
+    description = str(obj.get('description') or obj.get('shortDescription') or '').strip()[:MAX_DESCRIPTION_LEN]
 
     slug = obj.get('slug') or obj.get('url') or obj.get('seoUrl') or ''
     if slug.startswith('http'):
@@ -376,7 +540,7 @@ class EmlakjetScraper:
                         if rec and rec['id'] not in self.seen_ids:
                             xhr_results.append(rec)
                     if items:
-                        print(f"    [XHR] {url[:80]} → {len(items)} listing")
+                        print(f"    [XHR] {url[:80]} -> {len(items)} listing")
                 except Exception:
                     pass
                 finally:
@@ -398,8 +562,23 @@ class EmlakjetScraper:
                         if not passed:
                             return None
 
+                    try:
+                        await detail_page.wait_for_selector('#ilan-hakkinda', timeout=12000)
+                    except Exception:
+                        pass
+                    try:
+                        await detail_page.wait_for_selector(
+                            'h2:has-text("Açıklaması")', timeout=5000,
+                        )
+                    except Exception:
+                        pass
+
                     html = await detail_page.content()
-                    image_urls = extract_images_from_html(html)
+
+                    m = ID_RE.search(listing_url)
+                    lid = m.group(1) if m else ''
+
+                    image_urls = extract_images_from_html(html, lid)
 
                     # ── 1. window.dataLayer — en zengin kaynak ────────────
                     # {ilan_fiyat, city, town, neighborhood, district,
@@ -472,8 +651,12 @@ class EmlakjetScraper:
                     nbhd = str(dl.get('neighborhood') or '').replace('-', ' ').title()
                     district = ' - '.join(filter(None, [city, town, nbhd]))
 
-                    # ── Açıklama ──────────────────────────────────────────
-                    description = str(ld_product.get('description') or '').strip()[:2000]
+                    # ── DOM: İlan Bilgileri / Açıklama / Özellikler ─────────
+                    dom_info = parse_listing_info_table(html)
+                    dom_features = parse_property_features(html)
+                    description, html = await _resolve_description(
+                        detail_page, html, ld_product,
+                    )
 
                     # ── Attributes ────────────────────────────────────────
                     attrs: dict = {}
@@ -485,7 +668,6 @@ class EmlakjetScraper:
                         attrs['tradeType'] = dl['property_status']
                     if dl.get('property_category'):
                         attrs['category'] = dl['property_category']
-                    # dataLayer'da alan m2 gibi alanlar varsa ekle
                     for dl_key, attr_key in [
                         ('gross_m2', 'grossSize'), ('net_m2', 'netSize'),
                         ('building_age', 'buildingAge'), ('floor', 'floor'),
@@ -493,13 +675,16 @@ class EmlakjetScraper:
                     ]:
                         if dl.get(dl_key):
                             attrs[attr_key] = dl[dl_key]
+                    for key, val in dom_info.items():
+                        attrs[key] = val
+                    if dom_features:
+                        attrs['propertyFeatures'] = dom_features
 
                     if not title:
                         return None
 
-                    m = ID_RE.search(listing_url)
-                    lid = (m.group(1) if m else
-                           str(dl.get('item_id') or listing_url[-12:]))
+                    if not lid:
+                        lid = str(dl.get('item_id') or listing_url[-12:])
 
                     final_images = list(dict.fromkeys(image_urls))
 
@@ -541,7 +726,7 @@ class EmlakjetScraper:
                     if saved >= self.limit:
                         break
 
-                    print(f'\n→ {list_url_base}')
+                    print(f'\n-> {list_url_base}')
 
                     consecutive_empty = 0  # ardışık sıfır-kayıt sayfa sayacı
 

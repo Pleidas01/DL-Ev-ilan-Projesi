@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from scraper.playwright_scraper import build_listing_record
+from scraper.playwright_scraper import MAX_DESCRIPTION_LEN, build_listing_record
 
 
 def test_build_listing_record_keeps_long_description_for_feature_extraction():
@@ -18,7 +18,7 @@ def test_build_listing_record_keeps_long_description_for_feature_extraction():
 
     assert record is not None
     assert len(record["description"]) > 500
-    assert len(record["description"]) <= 2000
+    assert len(record["description"]) <= MAX_DESCRIPTION_LEN
 
 
 def test_scraper_source_does_not_keep_500_character_description_cap():

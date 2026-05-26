@@ -1,5 +1,31 @@
 from llm.clients import CANDIDATES, _openai_chat_temperature, candidate_by_id, estimate_cost_usd
-from llm.shootout import choose_winners, run_text_slot_benchmark, score_expected_slots
+from llm.shootout import (
+    FEW_SHOT_SLOT_EXAMPLES,
+    build_slot_prompt,
+    choose_winners,
+    run_text_slot_benchmark,
+    score_expected_slots,
+)
+
+
+def test_build_slot_prompt_includes_few_shot_examples():
+    prompt = build_slot_prompt("test sorgusu")
+
+    assert len(FEW_SHOT_SLOT_EXAMPLES) >= 2
+    for index, example in enumerate(FEW_SHOT_SLOT_EXAMPLES, start=1):
+        assert f"Ornek {index}:" in prompt
+        assert example["query"] in prompt
+    assert "test sorgusu" in prompt
+    assert '"hard_filters"' in prompt
+    assert '"facts_gold"' in prompt
+    assert '"visual_gold"' in prompt
+
+
+def test_build_slot_prompt_can_disable_few_shot():
+    prompt = build_slot_prompt("yalnizca sema", include_few_shot=False)
+
+    assert "Ornek 1:" not in prompt
+    assert "yalnizca sema" in prompt
 
 
 def test_feasibility_first_candidate_set_excludes_prohibitive_models():
@@ -49,11 +75,11 @@ def test_openai_chat_temperature_for_moonshot_is_one():
 
 def test_score_expected_slots_accepts_scalar_actual_for_list_fields():
     parsed = {
-        "hard_filters": {"rooms": "1+1", "districts": "Kadıköy", "max_price_tl": 30000},
-        "soft_features": {"image": {}, "text_extracted": {}},
+        "hard_filters": {"rooms": "1+1", "districts": "Kadikoy", "max_price_tl": 30000},
+        "soft_features": {"facts_gold": {}, "visual_gold": {}},
         "free_form_tr": "test",
     }
-    expected = {"rooms": ["1+1"], "districts": ["Kadıköy"], "max_price_tl": 30000}
+    expected = {"rooms": ["1+1"], "districts": ["Kadikoy"], "max_price_tl": 30000}
 
     score = score_expected_slots(parsed, expected)
 
@@ -63,7 +89,7 @@ def test_score_expected_slots_accepts_scalar_actual_for_list_fields():
 def test_score_expected_slots_does_not_crash_on_int_list_mismatch():
     parsed = {
         "hard_filters": {"rooms": 1},
-        "soft_features": {"image": {}, "text_extracted": {}},
+        "soft_features": {"facts_gold": {}, "visual_gold": {}},
         "free_form_tr": "test",
     }
 
