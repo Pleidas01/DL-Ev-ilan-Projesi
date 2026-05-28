@@ -27,7 +27,9 @@ VISION_MODEL_IDS = ("gemma_4_local", "kimi_k2_6")
 VISION_SYSTEM_PROMPT = """Sen emlak ilani fotograflarini JSON alanlarina etiketleyen bir asistansin.
 Sadece gecerli JSON dondur. Aciklama yazma."""
 
-VISION_USER_PROMPT = """Bu fotograflardan asagidaki 7 visual_gold alanini cikar. Fotografta gorunmeyen alanlar icin null kullan.
+VISION_USER_PROMPT = """Bu fotograflardan asagidaki 6 visual_gold alanini cikar. Fotografta gorunmeyen alanlar icin null kullan.
+
+ONEMLI: Degerlerde Turkce karakter KULLANMA. c/g/i/o/s/u yaz; ç/ğ/ı/ö/ş/ü DEGIL (orn. "bogaz", "acik_otopark"). Sadece asagidaki listede yer alan degerleri aynen kullan.
 
 JSON semasi:
 {
@@ -35,7 +37,6 @@ JSON semasi:
   "manzara": null,
   "mutfak_tipi": null,
   "banyo_ozellikleri": null,
-  "zemin_tipi": null,
   "salon_ozellikleri": null,
   "imkanlar": null
 }
@@ -45,7 +46,6 @@ Enumlar (sadece bu degerleri kullan):
 - manzara (liste): deniz, bogaz, orman_yesil, park, sehir_panorama, dag, ic_avlu, komsu_duvari
 - mutfak_tipi (tek deger): amerikan_acik | kapali_ayri
 - banyo_ozellikleri (liste): dusakabin, kuvet, jakuzi, banyoda_pencere, birden_fazla_banyo
-- zemin_tipi (tek deger): parke | laminat | seramik | granit | mermer | hali | karma
 - salon_ozellikleri (liste): somine, nis, acik_plan_genis, ayri_yemek_alani
 - imkanlar (liste): havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani
 
@@ -131,7 +131,7 @@ def run_vision_gold_benchmark(
                     samples.append({"listing_id": listing_id, "status": "missing_dataset_record", "accuracy": None})
                     continue
 
-                image_paths = listing_image_paths(record, GOLD_BENCHMARK_PHOTO_COUNT)
+                image_paths = listing_image_paths(record, None)  # tüm fotoğraflar (foto limiti kaldırıldı)
                 if not image_paths:
                     samples.append({"listing_id": listing_id, "status": "no_images", "accuracy": None})
                     continue

@@ -42,6 +42,17 @@ CANDIDATES: tuple[ModelCandidate, ...] = (
         base_url="https://api.deepseek.com",
     ),
     ModelCandidate(
+        id="deepseek_v4_pro",
+        display_name="DeepSeek V4 Pro",
+        provider="deepseek",
+        model_name="deepseek-v4-pro",
+        modalities=("text",),
+        input_usd_per_million=0.435,  # %75 indirimli cache-miss (normal $1.74); cache-hit $0.003625
+        output_usd_per_million=0.87,  # %75 indirimli (normal $3.48)
+        env_keys=("DEEPSEEK_API_KEY",),
+        base_url="https://api.deepseek.com",
+    ),
+    ModelCandidate(
         id="kimi_k2_6",
         display_name="Kimi K2.6",
         provider="moonshot",
@@ -203,7 +214,8 @@ def complete_vision_json(
         from openai import OpenAI
 
         api_key = os.environ[candidate.env_keys[0]]
-        client = OpenAI(api_key=api_key, base_url=candidate.base_url)
+        # timeout: vision çağrısı asılırsa sonsuz beklememek için (kimi vision takılması).
+        client = OpenAI(api_key=api_key, base_url=candidate.base_url, timeout=90)
         response = client.chat.completions.create(
             model=candidate.model_name,
             messages=[
@@ -244,12 +256,15 @@ def complete_vision_json(
     if candidate.provider == "ollama":
         from ollama import Client
 
+        # Ollama "images" SAF base64 bekler (data URL prefix'i DEĞİL) — aksi halde
+        # "illegal base64 data at input byte 4" hatası verir.
+        encoded = base64.b64encode(Path(image_path).read_bytes()).decode("ascii")
         client = Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
         response = client.chat(
             model=candidate.model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt, "images": [data_url]},
+                {"role": "user", "content": user_prompt, "images": [encoded]},
             ],
             format="json",
             options={"temperature": 0},

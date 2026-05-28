@@ -14,7 +14,7 @@ def test_new_gold_schema_field_counts_are_stable():
     assert len(STRUCTURED_FACT_FIELDS) == 15
     # HYBRID_FACT_FIELDS = FACTS - STRUCTURED, yani 4 hybrid + 2 desc-only = 6
     assert len(HYBRID_FACT_FIELDS) == 6
-    assert len(VISUAL_GOLD_FIELDS) == 7
+    assert len(VISUAL_GOLD_FIELDS) == 6
     assert "near_metrobus" in FACTS_GOLD_FIELDS
     assert "has_aircon" in FACTS_GOLD_FIELDS
     assert "heating_type" in STRUCTURED_FACT_FIELDS

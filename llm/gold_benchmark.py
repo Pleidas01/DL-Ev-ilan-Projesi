@@ -10,7 +10,7 @@ DEFAULT_DATASET_PATH = PROJECT_ROOT / "data" / "processed" / "dataset.jsonl"
 DEFAULT_RAW_PATH = PROJECT_ROOT / "data" / "raw" / "listings.jsonl"
 
 GOLD_BENCHMARK_LISTING_COUNT = 10
-GOLD_BENCHMARK_PHOTO_COUNT = 5
+GOLD_BENCHMARK_PHOTO_COUNT = 12
 
 FACTS_GOLD_FIELDS = (
     # --- STRUCTURED (scraper "İlan Bilgileri" tablosundan kesin) ---
@@ -62,7 +62,6 @@ VISUAL_GOLD_FIELDS = (
     "manzara",
     "mutfak_tipi",
     "banyo_ozellikleri",
-    "zemin_tipi",
     "salon_ozellikleri",
     "imkanlar",
 )
@@ -83,7 +82,6 @@ VISUAL_ENUMS = {
     "manzara": ["deniz", "bogaz", "orman_yesil", "park", "sehir_panorama", "dag", "ic_avlu", "komsu_duvari"],
     "mutfak_tipi": ["amerikan_acik", "kapali_ayri"],
     "banyo_ozellikleri": ["dusakabin", "kuvet", "jakuzi", "banyoda_pencere", "birden_fazla_banyo"],
-    "zemin_tipi": ["parke", "laminat", "seramik", "granit", "mermer", "hali", "karma"],
     "salon_ozellikleri": ["somine", "nis", "acik_plan_genis", "ayri_yemek_alani"],
     "imkanlar": ["havuz", "yesil_alan_peyzaj", "guvenlik_kabini", "kapali_otopark", "acik_otopark", "cocuk_parki", "spor_alani"],
 }
@@ -163,10 +161,11 @@ def listing_description(listing_id: str, dataset_index: dict[str, dict[str, Any]
     return ""
 
 
-def listing_image_paths(record: dict[str, Any], max_photos: int = GOLD_BENCHMARK_PHOTO_COUNT) -> list[str]:
+def listing_image_paths(record: dict[str, Any], max_photos: int | None = GOLD_BENCHMARK_PHOTO_COUNT) -> list[str]:
     paths = record.get("all_image_paths") or []
     if not paths and record.get("image_path"):
         paths = [record["image_path"]]
+    # max_photos=None -> tüm fotoğraflar (paths[:None] tüm listeyi döndürür)
     return [str(path) for path in paths[:max_photos]]
 
 
@@ -176,11 +175,20 @@ def gold_is_filled(gold: dict[str, Any] | None) -> bool:
     return any(value is not None for value in gold.values())
 
 
+# Türkçe → ASCII fold: VLM "boğaz"/"açık_otopark" üretebilir ama enum + gold ASCII
+# ("bogaz"/"acik_otopark"). translate ÖNCE (İ→I), sonra lower (Python "İ".lower() bug guard).
+_TR_ASCII = str.maketrans("çğıöşüâîûÇĞİÖŞÜI", "cgiosuaiucgiosui")
+
+
+def _fold(value: Any) -> str:
+    return str(value).strip().translate(_TR_ASCII).lower()
+
+
 def normalize_gold_value(value: Any) -> Any:
     if isinstance(value, list):
-        return sorted(str(item).strip().lower() for item in value)
+        return sorted(_fold(item) for item in value)
     if isinstance(value, str):
-        s = value.strip().lower()
+        s = _fold(value)
         # Boolean string'leri Python bool'a normalize et (kullanıcı "true"/"false" yazsa da çalışsın)
         if s == "true":
             return True
@@ -196,10 +204,10 @@ def _list_set(value: Any) -> set[str]:
     if value is None:
         return set()
     if isinstance(value, list):
-        return {str(item).strip().lower() for item in value if str(item).strip()}
-    if str(value).strip() == "":
+        return {_fold(item) for item in value if _fold(item)}
+    if _fold(value) == "":
         return set()
-    return {str(value).strip().lower()}
+    return {_fold(value)}
 
 
 def field_score(predicted: Any, gold: Any, *, multi_select: bool = False) -> float | None:
@@ -264,11 +272,13 @@ def score_against_gold(
 
 
 def aggregate_model_scores(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    # "sample_count" (not "samples") — shootout sonuçlarında "samples" detay listesi
+    # **aggregate ile ezilmesin diye ayrı isim kullanılır.
     scored = [row["accuracy"] for row in rows if row.get("accuracy") is not None]
     if not scored:
-        return {"accuracy": None, "samples": len(rows), "scored_samples": 0}
+        return {"accuracy": None, "sample_count": len(rows), "scored_samples": 0}
     return {
         "accuracy": sum(scored) / len(scored),
-        "samples": len(rows),
+        "sample_count": len(rows),
         "scored_samples": len(scored),
     }

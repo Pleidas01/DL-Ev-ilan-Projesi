@@ -1,0 +1,1922 @@
+[
+  {
+    "model_id": "deepseek_v4_flash",
+    "status": "ok",
+    "accuracy": 0.2833333333333333,
+    "cost_estimate_usd": 0.001764,
+    "samples": [
+      {
+        "listing_id": "19369995",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "klima",
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": true,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": "klima",
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 1,
+          "accuracy": 0.3333333333333333
+        },
+        "accuracy": 0.3333333333333333
+      },
+      {
+        "listing_id": "19370688",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "dogalgaz",
+              "predicted": "merkezi",
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19370809",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19372077",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "near_metrobus": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19373633",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": true,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 1,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19376408",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": false,
+          "has_parking": true,
+          "near_metro": true,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "merkezi",
+              "predicted": "merkezi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": true,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 2,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19380525",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19382188",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19382618",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "kombi",
+          "has_balcony": null,
+          "has_elevator": true,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": "kombi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 2,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19392370",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": true,
+          "is_furnished": false,
+          "has_parking": true,
+          "near_metro": true,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "merkezi",
+              "predicted": "merkezi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 4,
+          "accuracy": 1.0
+        },
+        "accuracy": 1.0
+      }
+    ],
+    "sample_count": 10,
+    "scored_samples": 10
+  },
+  {
+    "model_id": "kimi_k2_6",
+    "status": "ok",
+    "accuracy": 0.2833333333333333,
+    "cost_estimate_usd": 0.01575,
+    "samples": [
+      {
+        "listing_id": "19369995",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": true,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 1,
+          "accuracy": 0.3333333333333333
+        },
+        "accuracy": 0.3333333333333333
+      },
+      {
+        "listing_id": "19370688",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": false,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "dogalgaz",
+              "predicted": "merkezi",
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19370809",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19372077",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "near_metrobus": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19373633",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": true,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 1,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19376408",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": false,
+          "has_parking": true,
+          "near_metro": true,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "merkezi",
+              "predicted": "merkezi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": true,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 2,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19380525",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19382188",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19382618",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "kombi",
+          "has_balcony": null,
+          "has_elevator": true,
+          "is_furnished": false,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": "kombi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 2,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19392370",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": true,
+          "is_furnished": false,
+          "has_parking": true,
+          "near_metro": true,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "merkezi",
+              "predicted": "merkezi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 4,
+          "accuracy": 1.0
+        },
+        "accuracy": 1.0
+      }
+    ],
+    "sample_count": 10,
+    "scored_samples": 10
+  },
+  {
+    "model_id": "gemma_4_local",
+    "status": "ok",
+    "accuracy": 0.31666666666666665,
+    "cost_estimate_usd": 0.0,
+    "samples": [
+      {
+        "listing_id": "19369995",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": false,
+          "has_elevator": false,
+          "is_furnished": true,
+          "has_parking": false,
+          "near_metro": false,
+          "near_metrobus": false
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": false,
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 2,
+          "accuracy": 0.6666666666666666
+        },
+        "accuracy": 0.6666666666666666
+      },
+      {
+        "listing_id": "19370688",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": false,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "dogalgaz",
+              "predicted": "merkezi",
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19370809",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19372077",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": false,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "near_metrobus": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19373633",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "null",
+          "has_balcony": true,
+          "has_elevator": null,
+          "is_furnished": true,
+          "has_parking": false,
+          "near_metro": false,
+          "near_metrobus": true
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": "null",
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": true,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": true,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 1,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19376408",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": true,
+          "is_furnished": false,
+          "has_parking": true,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "merkezi",
+              "predicted": "merkezi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 3,
+          "accuracy": 0.75
+        },
+        "accuracy": 0.75
+      },
+      {
+        "listing_id": "19380525",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19382188",
+        "status": "ok",
+        "predicted": {
+          "heating_type": null,
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": null,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_balcony": {
+              "gold": false,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 0,
+          "accuracy": 0.0
+        },
+        "accuracy": 0.0
+      },
+      {
+        "listing_id": "19382618",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "kombi",
+          "has_balcony": null,
+          "has_elevator": true,
+          "is_furnished": false,
+          "has_parking": null,
+          "near_metro": null,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "kombi",
+              "predicted": "kombi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": false,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 2,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19392370",
+        "status": "ok",
+        "predicted": {
+          "heating_type": "merkezi",
+          "has_balcony": null,
+          "has_elevator": null,
+          "is_furnished": true,
+          "has_parking": true,
+          "near_metro": true,
+          "near_metrobus": null
+        },
+        "score": {
+          "per_field": {
+            "heating_type": {
+              "gold": "merkezi",
+              "predicted": "merkezi",
+              "match": true,
+              "field_score": 1.0
+            },
+            "has_balcony": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "has_elevator": {
+              "gold": true,
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "is_furnished": {
+              "gold": null,
+              "predicted": true,
+              "match": null,
+              "field_score": null
+            },
+            "has_parking": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metro": {
+              "gold": true,
+              "predicted": true,
+              "match": true,
+              "field_score": 1.0
+            },
+            "near_metrobus": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 3,
+          "accuracy": 0.75
+        },
+        "accuracy": 0.75
+      }
+    ],
+    "sample_count": 10,
+    "scored_samples": 10
+  }
+]

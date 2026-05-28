@@ -33,6 +33,7 @@ def test_feasibility_first_candidate_set_excludes_prohibitive_models():
 
     assert candidate_ids == {
         "deepseek_v4_flash",
+        "deepseek_v4_pro",
         "kimi_k2_6",
         "gemini_3_5_flash",
         "glm_4_6",

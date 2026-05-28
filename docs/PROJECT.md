@@ -142,9 +142,9 @@ Priority chain: structured scraper alanı varsa otomatik dolar; hybrid alanlarda
 
 > Not: `kitchen_type` kaldırıldı; mutfak bilgisi tek alanda — `visual_gold.mutfak_tipi` (sadece `amerikan_acik | kapali_ayri`).
 
-### 7b. Katman B — `visual_gold` (7 alan)
+### 7b. Katman B — `visual_gold` (6 alan)
 
-Primary VLM, fallback/cross-check `property_features`. single-select: `mutfak_tipi`, `zemin_tipi`. Diğerleri multi-select (JSON array).
+Primary VLM, fallback/cross-check `property_features`. single-select: `mutfak_tipi`. Diğerleri multi-select (JSON array). (`zemin_tipi` kaldırıldı — parke/laminat fotoğraftan ayırt edilemiyordu, gemma 0/10.)
 
 ```json
 {
@@ -152,7 +152,6 @@ Primary VLM, fallback/cross-check `property_features`. single-select: `mutfak_ti
   "manzara": ["deniz", "bogaz", "orman_yesil", "park", "sehir_panorama", "dag", "ic_avlu", "komsu_duvari"],
   "mutfak_tipi": "amerikan_acik | kapali_ayri",
   "banyo_ozellikleri": ["dusakabin", "kuvet", "jakuzi", "banyoda_pencere", "birden_fazla_banyo"],
-  "zemin_tipi": "parke | laminat | seramik | granit | mermer | hali | karma",
   "salon_ozellikleri": ["somine", "nis", "acik_plan_genis", "ayri_yemek_alani"],
   "imkanlar": ["havuz", "yesil_alan_peyzaj", "guvenlik_kabini", "kapali_otopark", "acik_otopark", "cocuk_parki", "spor_alani"]
 }
@@ -185,7 +184,7 @@ Resmi tanımlar `llm/gold_benchmark.py:FACTS_GOLD_FIELDS` ve `VISUAL_GOLD_FIELDS
 |---|---|---|---|
 | Slot extraction | JSON-valid + slot accuracy | quality_score ≥ 0.85 | `llm/shootout.py:BENCHMARK_QUERIES` |
 | Description extraction | per-field accuracy (7 hybrid+desc alanı) | ≥ 0.75 | `labeling/gold_listings_manual_todo.jsonl:facts_gold` |
-| Image labeling | per-field Jaccard / accuracy (7 visual alan) | ≥ 0.70 | `labeling/gold_listings_manual_todo.jsonl:visual_gold` |
+| Image labeling | per-field Jaccard / accuracy (6 visual alan) | ≥ 0.70 | `labeling/gold_listings_manual_todo.jsonl:visual_gold` |
 | Retrieval | R@5, R@10, MRR | R@10 ≥ 0.60 | `evaluation/gold_queries_manual_todo.jsonl` |
 | Time series | MAE / sMAPE | rapor (baseline'a göre) | sentetik gold |
 

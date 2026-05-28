@@ -1,0 +1,747 @@
+[
+  {
+    "model_id": "kimi_k2_6",
+    "status": "error:APITimeoutError:Request timed out.",
+    "accuracy": null,
+    "cost_estimate_usd": 0.107,
+    "samples": [
+      {
+        "listing_id": "19369995",
+        "status": "ok",
+        "photo_count": 9,
+        "missing_files": 0,
+        "per_image": [
+          {
+            "image_path": "data\\images\\19369995\\00_F2C87893E7D9D4201D1A011613064D9919369995.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19369995\\01_48D94C1A3B1CA69EB5D64EB829D8008619369995.JPG",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19369995\\02_8F840BAC3A7C726534F762697D412D4319369995.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": [
+                "dusakabin"
+              ],
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19369995\\03_997016732CD930D8E5F5243810333B2619369995.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": [],
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19369995\\04_E9C2B6FCE2670C83119D6DE4257E276C19369995.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19369995\\05_9653DE95086E779A30A1C301F87A941119369995.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19369995\\06_388C48997EB0171636A43A5C1FFB6F1419369995.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": [
+                "dusakabin"
+              ],
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19369995\\07_07174EAF949E2D64F4BC080E01F897E919369995.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": "amerikan_acik",
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19369995\\08_5D4EDC18BE03F87CF4D8764BF1CA5F6D19369995.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": "amerikan_acik",
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": [
+                "acik_plan_genis"
+              ],
+              "imkanlar": null
+            }
+          }
+        ],
+        "predicted_aggregated": {
+          "balkon_ozellikleri": null,
+          "manzara": null,
+          "mutfak_tipi": "amerikan_acik",
+          "banyo_ozellikleri": [
+            "dusakabin"
+          ],
+          "salon_ozellikleri": [
+            "acik_plan_genis"
+          ],
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "mutfak_tipi": {
+              "gold": "amerikan_acik",
+              "predicted": "amerikan_acik",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin"
+              ],
+              "predicted": [
+                "dusakabin"
+              ],
+              "match": true,
+              "field_score": 1.0
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "acik_plan_genis"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 2,
+          "accuracy": 1.0
+        },
+        "accuracy": 1.0
+      },
+      {
+        "listing_id": "19370688",
+        "status": "ok",
+        "photo_count": 19,
+        "missing_files": 0,
+        "per_image": [
+          {
+            "image_path": "data\\images\\19370688\\00_27F1CE9D4137488417A4BF11C829C85219370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": [
+                "yesil_alan_peyzaj"
+              ]
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\01_8293F2C8034899349E16E143C65D6B5419370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "orman_yesil"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\02_F7B32FF05B8CBF8D27171A239FC0CB3419370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\03_3457270CF57D45EA9C76E86C9A5138D519370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "orman_yesil",
+                "park"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\04_7ABE1FA1A8D5A3E9FA714AEF1528D51619370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": "amerikan_acik",
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\05_A4F23847A7EF3171A65AA75F27074EB219370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": [
+                "dusakabin"
+              ],
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\06_455FECE58CEDF6AE55C6858A5E12830A19370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": [
+                "dusakabin"
+              ],
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\07_B8BB0174F867BC30AF942B8BB2D494C919370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "orman_yesil"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\08_62982616E2D3148E0BBDD1C2DC4D08CE19370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": "amerikan_acik",
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": [
+                "acik_plan_genis"
+              ],
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\09_C0A6B92458D8657E91D6F051F28294FE19370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": [
+                "havuz",
+                "yesil_alan_peyzaj"
+              ]
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\10_743204341B0D156CCC98690C92344CD219370688.jpg",
+            "predicted": {}
+          },
+          {
+            "image_path": "data\\images\\19370688\\11_3BD9F04C30D6DF3CDF69E9DFB01784A719370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "sehir_panorama",
+                "orman_yesil"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\12_7D4DFCDE0FD2CF88322ECB8ADADAE56619370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "sehir_panorama"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\13_7EB383FB7D8800A4A725A82B3145844219370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "orman_yesil"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\14_4B8FC2090E04D189CB12CC4F10BA69F719370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\15_EF3BFEF982ECEF708405D9DDEC107A8819370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "orman_yesil"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\16_9BAD59D4F9CCB47D4E2C4A89A89ACA3F19370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "sehir_panorama"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\17_802345010BD3F3A742F29733799DC8CD19370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "orman_yesil"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370688\\18_1B54F96A83991AE6CB553F428A1CE1B519370688.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "sehir_panorama",
+                "orman_yesil"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          }
+        ],
+        "predicted_aggregated": {
+          "balkon_ozellikleri": null,
+          "manzara": [
+            "orman_yesil",
+            "park",
+            "sehir_panorama"
+          ],
+          "mutfak_tipi": "amerikan_acik",
+          "banyo_ozellikleri": [
+            "dusakabin"
+          ],
+          "salon_ozellikleri": [
+            "acik_plan_genis"
+          ],
+          "imkanlar": [
+            "havuz",
+            "yesil_alan_peyzaj"
+          ]
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": [
+                "orman_yesil"
+              ],
+              "predicted": [
+                "orman_yesil",
+                "park",
+                "sehir_panorama"
+              ],
+              "match": false,
+              "field_score": 0.3333333333333333
+            },
+            "mutfak_tipi": {
+              "gold": "amerikan_acik",
+              "predicted": "amerikan_acik",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin"
+              ],
+              "predicted": [
+                "dusakabin"
+              ],
+              "match": true,
+              "field_score": 1.0
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "acik_plan_genis"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": [
+                "havuz",
+                "yesil_alan_peyzaj",
+                "spor_alani"
+              ],
+              "predicted": [
+                "havuz",
+                "yesil_alan_peyzaj"
+              ],
+              "match": false,
+              "field_score": 0.6666666666666666
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 2,
+          "accuracy": 0.7499999999999999
+        },
+        "accuracy": 0.7499999999999999
+      },
+      {
+        "listing_id": "19370809",
+        "status": "ok",
+        "photo_count": 14,
+        "missing_files": 0,
+        "per_image": [
+          {
+            "image_path": "data\\images\\19370809\\00_3EF1C7E6239275976ACC787219FF427A19370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "orman_yesil",
+                "komsu_duvari"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\01_C5BC449183B061722466FD4E2EC5B3CC19370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "orman_yesil",
+                "komsu_duvari"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\02_465595C55EE448AB42256E619F75DAE819370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\03_2BC8ACE5095BFFE1269C34D10EA7FDC019370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\04_2F85DEA168A7E57C8D0FDF99AB68BAC419370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\05_02C5826A7736E06B786FCE18C78A668419370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": [
+                "komsu_duvari"
+              ],
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\06_428AF8EC6AD8E7D7B32E227310AE5FBA19370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\07_7E644BF0FC4EC71F411BD7A028009A3019370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\08_99F19E6A4358BAA5290A7CB547EF9C7319370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\09_01FCF28FDDDA6989896CDD89479159DA19370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": "kapali_ayri",
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\10_88C0E35E76AA382521060202F9B4F38F19370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": "kapali_ayri",
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\11_8E05EC73FB6A151141AD03E733F4B7EF19370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": [
+                "banyoda_pencere"
+              ],
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\12_DF486E702BC40D3A3489032D97BC0ABB19370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": [
+                "banyoda_pencere"
+              ],
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          },
+          {
+            "image_path": "data\\images\\19370809\\13_8594662396193D080FB73D42E9119A8F19370809.jpg",
+            "predicted": {
+              "balkon_ozellikleri": null,
+              "manzara": null,
+              "mutfak_tipi": null,
+              "banyo_ozellikleri": null,
+              "salon_ozellikleri": null,
+              "imkanlar": null
+            }
+          }
+        ],
+        "predicted_aggregated": {
+          "balkon_ozellikleri": null,
+          "manzara": [
+            "komsu_duvari",
+            "orman_yesil"
+          ],
+          "mutfak_tipi": "kapali_ayri",
+          "banyo_ozellikleri": [
+            "banyoda_pencere"
+          ],
+          "salon_ozellikleri": null,
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": null,
+              "predicted": [
+                "komsu_duvari",
+                "orman_yesil"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "mutfak_tipi": {
+              "gold": "kapali_ayri",
+              "predicted": "kapali_ayri",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "banyoda_pencere"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 1,
+          "correct_fields": 1,
+          "accuracy": 1.0
+        },
+        "accuracy": 1.0
+      }
+    ]
+  }
+]

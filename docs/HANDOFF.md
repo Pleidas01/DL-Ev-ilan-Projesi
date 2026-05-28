@@ -59,7 +59,7 @@ M1.5 (vis+desc shoot) ✅ HAZIR — 10/30 gold yeterli, shootout kodu güncel ş
 M3-M8                 ⏳ PENDING
 ```
 
-**Acil sıradaki iş:** M1.5 — vision + description shootout (10/30 gold yeterli). Veya kullanıcı kalan listing gold'u doldurmaya devam eder (workflow: kullanıcı `ID + özellik listesi` verir, supervisor JSON'a yazar).
+**Acil sıradaki iş:** M3 hazırlık — vision için **multi-image refactor** (clients.py: complete_vision_json çoklu image; shootout_vision.py: tek çağrı/listing). M1.5 sonucu: Kimi vision 0.917 (winner), gemma 0.135 (yetersiz). Per-image kırılgan/pahalı (~$0.007/foto, 1500×full=$168). M3'te multi-image (161→10 çağrı) + foto kıs (4-8) + Kimi. Multi-image kalite riski (attention dilution) gold'da test edilecek.
 
 ---
 
