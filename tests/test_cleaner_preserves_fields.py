@@ -12,7 +12,6 @@ FACTS_FIELDS = (
     "floor",
     "total_floors",
     "heating_type",
-    "kitchen_type",
     "has_balcony",
     "has_elevator",
     "has_aircon",
@@ -76,7 +75,6 @@ def test_clean_record_keeps_m3_source_fields_separate_from_short_text():
     assert record["in_gated_complex"] is True
     assert record["title_deed_status"] == "Kat Mulkiyeti"
     assert record["heating_type"] == "merkezi"
-    assert record["kitchen_type"] == "amerikan_acik"
     assert record["has_balcony"] is True
     assert record["has_elevator"] is True
     assert record["has_parking"] is True

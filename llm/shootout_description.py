@@ -20,11 +20,13 @@ from llm.gold_benchmark import (
 )
 
 DESCRIPTION_MODEL_IDS = ("deepseek_v4_flash", "kimi_k2_6", "gemma_4_local")
+# NOT (2026-05-29): text_model=kimi_k2_6 kilitli (slot M1 + vision M1.5 kazananı);
+# description shootout yalnızca opsiyonel cross-check. heating_type + is_furnished
+# STRUCTURED alanlar olduğu için çıkarıldı — LLM'i, description'dan çıkaramayacağı
+# structured truth'a karşı haksız cezalandırıyordu (bkz. STATUS.md M1.5).
 DESCRIPTION_FACT_FIELDS = (
-    "heating_type",
     "has_balcony",
     "has_elevator",
-    "is_furnished",
     "has_parking",
     "near_metro",
     "near_metrobus",
@@ -40,17 +42,12 @@ def build_description_prompt(description: str) -> str:
 
 JSON semasi:
 {{
-  "heating_type": null,
   "has_balcony": null,
   "has_elevator": null,
-  "is_furnished": null,
   "has_parking": null,
   "near_metro": null,
   "near_metrobus": null
 }}
-
-Enumlar:
-- heating_type: kombi | dogalgaz | merkezi | klima | yerden_isitma | null
 
 near_metro sadece <15dk yurume anlami varsa true olmali. Emin olmadigin alanlar icin null kullan."""
 

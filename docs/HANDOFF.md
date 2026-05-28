@@ -186,7 +186,9 @@ Output şeması (her satır):
 
 **Pre-flight test:** Önce gold'daki 10 listing'i etiketle, `facts_gold` + `visual_gold` ile karşılaştır, accuracy raporla. Threshold:
 - facts (8 alan): ≥ 0.75
-- visual (12 alan, Jaccard ortalaması): ≥ 0.70
+- visual (Jaccard ortalaması): ≥ 0.70
+
+> **`imkanlar` vision'dan ÇIKARMA — text ile etiketle (karar 2026-05-29, STATUS Açık Soru #5).** Vision hata analizi: gold `imkanlar` kullanıcı tarafından image+text birlikte dolduruldu; site özellikleri (guvenlik_kabini, kapali_otopark, cocuk_parki, spor_alani) iç-mekan fotolarında yok, ilan açıklaması/property_features metninde. M3'te `imkanlar`'ı description+property_features'tan LLM ile çıkar (gerekirse vision union); vision-prompt'u imkanlar için zorlama → halüsinasyon. Vision'ın gerçek görsel alan doğruluğu imkanlar hariç **0.789** (mutfak 0.900, banyo 0.738). İkincil vision-tunable zayıflık (küçük-n, M3 pre-flight gold=30'da doğrula): `fransiz_balkon` 0/2 (model acik_balkon/null diyor), `manzara` hafif aşırı-tahmin.
 
 Tutmazsa M3 batch'i koşma; prompt'u tune et veya supervisor'a dön.
 

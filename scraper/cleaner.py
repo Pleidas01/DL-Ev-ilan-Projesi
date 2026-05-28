@@ -192,16 +192,6 @@ def _detect_aircon(attrs: dict, feature_blob: str) -> bool | None:
     return None
 
 
-def _infer_kitchen_type(blob: str) -> str | None:
-    if "amerikan" in blob or "acik mutfak" in blob:
-        return "amerikan_acik"
-    if "yari acik" in blob:
-        return "yari_acik"
-    if "kapali mutfak" in blob or "ayri mutfak" in blob:
-        return "kapali_ayri"
-    return None
-
-
 def _contains_any(blob: str, needles: tuple[str, ...]) -> bool | None:
     return True if any(needle in blob for needle in needles) else None
 
@@ -261,7 +251,6 @@ def clean_record(raw: dict, *, image_path: str, all_image_paths: list[str]) -> d
         "floor": attrs.get("floor", "") or "",
         "total_floors": _parse_int(attrs.get("totalFloors")),
         "heating_type": _normalize_heating(attrs.get("heating")),
-        "kitchen_type": _infer_kitchen_type(feature_blob),
         "has_balcony": _contains_any(feature_blob, ("balkon", "teras")),
         "has_elevator": _contains_any(feature_blob, ("asansor",)),
         "has_aircon": _detect_aircon(attrs, feature_blob),

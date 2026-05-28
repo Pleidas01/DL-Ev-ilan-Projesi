@@ -41,5 +41,5 @@
   ],
   "cost_budget_usd": 100,
   "max_100k_listing_cost_usd": 500,
-  "notes_tr": "GPT-5.5 ve Claude Opus 4.7 aday seti dışında bırakıldı: TR erişim ve production maliyeti uygun değil."
+  "notes_tr": "GPT-5.5 ve Claude Opus 4.7 aday seti dışında bırakıldı: TR erişim ve production maliyeti uygun değil. text_model + vision_model FINAL = kimi_k2_6 (slot M1 + vision M1.5 multi-image kazananı, 2026-05-29); description shootout atlandı çünkü Kimi zaten slot+vision kazandı."
 }

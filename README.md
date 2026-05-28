@@ -6,6 +6,8 @@
 
 ---
 
+> **Uyarı — bu README güncel DEĞİL.** Aşağıdaki içerik eski mCLIP/CLIP fine-tuning tasarımını yansıtıyor. Proje, **VLM-etiketleme → BGE-M3 embedding → ChromaDB → RAG/Streamlit** mimarisine geçti. Kurulum/Kullanım bölümündeki bazı komutlar (`model/fine_tune.py`, `retrieval/indexer.py`, `ui/app.py`, `evaluation/metrics.py`) henüz mevcut olmayan dosyalara işaret eder. **Güncel mimari, şema ve durum için tek doğru kaynak: [`docs/PROJECT.md`](docs/PROJECT.md) + [`docs/STATUS.md`](docs/STATUS.md) + [`docs/HANDOFF.md`](docs/HANDOFF.md).** README'nin tam yeniden yazımı M8'e planlandı.
+
 ## Proje Özeti
 
 Kullanıcıların metin (`"ferah salon"`, `"deniz manzaralı 3+1"`) veya fotoğraf kullanarak Türkçe gayrimenkul ilanlarında anlamsal arama yapabildiği multimodal (çok-kipli) bir arama sistemi.

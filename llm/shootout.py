@@ -55,6 +55,10 @@ FEW_SHOT_SLOT_EXAMPLES: list[dict[str, Any]] = [
 ]
 
 
+# NOT (M1 FROZEN, 2026-05-29): Aşağıdaki "expected" çıktıları schema refactor ÖNCESİ
+# alan adlarını kullanır (kitchen_type, site_imkanlari, zemin_tipi, teras_tipi,
+# balkon_tipi, mutfak_ozellikleri). M1 slot shootout DONE ve dondurulmuş (kazanan
+# kimi_k2_6). Yeniden koşulacaksa önce facts_gold/visual_gold şemasına migrate edilmeli.
 BENCHMARK_QUERIES: list[dict[str, Any]] = [
     {"query": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire", "expected": {"rooms": ["1+1"], "districts": ["Kadikoy"], "max_price_tl": 30000}},
     {"query": "genis salonlu denize yakin 2+1 asansorlu ev", "expected": {"rooms": ["2+1"], "has_elevator": True, "salon_ozellikleri": ["acik_plan_genis"], "manzara": ["deniz"]}},

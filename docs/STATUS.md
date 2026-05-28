@@ -191,6 +191,7 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 2. **`heating_type` enum dışı değerler:** 17 ilanda heating_type=null (Sobalı, VRV, Fueloil, vs). Bunlar enum'a eklenmeli mi yoksa "diger" kategorisi mi açılmalı?
 3. **Scrape genişletme:** 1239 yeterli mi, ek 1500-2000 incremental scrape edilsin mi? — M3 + M4 retrieval sonuçlarına bakılmalı.
 4. **Gemini free tier:** 429 sebebiyle shootout'larda kullanılamadı. Billing açma kararı? — şu an Kimi+Gemma yeterli.
+5. **`imkanlar` modalite uyuşmazlığı — KARAR (2026-05-29):** Vision multi-image hata analizi (kullanıcı teyitli) gösterdi ki gold `imkanlar` **image+text birlikte** dolduruldu; site özellikleri (guvenlik_kabini, kapali_otopark, cocuk_parki, spor_alani) genelde iç-mekan fotoğraflarında değil, ilan **açıklaması/property_features metninde**. Kanıt: 19382188 gold `[guvenlik_kabini]` ama 7 fotonun hepsi iç mekan + açıklamada amenity yok + `in_gated_complex=False` (muhtemel gold hatası); 19392370 & 19376408 amenity'leri doğrudan description kelimelerinden (site/güvenlik/havuz/otopark/fitness/çocuk). Ayrıca gold bazı görünür özellikleri eksik etiketlemiş (19382188 banyoda_pencere foto 05'te net, model doğru bildi, gold atlamış). **Karar:** M3'te `imkanlar` vision'dan DEĞİL, description+property_features'tan LLM ile (gerekirse vision union) etiketlenecek; vision-prompt'u imkanlar için zorlama (halüsinasyon riski). Vision gerçek doğruluğu imkanlar hariç **0.789** (mutfak 0.900, banyo 0.738). Gold 10→30 genişletmesinde 19382188 gözden geçirilsin.
 
 ---
 
