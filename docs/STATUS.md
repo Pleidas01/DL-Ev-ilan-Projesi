@@ -1,6 +1,6 @@
 # STATUS.md — Mevcut Durum (snapshot)
 
-> Son güncelleme: 2026-05-28, schema sadeleştirme: `kitchen_type` kaldırıldı (mutfak bilgisi tek alanda → `visual_gold.mutfak_tipi`); visual_gold 12→7 alan (teras_tipi / mutfak_ozellikleri / banyo_dus / pencere_tipi / depolama_gomme çıktı; banyo tek alanda birleşti; balkon multi-select oldu); `site_imkanlari` → `imkanlar`. Listing gold 10/30 dolduruldu. shootout_vision per-image aggregate + shootout_description cleaned-parity fix.
+> Son güncelleme: 2026-05-29, **vision multi-image refactor**: `complete_vision_json` çoklu image (tek çağrı/ilan), `shootout_vision` per-image aggregate kaldırıldı + listing-başına resilience. Kimi multi-image gold testi geçti (bkz. M1.5). Önceki (2026-05-28): schema sadeleştirme `kitchen_type` kaldırıldı, visual_gold 6 alan (zemin_tipi de çıktı), `site_imkanlari`→`imkanlar`, listing gold 10/30.
 > Bu dosyayı sıradaki agent her milestone bitince güncellemeli.
 
 ---
@@ -11,8 +11,8 @@
 - **M1 (slot shootout)** — **DONE** (2026-05-25): Kazanan **`kimi_k2_6`** (quality 0.897). `llm/selected.json` text+vision = Kimi (vision provisional, M1.5 ile kesinleşecek).
 - **M2.0 (helper + schema refactor)** — **DONE** (2026-05-26 13:00): heating_type + is_furnished STRUCTURED'a taşındı, `has_aircon` hybrid alan eklendi, `_normalize_blob` Türkçe büyük harf bug'ı fix, visual gold prefilled regen.
 - **M2 (manuel gold)** — **AKTİF**: sadeleştirilmiş schema (21 facts + 7 visual). Listing gold **10/30 dolu** (M1.5 eşiği ≥10 geçildi). Query gold (30 sorgu) M4'e ertelendi.
-- **M1.5 (vision + description shootout)** — KISMİ (2026-05-28): **Kimi vision 0.917** (3 listing, timeout kesti), gemma 0.135 yetersiz. Kimi winner ama per-image kırılgan/pahalı (~$0.007/foto). M3'te multi-image + foto kıs gerekli.
-- **M3–M8** — M3 sıradaki: multi-image refactor + Kimi labeling.
+- **M1.5 (vision shootout)** — **VISION DONE** (2026-05-29, multi-image refactor): Kimi multi-image (tek çağrı/ilan, tüm foto) **10/10 ilan tamamladı**, accuracy **0.748** (10 ilan); per-image ile ortak 3 ilanda **0.931 ≥ 0.917** → dilution yok, robust, **~3x ucuz ($0.036/ilan)**. Karar: M3 multi-image+Kimi. (Description shootout kısmı hâlâ açık — heating_type haksızlığı düzeltilmeli.)
+- **M3–M8** — M3 sıradaki: `run_labeling.py` (multi-image + Kimi, **eşzamanlı** çağrı, resume, cost cap).
 
 Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). Not: `archive/hw6` + `pre_scraper_fix` + `data/_*` temizlikte silindi (bkz. checkpoint 6b019f7).
 
@@ -115,7 +115,26 @@ Kimi kalitesi net üstün AMA per-image tasarım **kırılgan + pahalı + yavaş
 
 **Description sonucu (eski, heating_type structured haksızlığıyla):** deepseek_flash 0.28, kimi 0.28, gemma 0.32 — heating_type/is_furnished structured alanlar haksız ceza veriyor, çıkarılmalı.
 
-**M3 önerisi:** multi-image (161→10 çağrı: hız+ucuz+az timeout) + foto kıs (4-8) + Kimi. Multi-image kalite riski (attention dilution) gold'da test edilmeli.
+**M3 önerisi (per-image sonrası):** multi-image (161→10 çağrı: hız+ucuz+az timeout) + Kimi. Multi-image kalite riski (attention dilution) gold'da test edilmeli.
+
+#### Multi-image refactor + test (2026-05-29) — **VISION DONE**
+
+Per-image → **tek çağrı/ilan** (tüm fotoğraflar tek pakette, model tek bütünleşik JSON). `clients.complete_vision_json` artık `image_paths: list[str]`; `shootout_vision` listing-başına try/except ile resilient. Foto cap konmadı (per-image ile adil karşılaştırma için tüm foto).
+
+Kimi multi-image (10 gold listing, tüm foto = 161, `llm/shootout_vision_multi_rows.json`):
+| Metrik | Multi-image | Per-image (önceki) |
+|---|---|---|
+| Tamamlanan | **10/10, hata yok** | 3/10 (timeout kesti) |
+| Ham accuracy | **0.748** (10 ilan) | 0.917 (sadece 3 ilan) |
+| Ortak 3 ilanda | **0.931** | 0.917 |
+| Süre | 19 dk (seri) | 51 dk (seri, kısmi) |
+
+- **0.748 < 0.917 elma-armut**: per-image yalnızca kolay ilk 3 ilanı bitirdi. Adil karşılaştırma (her ikisinin de tamamladığı 3 ilan) → **multi 0.931 ≥ per 0.917**; 19-fotolu ilanda bile multi (0.792) > per (0.750) ⇒ **attention dilution YOK**. 0.748, per-image'ın hiç ulaşamadığı 7 zor ilandan (0.33–0.63) geliyor; yine de M3 eşiği ≥0.70'in üstünde.
+- Per-field (multi): mutfak_tipi 0.900 (n=10), banyo 0.738 (n=7) güçlü; balkon 0.375 / imkanlar 0.458 / salon 0.333 zayıf ama **düşük-n** (gürültülü).
+- **Ölçülen maliyet** (Moonshot bakiye farkı $1.26385→$0.90311): **$0.3607** = **$0.036/ilan, $0.00224/foto** → per-image'ın $0.007/foto'suna göre ~3x ucuz. M3 ekstrapolasyon ~1239 ilan ≈ **~$45**.
+- **Zamanlama:** 19 dk seri (CPU 1.2s; tamamı ağ-bound). M3'te eşzamanlı (20-30 worker) → ~1-2 saat. Seri DEĞİL.
+
+**Karar:** M3 labeling **multi-image + Kimi** ile yapılır. Caveat: 10 gold küçük örneklem, zayıf per-field'lar düşük-n; M3 pre-flight'ta prompt tune + gold 10→30 önerilir.
 
 ### M2 — Manual gold sets (AKTİF — 10/30 dolu)
 
@@ -192,9 +211,10 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 | Adım | Harcanan | Tahmini ek | Notlar |
 |---|---|---|---|
 | M1 4-model shootout | ~$2 | — | Kimi+Gemma+DeepSeek+Gemini (kısmî) |
-| M1.5 vision+desc shootout | $0 | $1-2 | 10 listing × 2-3 model |
-| M3 labeling 1239 ilan | $0 | $0-25 | Gemma4 ise $0, Kimi ise ~$20-25 |
-| **TOPLAM** | ~$2 | $1-27 | $100 bütçenin çok altında |
+| M1.5 vision per-image (önceki) | ~$0.11 | — | 3 listing tamamlandı (timeout) |
+| M1.5 vision multi-image (2026-05-29) | **$0.36** | — | Kimi, 10 ilan, 161 foto, bakiye farkıyla ölçüldü |
+| M3 labeling 1239 ilan | $0 | ~$45 | Kimi multi-image ekstrapolasyon ($0.036/ilan) |
+| **TOPLAM** | ~$2.5 | ~$45 | $100 bütçenin altında |
 
 ---
 

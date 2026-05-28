@@ -5,7 +5,7 @@ import mimetypes
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 
 Modality = Literal["text", "vision"]
@@ -202,31 +202,32 @@ def complete_vision_json(
     candidate: ModelCandidate,
     system_prompt: str,
     user_prompt: str,
-    image_path: str,
+    image_paths: list[str],
 ) -> str:
-    """Call a vision-capable candidate with one local image and JSON output."""
+    """Call a vision-capable candidate with one or more local images, JSON output.
+
+    Tüm fotoğraflar tek istekte gider; model tek bütünleşik JSON döndürür
+    (per-image aggregate gerekmez). Tek elemanlı liste de çalışır.
+    """
     if not candidate.supports_vision:
         raise ValueError(f"Candidate {candidate.id} does not support vision")
-
-    data_url = _image_data_url(image_path)
+    if not image_paths:
+        raise ValueError("complete_vision_json requires at least one image path")
 
     if candidate.provider in {"moonshot", "openrouter"}:
         from openai import OpenAI
 
         api_key = os.environ[candidate.env_keys[0]]
-        # timeout: vision çağrısı asılırsa sonsuz beklememek için (kimi vision takılması).
-        client = OpenAI(api_key=api_key, base_url=candidate.base_url, timeout=90)
+        content: list[dict[str, Any]] = [{"type": "text", "text": user_prompt}]
+        for image_path in image_paths:
+            content.append({"type": "image_url", "image_url": {"url": _image_data_url(image_path)}})
+        # timeout: multi-image tek çağrı daha büyük → sonsuz beklememek için 120s.
+        client = OpenAI(api_key=api_key, base_url=candidate.base_url, timeout=120)
         response = client.chat.completions.create(
             model=candidate.model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": user_prompt},
-                        {"type": "image_url", "image_url": {"url": data_url}},
-                    ],
-                },
+                {"role": "user", "content": content},
             ],
             response_format={"type": "json_object"},
             temperature=_openai_chat_temperature(candidate),
@@ -238,14 +239,15 @@ def complete_vision_json(
         from google.genai import types
 
         client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-        image_bytes = Path(image_path).read_bytes()
-        mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+        contents: list[Any] = []
+        for image_path in image_paths:
+            image_bytes = Path(image_path).read_bytes()
+            mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+            contents.append(types.Part.from_bytes(data=image_bytes, mime_type=mime_type))
+        contents.append(f"{system_prompt}\n\n{user_prompt}")
         response = client.models.generate_content(
             model=candidate.model_name,
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                f"{system_prompt}\n\n{user_prompt}",
-            ],
+            contents=contents,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 temperature=0,
@@ -256,15 +258,15 @@ def complete_vision_json(
     if candidate.provider == "ollama":
         from ollama import Client
 
-        # Ollama "images" SAF base64 bekler (data URL prefix'i DEĞİL) — aksi halde
-        # "illegal base64 data at input byte 4" hatası verir.
-        encoded = base64.b64encode(Path(image_path).read_bytes()).decode("ascii")
+        # Ollama "images" SAF base64 listesi bekler (data URL prefix'i DEĞİL) — aksi
+        # halde "illegal base64 data at input byte 4" hatası verir.
+        encoded = [base64.b64encode(Path(p).read_bytes()).decode("ascii") for p in image_paths]
         client = Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
         response = client.chat(
             model=candidate.model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt, "images": [encoded]},
+                {"role": "user", "content": user_prompt, "images": encoded},
             ],
             format="json",
             options={"temperature": 0},

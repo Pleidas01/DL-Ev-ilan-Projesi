@@ -18,7 +18,7 @@
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-.\.venv\Scripts\python.exe -m pytest -q   # 25 passed beklenir
+.\.venv\Scripts\python.exe -m pytest -q   # 27 passed beklenir
 
 # .env kontrolü — Cursor Read tool'una GÜVENME, gerçek key dolulğu için:
 .\.venv\Scripts\python.exe -c "from dotenv import dotenv_values; v=dotenv_values('.env'); [print(f'{k}: {\"FILLED\" if val else \"EMPTY\"}') for k,val in v.items() if 'API_KEY' in k]"
@@ -59,7 +59,7 @@ M1.5 (vis+desc shoot) ✅ HAZIR — 10/30 gold yeterli, shootout kodu güncel ş
 M3-M8                 ⏳ PENDING
 ```
 
-**Acil sıradaki iş:** M3 hazırlık — vision için **multi-image refactor** (clients.py: complete_vision_json çoklu image; shootout_vision.py: tek çağrı/listing). M1.5 sonucu: Kimi vision 0.917 (winner), gemma 0.135 (yetersiz). Per-image kırılgan/pahalı (~$0.007/foto, 1500×full=$168). M3'te multi-image (161→10 çağrı) + foto kıs (4-8) + Kimi. Multi-image kalite riski (attention dilution) gold'da test edilecek.
+**Acil sıradaki iş:** M3 — `labeling/run_labeling.py` yaz (multi-image + Kimi). Multi-image refactor + gold testi **BİTTİ** (2026-05-29): Kimi multi-image 10/10 ilan tamamladı, ortak 3 ilanda 0.931 ≥ per-image 0.917 (dilution yok), $0.036/ilan (~3x ucuz), robust. `complete_vision_json` artık `image_paths: list[str]`; `shootout_vision` tek çağrı/ilan + listing-başına resilience. **M3 kritik nokta:** seri run 1239 ilan ≈ 39 saat → `run_labeling.py` **eşzamanlı** olmalı (20-30 worker, Moonshot rate limit'e göre) → ~1-2 saat. Vision karar dosyası: `llm/shootout_vision_multi_rows.json`.
 
 ---
 
@@ -122,6 +122,8 @@ Kullanıcı:
 ---
 
 ## 3. AGENT — Vision + Description shootout (M2 dolduktan SONRA)
+
+> **Vision kısmı BİTTİ (2026-05-29):** multi-image refactor + Kimi gold testi tamamlandı (bkz. STATUS.md M1.5). Vision modeli = **kimi_k2_6 multi-image**. Aşağıdaki vision shootout komutu artık `--max-photos` opsiyonu alır (varsayılan: tüm foto) ve sonucu `llm/shootout_vision_multi_rows.json`'a yazılır. **Description shootout hâlâ açık** (heating_type/is_furnished structured haksızlığı düzeltilmeli).
 
 Kullanıcı M2'yi bitirdiğini söyleyene kadar başlama. Gold dolduğunu doğrulamak için yukarıdaki 2d (doluluk kontrolü) komutu. En az 10/30 listing dolu olmalı.
 

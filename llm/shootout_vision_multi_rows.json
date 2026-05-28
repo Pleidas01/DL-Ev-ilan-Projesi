@@ -1,0 +1,794 @@
+[
+  {
+    "model_id": "kimi_k2_6",
+    "status": "ok",
+    "accuracy": 0.7483333333333333,
+    "cost_estimate_usd": 0.392,
+    "samples": [
+      {
+        "listing_id": "19369995",
+        "status": "ok",
+        "photo_count": 9,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": null,
+          "manzara": null,
+          "mutfak_tipi": "amerikan_acik",
+          "banyo_ozellikleri": [
+            "dusakabin"
+          ],
+          "salon_ozellikleri": [
+            "acik_plan_genis",
+            "ayri_yemek_alani"
+          ],
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "mutfak_tipi": {
+              "gold": "amerikan_acik",
+              "predicted": "amerikan_acik",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin"
+              ],
+              "predicted": [
+                "dusakabin"
+              ],
+              "match": true,
+              "field_score": 1.0
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "acik_plan_genis",
+                "ayri_yemek_alani"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 2,
+          "accuracy": 1.0
+        },
+        "accuracy": 1.0
+      },
+      {
+        "listing_id": "19370688",
+        "status": "ok",
+        "photo_count": 19,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": null,
+          "manzara": [
+            "orman_yesil",
+            "sehir_panorama"
+          ],
+          "mutfak_tipi": "amerikan_acik",
+          "banyo_ozellikleri": [
+            "dusakabin"
+          ],
+          "salon_ozellikleri": [
+            "acik_plan_genis"
+          ],
+          "imkanlar": [
+            "havuz",
+            "yesil_alan_peyzaj"
+          ]
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": [
+                "orman_yesil"
+              ],
+              "predicted": [
+                "orman_yesil",
+                "sehir_panorama"
+              ],
+              "match": false,
+              "field_score": 0.5
+            },
+            "mutfak_tipi": {
+              "gold": "amerikan_acik",
+              "predicted": "amerikan_acik",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin"
+              ],
+              "predicted": [
+                "dusakabin"
+              ],
+              "match": true,
+              "field_score": 1.0
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "acik_plan_genis"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": [
+                "havuz",
+                "yesil_alan_peyzaj",
+                "spor_alani"
+              ],
+              "predicted": [
+                "havuz",
+                "yesil_alan_peyzaj"
+              ],
+              "match": false,
+              "field_score": 0.6666666666666666
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 2,
+          "accuracy": 0.7916666666666666
+        },
+        "accuracy": 0.7916666666666666
+      },
+      {
+        "listing_id": "19370809",
+        "status": "ok",
+        "photo_count": 14,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": null,
+          "manzara": null,
+          "mutfak_tipi": "kapali_ayri",
+          "banyo_ozellikleri": [
+            "banyoda_pencere",
+            "birden_fazla_banyo"
+          ],
+          "salon_ozellikleri": null,
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "mutfak_tipi": {
+              "gold": "kapali_ayri",
+              "predicted": "kapali_ayri",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "banyoda_pencere",
+                "birden_fazla_banyo"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 1,
+          "correct_fields": 1,
+          "accuracy": 1.0
+        },
+        "accuracy": 1.0
+      },
+      {
+        "listing_id": "19372077",
+        "status": "ok",
+        "photo_count": 20,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": null,
+          "manzara": null,
+          "mutfak_tipi": "kapali_ayri",
+          "banyo_ozellikleri": [
+            "banyoda_pencere"
+          ],
+          "salon_ozellikleri": null,
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "mutfak_tipi": {
+              "gold": "kapali_ayri",
+              "predicted": "kapali_ayri",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "banyoda_pencere"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 1,
+          "correct_fields": 1,
+          "accuracy": 1.0
+        },
+        "accuracy": 1.0
+      },
+      {
+        "listing_id": "19373633",
+        "status": "ok",
+        "photo_count": 20,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": [
+            "acik_balkon"
+          ],
+          "manzara": [
+            "bogaz",
+            "sehir_panorama"
+          ],
+          "mutfak_tipi": null,
+          "banyo_ozellikleri": [
+            "dusakabin",
+            "banyoda_pencere"
+          ],
+          "salon_ozellikleri": [
+            "acik_plan_genis"
+          ],
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": [
+                "cam_balkon",
+                "acik_balkon"
+              ],
+              "predicted": [
+                "acik_balkon"
+              ],
+              "match": false,
+              "field_score": 0.5
+            },
+            "manzara": {
+              "gold": [
+                "deniz",
+                "bogaz",
+                "orman_yesil"
+              ],
+              "predicted": [
+                "bogaz",
+                "sehir_panorama"
+              ],
+              "match": false,
+              "field_score": 0.25
+            },
+            "mutfak_tipi": {
+              "gold": "kapali_ayri",
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin",
+                "banyoda_pencere",
+                "birden_fazla_banyo"
+              ],
+              "predicted": [
+                "dusakabin",
+                "banyoda_pencere"
+              ],
+              "match": false,
+              "field_score": 0.6666666666666666
+            },
+            "salon_ozellikleri": {
+              "gold": [
+                "nis",
+                "acik_plan_genis",
+                "ayri_yemek_alani"
+              ],
+              "predicted": [
+                "acik_plan_genis"
+              ],
+              "match": false,
+              "field_score": 0.3333333333333333
+            },
+            "imkanlar": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 5,
+          "correct_fields": 0,
+          "accuracy": 0.35
+        },
+        "accuracy": 0.35
+      },
+      {
+        "listing_id": "19376408",
+        "status": "ok",
+        "photo_count": 20,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": null,
+          "manzara": [
+            "deniz",
+            "sehir_panorama"
+          ],
+          "mutfak_tipi": "amerikan_acik",
+          "banyo_ozellikleri": [
+            "dusakabin"
+          ],
+          "salon_ozellikleri": [
+            "acik_plan_genis"
+          ],
+          "imkanlar": [
+            "havuz",
+            "yesil_alan_peyzaj"
+          ]
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": [
+                "deniz",
+                "sehir_panorama"
+              ],
+              "predicted": [
+                "deniz",
+                "sehir_panorama"
+              ],
+              "match": true,
+              "field_score": 1.0
+            },
+            "mutfak_tipi": {
+              "gold": "amerikan_acik",
+              "predicted": "amerikan_acik",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin"
+              ],
+              "predicted": [
+                "dusakabin"
+              ],
+              "match": true,
+              "field_score": 1.0
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "acik_plan_genis"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": [
+                "havuz",
+                "yesil_alan_peyzaj",
+                "guvenlik_kabini",
+                "kapali_otopark"
+              ],
+              "predicted": [
+                "havuz",
+                "yesil_alan_peyzaj"
+              ],
+              "match": false,
+              "field_score": 0.5
+            }
+          },
+          "scored_fields": 4,
+          "correct_fields": 3,
+          "accuracy": 0.875
+        },
+        "accuracy": 0.875
+      },
+      {
+        "listing_id": "19380525",
+        "status": "ok",
+        "photo_count": 12,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": [
+            "acik_balkon"
+          ],
+          "manzara": [
+            "komsu_duvari"
+          ],
+          "mutfak_tipi": "kapali_ayri",
+          "banyo_ozellikleri": [
+            "banyoda_pencere"
+          ],
+          "salon_ozellikleri": [
+            "nis"
+          ],
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": [
+                "acik_balkon"
+              ],
+              "predicted": [
+                "acik_balkon"
+              ],
+              "match": true,
+              "field_score": 1.0
+            },
+            "manzara": {
+              "gold": null,
+              "predicted": [
+                "komsu_duvari"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "mutfak_tipi": {
+              "gold": "kapali_ayri",
+              "predicted": "kapali_ayri",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "banyoda_pencere"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "nis"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 2,
+          "correct_fields": 2,
+          "accuracy": 1.0
+        },
+        "accuracy": 1.0
+      },
+      {
+        "listing_id": "19382188",
+        "status": "ok",
+        "photo_count": 7,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": null,
+          "manzara": null,
+          "mutfak_tipi": "kapali_ayri",
+          "banyo_ozellikleri": [
+            "dusakabin",
+            "banyoda_pencere"
+          ],
+          "salon_ozellikleri": [
+            "nis"
+          ],
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "manzara": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "mutfak_tipi": {
+              "gold": "kapali_ayri",
+              "predicted": "kapali_ayri",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin"
+              ],
+              "predicted": [
+                "dusakabin",
+                "banyoda_pencere"
+              ],
+              "match": false,
+              "field_score": 0.5
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "nis"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": [
+                "guvenlik_kabini"
+              ],
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 1,
+          "accuracy": 0.5
+        },
+        "accuracy": 0.5
+      },
+      {
+        "listing_id": "19382618",
+        "status": "ok",
+        "photo_count": 20,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": [
+            "acik_balkon"
+          ],
+          "manzara": [
+            "sehir_panorama"
+          ],
+          "mutfak_tipi": "kapali_ayri",
+          "banyo_ozellikleri": [
+            "kuvet",
+            "banyoda_pencere"
+          ],
+          "salon_ozellikleri": null,
+          "imkanlar": null
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": [
+                "fransiz_balkon"
+              ],
+              "predicted": [
+                "acik_balkon"
+              ],
+              "match": false,
+              "field_score": 0.0
+            },
+            "manzara": {
+              "gold": null,
+              "predicted": [
+                "sehir_panorama"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "mutfak_tipi": {
+              "gold": "kapali_ayri",
+              "predicted": "kapali_ayri",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin"
+              ],
+              "predicted": [
+                "kuvet",
+                "banyoda_pencere"
+              ],
+              "match": false,
+              "field_score": 0.0
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": null,
+              "predicted": null,
+              "match": null,
+              "field_score": null
+            }
+          },
+          "scored_fields": 3,
+          "correct_fields": 1,
+          "accuracy": 0.3333333333333333
+        },
+        "accuracy": 0.3333333333333333
+      },
+      {
+        "listing_id": "19392370",
+        "status": "ok",
+        "photo_count": 20,
+        "missing_files": 0,
+        "predicted": {
+          "balkon_ozellikleri": null,
+          "manzara": [
+            "deniz",
+            "sehir_panorama"
+          ],
+          "mutfak_tipi": "amerikan_acik",
+          "banyo_ozellikleri": [
+            "dusakabin"
+          ],
+          "salon_ozellikleri": [
+            "acik_plan_genis"
+          ],
+          "imkanlar": [
+            "havuz",
+            "spor_alani",
+            "kapali_otopark",
+            "acik_otopark"
+          ]
+        },
+        "score": {
+          "per_field": {
+            "balkon_ozellikleri": {
+              "gold": [
+                "fransiz_balkon"
+              ],
+              "predicted": null,
+              "match": false,
+              "field_score": 0.0
+            },
+            "manzara": {
+              "gold": [
+                "sehir_panorama"
+              ],
+              "predicted": [
+                "deniz",
+                "sehir_panorama"
+              ],
+              "match": false,
+              "field_score": 0.5
+            },
+            "mutfak_tipi": {
+              "gold": "amerikan_acik",
+              "predicted": "amerikan_acik",
+              "match": true,
+              "field_score": 1.0
+            },
+            "banyo_ozellikleri": {
+              "gold": [
+                "dusakabin"
+              ],
+              "predicted": [
+                "dusakabin"
+              ],
+              "match": true,
+              "field_score": 1.0
+            },
+            "salon_ozellikleri": {
+              "gold": null,
+              "predicted": [
+                "acik_plan_genis"
+              ],
+              "match": null,
+              "field_score": null
+            },
+            "imkanlar": {
+              "gold": [
+                "havuz",
+                "guvenlik_kabini",
+                "acik_otopark",
+                "kapali_otopark",
+                "cocuk_parki",
+                "spor_alani"
+              ],
+              "predicted": [
+                "havuz",
+                "spor_alani",
+                "kapali_otopark",
+                "acik_otopark"
+              ],
+              "match": false,
+              "field_score": 0.6666666666666666
+            }
+          },
+          "scored_fields": 5,
+          "correct_fields": 2,
+          "accuracy": 0.6333333333333333
+        },
+        "accuracy": 0.6333333333333333
+      }
+    ],
+    "sample_count": 10,
+    "scored_samples": 10
+  }
+]

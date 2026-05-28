@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -10,8 +9,6 @@ from llm.clients import candidate_by_id, complete_vision_json, estimate_cost_usd
 from llm.gold_benchmark import (
     DEFAULT_DATASET_PATH,
     DEFAULT_GOLD_PATH,
-    GOLD_BENCHMARK_PHOTO_COUNT,
-    MULTI_SELECT_FIELDS,
     VISUAL_GOLD_FIELDS,
     aggregate_model_scores,
     gold_is_filled,
@@ -60,44 +57,18 @@ def parse_vision_json(raw_response: str) -> dict[str, Any]:
     return parsed if isinstance(parsed, dict) else {}
 
 
-def aggregate_per_image_predictions(per_image_preds: list[dict[str, Any]]) -> dict[str, Any]:
-    """Bir ilanın N fotosundan gelen per-image VLM çıktılarını tek bir visual_gold
-    JSON'una indirger. Multi-select alanlar: union. Single-select alanlar: majority
-    vote (eşitlikte ilk gelen). Bir alanı hiçbir foto görmediyse null.
-    """
-    aggregated: dict[str, Any] = {}
-    for field in VISUAL_GOLD_FIELDS:
-        if field in MULTI_SELECT_FIELDS:
-            union: set[str] = set()
-            for pred in per_image_preds:
-                value = pred.get(field)
-                if isinstance(value, list):
-                    union.update(str(v).strip().lower() for v in value if v)
-            aggregated[field] = sorted(union) if union else None
-        else:
-            counter: Counter[str] = Counter()
-            for pred in per_image_preds:
-                value = pred.get(field)
-                if value is None:
-                    continue
-                normalized = str(value).strip().lower()
-                if not normalized or normalized in ("null", "none"):
-                    continue
-                counter[normalized] += 1
-            aggregated[field] = counter.most_common(1)[0][0] if counter else None
-    return aggregated
-
-
-# Cost tahmini için varsayım: 10 listing × 5 foto = 50 VLM çağrısı,
-# her çağrı ~1200 input + 250 output token (resim base64 + prompt + JSON).
-COST_EST_INPUT_TOKENS = 1200 * 50
-COST_EST_OUTPUT_TOKENS = 250 * 50
+# Cost tahmini (kaba): multi-image tek çağrı/listing. 10 listing, her çağrı
+# ~8 foto × 5000 input token (Kimi image) + prompt, ~300 output token/listing.
+# Gerçek maliyet Moonshot bakiye farkıyla ölçülür; bu sadece sıra-büyüklük tahmini.
+COST_EST_INPUT_TOKENS = 5000 * 8 * 10
+COST_EST_OUTPUT_TOKENS = 300 * 10
 
 
 def run_vision_gold_benchmark(
     model_ids: list[str],
     gold_path: Path = DEFAULT_GOLD_PATH,
     dataset_path: Path = DEFAULT_DATASET_PATH,
+    max_photos: int | None = None,
 ) -> list[dict[str, Any]]:
     gold_rows = {row["listing_id"]: row for row in load_gold_rows(gold_path)}
     dataset_index = load_dataset_index(dataset_path)
@@ -131,34 +102,42 @@ def run_vision_gold_benchmark(
                     samples.append({"listing_id": listing_id, "status": "missing_dataset_record", "accuracy": None})
                     continue
 
-                image_paths = listing_image_paths(record, None)  # tüm fotoğraflar (foto limiti kaldırıldı)
+                # max_photos=None -> tüm fotoğraflar (per-image ile adil karşılaştırma).
+                # İsteğe bağlı tavan (Kimi foto limiti / maliyet) için --max-photos.
+                image_paths = listing_image_paths(record, max_photos)
                 if not image_paths:
                     samples.append({"listing_id": listing_id, "status": "no_images", "accuracy": None})
                     continue
 
-                per_image: list[dict[str, Any]] = []
-                missing_files = 0
-                for image_path in image_paths:
-                    resolved = Path(image_path)
-                    if not resolved.is_file():
-                        missing_files += 1
-                        continue
-                    raw = complete_vision_json(candidate, VISION_SYSTEM_PROMPT, VISION_USER_PROMPT, str(resolved))
-                    per_image.append({"image_path": str(resolved), "predicted": parse_vision_json(raw)})
-
-                if not per_image:
+                resolved_paths = [str(p) for p in image_paths if Path(p).is_file()]
+                missing_files = len(image_paths) - len(resolved_paths)
+                if not resolved_paths:
                     samples.append({"listing_id": listing_id, "status": "all_images_missing", "accuracy": None})
                     continue
 
-                predicted_aggregated = aggregate_per_image_predictions([item["predicted"] for item in per_image])
-                scored = score_against_gold(predicted_aggregated, visual_gold, VISUAL_GOLD_FIELDS)
+                # Tüm fotoğraflar TEK çağrıda; model tek bütünleşik JSON döndürür.
+                # Listing-başına resilience: bir ilan patlarsa (örn. Kimi foto limiti /
+                # timeout) sadece o "error" işaretlenir, diğer ilanlar devam eder.
+                try:
+                    raw = complete_vision_json(candidate, VISION_SYSTEM_PROMPT, VISION_USER_PROMPT, resolved_paths)
+                except Exception as exc:
+                    samples.append({
+                        "listing_id": listing_id,
+                        "status": f"error:{type(exc).__name__}:{exc}",
+                        "photo_count": len(resolved_paths),
+                        "missing_files": missing_files,
+                        "accuracy": None,
+                    })
+                    continue
+
+                predicted = parse_vision_json(raw)
+                scored = score_against_gold(predicted, visual_gold, VISUAL_GOLD_FIELDS)
                 samples.append({
                     "listing_id": listing_id,
                     "status": "ok",
-                    "photo_count": len(per_image),
+                    "photo_count": len(resolved_paths),
                     "missing_files": missing_files,
-                    "per_image": per_image,
-                    "predicted_aggregated": predicted_aggregated,
+                    "predicted": predicted,
                     "score": scored,
                     "accuracy": scored["accuracy"],
                 })
@@ -185,6 +164,14 @@ def run_vision_gold_benchmark(
 
 
 def main() -> None:
+    # Windows cp1254 konsol Türkçe/özel karakter print'inde crash eder; UTF-8'e zorla.
+    try:
+        import sys
+
+        sys.stdout.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
     try:
         from dotenv import load_dotenv
 
@@ -197,9 +184,12 @@ def main() -> None:
     parser.add_argument("--gold", default=str(DEFAULT_GOLD_PATH))
     parser.add_argument("--dataset", default=str(DEFAULT_DATASET_PATH))
     parser.add_argument("--out", default="llm/shootout_vision_rows.json")
+    parser.add_argument("--max-photos", type=int, default=None,
+                        help="Listing başına TEK çağrıya giren maks foto (varsayılan: tümü). "
+                             "Kimi foto limiti / maliyet için tavan koymak istersen ayarla.")
     args = parser.parse_args()
 
-    rows = run_vision_gold_benchmark(args.models, Path(args.gold), Path(args.dataset))
+    rows = run_vision_gold_benchmark(args.models, Path(args.gold), Path(args.dataset), args.max_photos)
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
