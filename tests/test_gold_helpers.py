@@ -10,15 +10,19 @@ from llm.gold_benchmark import (
 
 
 def test_new_gold_schema_field_counts_are_stable():
-    assert len(FACTS_GOLD_FIELDS) == 22
+    assert len(FACTS_GOLD_FIELDS) == 21
     assert len(STRUCTURED_FACT_FIELDS) == 15
-    assert len(HYBRID_FACT_FIELDS) == 7
-    assert len(VISUAL_GOLD_FIELDS) == 12
+    # HYBRID_FACT_FIELDS = FACTS - STRUCTURED, yani 4 hybrid + 2 desc-only = 6
+    assert len(HYBRID_FACT_FIELDS) == 6
+    assert len(VISUAL_GOLD_FIELDS) == 7
     assert "near_metrobus" in FACTS_GOLD_FIELDS
     assert "has_aircon" in FACTS_GOLD_FIELDS
     assert "heating_type" in STRUCTURED_FACT_FIELDS
     assert "is_furnished" in STRUCTURED_FACT_FIELDS
-    assert "depolama_gomme" in VISUAL_GOLD_FIELDS
+    # kitchen_type kaldırıldı; mutfak bilgisi visual_gold.mutfak_tipi'nde kalıyor
+    assert "kitchen_type" not in FACTS_GOLD_FIELDS
+    assert "balkon_ozellikleri" in VISUAL_GOLD_FIELDS
+    assert "depolama_gomme" not in VISUAL_GOLD_FIELDS
 
 
 def test_suggest_hybrid_facts_detects_common_keywords():
@@ -37,7 +41,6 @@ def test_suggest_hybrid_facts_detects_common_keywords():
     # Detections
     assert suggested["near_metro"] is True
     assert suggested["near_metrobus"] is True
-    assert suggested["kitchen_type"] == "amerikan_acik"
     assert suggested["has_balcony"] is True
     assert suggested["has_elevator"] is True
     assert suggested["has_parking"] is True
@@ -57,34 +60,37 @@ def test_suggest_hybrid_facts_handles_turkish_uppercase_normalization():
 def test_build_prefilled_visual_gold_returns_correct_structure():
     prefilled = build_prefilled_visual_gold()
     assert set(prefilled.keys()) == set(VISUAL_GOLD_FIELDS)
-    # Multi-select alanlar array, single-select '|'li string
+    # Multi-select alanlar array
     assert isinstance(prefilled["manzara"], list)
     assert "deniz" in prefilled["manzara"]
-    assert isinstance(prefilled["balkon_tipi"], str)
-    assert "cam_balkon" in prefilled["balkon_tipi"]
-    assert " | " in prefilled["balkon_tipi"]
+    assert isinstance(prefilled["balkon_ozellikleri"], list)
+    assert "teras" in prefilled["balkon_ozellikleri"]
+    # Single-select alanlar '|'li string
+    assert isinstance(prefilled["mutfak_tipi"], str)
+    assert "amerikan_acik" in prefilled["mutfak_tipi"]
+    assert " | " in prefilled["mutfak_tipi"]
 
 
 def test_suggest_visual_fields_cross_validates_property_features():
-    suggested = suggest_visual_fields(["Somine", "Kapali Otopark", "Havuz", "Gomme Dolap"])
+    suggested = suggest_visual_fields(["Somine", "Kapali Otopark", "Havuz"])
 
     assert suggested["salon_ozellikleri"] == ["somine"]
-    assert suggested["site_imkanlari"] == ["havuz", "kapali_otopark"]
-    assert suggested["depolama_gomme"] == ["gomme_dolap_yatak"]
+    assert suggested["imkanlar"] == ["havuz", "kapali_otopark"]
+    assert "depolama_gomme" not in suggested
 
 
 def test_score_against_gold_skips_null_gold_fields_and_scores_jaccard():
     scored = score_against_gold(
-        {"has_elevator": True, "site_imkanlari": ["havuz", "guvenlik_kabini"]},
-        {"has_elevator": True, "near_metro": None, "site_imkanlari": ["havuz", "acik_otopark"]},
-        ("has_elevator", "near_metro", "site_imkanlari"),
+        {"has_elevator": True, "imkanlar": ["havuz", "guvenlik_kabini"]},
+        {"has_elevator": True, "near_metro": None, "imkanlar": ["havuz", "acik_otopark"]},
+        ("has_elevator", "near_metro", "imkanlar"),
     )
 
     assert scored["scored_fields"] == 2
     assert scored["correct_fields"] == 1
     assert scored["accuracy"] == 2 / 3
     assert scored["per_field"]["near_metro"]["match"] is None
-    assert scored["per_field"]["site_imkanlari"]["field_score"] == 1 / 3
+    assert scored["per_field"]["imkanlar"]["field_score"] == 1 / 3
 
 
 def test_extract_hard_filters_from_turkish_query():

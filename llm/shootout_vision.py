@@ -27,25 +27,29 @@ VISION_MODEL_IDS = ("gemma_4_local", "kimi_k2_6")
 VISION_SYSTEM_PROMPT = """Sen emlak ilani fotograflarini JSON alanlarina etiketleyen bir asistansin.
 Sadece gecerli JSON dondur. Aciklama yazma."""
 
-VISION_USER_PROMPT = """Bu fotograflardan asagidaki 12 visual_gold alanini cikar. Fotografta gorunmeyen alanlar icin null kullan.
+VISION_USER_PROMPT = """Bu fotograflardan asagidaki 7 visual_gold alanini cikar. Fotografta gorunmeyen alanlar icin null kullan.
 
 JSON semasi:
 {
-  "balkon_tipi": null,
-  "teras_tipi": null,
+  "balkon_ozellikleri": null,
   "manzara": null,
   "mutfak_tipi": null,
-  "mutfak_ozellikleri": null,
-  "banyo_dus": null,
   "banyo_ozellikleri": null,
   "zemin_tipi": null,
-  "pencere_tipi": null,
   "salon_ozellikleri": null,
-  "site_imkanlari": null,
-  "depolama_gomme": null
+  "imkanlar": null
 }
 
-Multi-select alanlar liste olmalidir: manzara, mutfak_ozellikleri, banyo_ozellikleri, salon_ozellikleri, site_imkanlari, depolama_gomme."""
+Enumlar (sadece bu degerleri kullan):
+- balkon_ozellikleri (liste): cam_balkon, acik_balkon, fransiz_balkon, cikma_balkon, teras
+- manzara (liste): deniz, bogaz, orman_yesil, park, sehir_panorama, dag, ic_avlu, komsu_duvari
+- mutfak_tipi (tek deger): amerikan_acik | kapali_ayri
+- banyo_ozellikleri (liste): dusakabin, kuvet, jakuzi, banyoda_pencere, birden_fazla_banyo
+- zemin_tipi (tek deger): parke | laminat | seramik | granit | mermer | hali | karma
+- salon_ozellikleri (liste): somine, nis, acik_plan_genis, ayri_yemek_alani
+- imkanlar (liste): havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani
+
+Liste (multi-select) alanlar JSON array olmalidir: balkon_ozellikleri, manzara, banyo_ozellikleri, salon_ozellikleri, imkanlar."""
 
 
 def parse_vision_json(raw_response: str) -> dict[str, Any]:

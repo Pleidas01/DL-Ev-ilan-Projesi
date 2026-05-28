@@ -22,7 +22,6 @@ from llm.gold_benchmark import (
 DESCRIPTION_MODEL_IDS = ("deepseek_v4_flash", "kimi_k2_6", "gemma_4_local")
 DESCRIPTION_FACT_FIELDS = (
     "heating_type",
-    "kitchen_type",
     "has_balcony",
     "has_elevator",
     "is_furnished",
@@ -42,7 +41,6 @@ def build_description_prompt(description: str) -> str:
 JSON semasi:
 {{
   "heating_type": null,
-  "kitchen_type": null,
   "has_balcony": null,
   "has_elevator": null,
   "is_furnished": null,
@@ -53,7 +51,6 @@ JSON semasi:
 
 Enumlar:
 - heating_type: kombi | dogalgaz | merkezi | klima | yerden_isitma | null
-- kitchen_type: amerikan_acik | kapali_ayri | yari_acik | null
 
 near_metro sadece <15dk yurume anlami varsa true olmali. Emin olmadigin alanlar icin null kullan."""
 

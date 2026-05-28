@@ -30,7 +30,6 @@ FACTS_GOLD_FIELDS = (
     "heating_type",
     "is_furnished",
     # --- HYBRID (features/title + description LLM + visual VLM fallback) ---
-    "kitchen_type",
     "has_balcony",
     "has_elevator",
     "has_parking",
@@ -59,44 +58,34 @@ STRUCTURED_FACT_FIELDS = (
 )
 
 VISUAL_GOLD_FIELDS = (
-    "balkon_tipi",
-    "teras_tipi",
+    "balkon_ozellikleri",
     "manzara",
     "mutfak_tipi",
-    "mutfak_ozellikleri",
-    "banyo_dus",
     "banyo_ozellikleri",
     "zemin_tipi",
-    "pencere_tipi",
     "salon_ozellikleri",
-    "site_imkanlari",
-    "depolama_gomme",
+    "imkanlar",
 )
 
 MULTI_SELECT_FIELDS = {
+    "balkon_ozellikleri",
     "manzara",
-    "mutfak_ozellikleri",
     "banyo_ozellikleri",
     "salon_ozellikleri",
-    "site_imkanlari",
-    "depolama_gomme",
+    "imkanlar",
 }
 
 # visual_gold enum sözlüğü — single source of truth.
 # Manuel gold doldurma için prefilled template + scoring için referans.
+# single-select: mutfak_tipi, zemin_tipi. Diğerleri multi-select.
 VISUAL_ENUMS = {
-    "balkon_tipi": ["cam_balkon", "acik_balkon", "fransiz_balkon", "cikma_balkon", "yok"],
-    "teras_tipi": ["cati_terasi", "normal_teras", "bahce_cikisli", "yok"],
+    "balkon_ozellikleri": ["cam_balkon", "acik_balkon", "fransiz_balkon", "cikma_balkon", "teras"],
     "manzara": ["deniz", "bogaz", "orman_yesil", "park", "sehir_panorama", "dag", "ic_avlu", "komsu_duvari"],
-    "mutfak_tipi": ["amerikan_acik", "kapali_ayri", "yari_acik"],
-    "mutfak_ozellikleri": ["ada_tezgah", "bar_tezgahi", "ankastre", "mutfakta_pencere"],
-    "banyo_dus": ["dusakabin", "kuvet", "jakuzi", "sade_dus", "kuvet_ve_dusakabin"],
-    "banyo_ozellikleri": ["banyoda_pencere", "cift_lavabo", "hilton_tipi_ayri", "ebeveyn_banyosu", "duvardan_asma_klozet"],
+    "mutfak_tipi": ["amerikan_acik", "kapali_ayri"],
+    "banyo_ozellikleri": ["dusakabin", "kuvet", "jakuzi", "banyoda_pencere", "birden_fazla_banyo"],
     "zemin_tipi": ["parke", "laminat", "seramik", "granit", "mermer", "hali", "karma"],
-    "pencere_tipi": ["standart", "boy_pencere", "panoramik", "cumba", "giyotin"],
     "salon_ozellikleri": ["somine", "nis", "acik_plan_genis", "ayri_yemek_alani"],
-    "site_imkanlari": ["havuz", "yesil_alan_peyzaj", "guvenlik_kabini", "kapali_otopark", "acik_otopark", "cocuk_parki", "spor_alani"],
-    "depolama_gomme": ["gomme_dolap_yatak", "vestiyer_giris", "gomme_kitaplik"],
+    "imkanlar": ["havuz", "yesil_alan_peyzaj", "guvenlik_kabini", "kapali_otopark", "acik_otopark", "cocuk_parki", "spor_alani"],
 }
 
 
@@ -117,7 +106,6 @@ def build_prefilled_visual_gold() -> dict[str, Any]:
 
 # facts_gold HYBRID prefill (kullanıcı manuel doldurma kolaylığı):
 HYBRID_PREFILL_ENUMS = {
-    "kitchen_type": ["amerikan_acik", "kapali_ayri", "yari_acik"],
     "has_balcony": ["true", "false"],
     "has_elevator": ["true", "false"],
     "has_parking": ["true", "false"],

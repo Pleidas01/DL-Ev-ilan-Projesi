@@ -1,20 +1,20 @@
 # STATUS.md — Mevcut Durum (snapshot)
 
-> Son güncelleme: 2026-05-26 13:00, schema 21→22 alan refactor (heating_type+is_furnished STRUCTURED'a taşındı, has_aircon eklendi), cleaner `_normalize_blob` Türkçe `İ` bug fix, gold template prefilled visual ile regen edildi.
+> Son güncelleme: 2026-05-28, schema sadeleştirme: `kitchen_type` kaldırıldı (mutfak bilgisi tek alanda → `visual_gold.mutfak_tipi`); visual_gold 12→7 alan (teras_tipi / mutfak_ozellikleri / banyo_dus / pencere_tipi / depolama_gomme çıktı; banyo tek alanda birleşti; balkon multi-select oldu); `site_imkanlari` → `imkanlar`. Listing gold 10/30 dolduruldu. shootout_vision per-image aggregate + shootout_description cleaned-parity fix.
 > Bu dosyayı sıradaki agent her milestone bitince güncellemeli.
 
 ---
 
 ## TL;DR
 
-- **M0 (scraper + cleaner + yeni şema)** — **DONE** (2026-05-26 13:00 schema refactor sonrası): 1483 ham → **1239** temizlenmiş ilan, **22 facts** top-level (15 structured + 5 hybrid + 2 desc-only) + boş `visual_qualities` object.
+- **M0 (scraper + cleaner + yeni şema)** — **DONE** (2026-05-26 13:00 schema refactor sonrası): 1483 ham → **1239** temizlenmiş ilan, **21 facts** top-level (15 structured + 4 hybrid + 2 desc-only) + boş `visual_qualities` object.
 - **M1 (slot shootout)** — **DONE** (2026-05-25): Kazanan **`kimi_k2_6`** (quality 0.897). `llm/selected.json` text+vision = Kimi (vision provisional, M1.5 ile kesinleşecek).
 - **M2.0 (helper + schema refactor)** — **DONE** (2026-05-26 13:00): heating_type + is_furnished STRUCTURED'a taşındı, `has_aircon` hybrid alan eklendi, `_normalize_blob` Türkçe büyük harf bug'ı fix, visual gold prefilled regen.
-- **M2 (manuel gold)** — **AKTİF**: yeni schema'da 30 listing template hazır (`labeling/gold_listings_manual_todo.jsonl` — facts 7 user-fill + visual prefilled), 30 sorgu template hazır. Kullanıcı doldurmaya başlayabilir. Şu an 0/30 dolu.
-- **M1.5 (vision + description shootout)** — BLOKE: M2 dolmasını bekliyor.
-- **M3–M8** — M2 + M1.5 bitince başlar.
+- **M2 (manuel gold)** — **AKTİF**: sadeleştirilmiş schema (21 facts + 7 visual). Listing gold **10/30 dolu** (M1.5 eşiği ≥10 geçildi). Query gold (30 sorgu) M4'e ertelendi.
+- **M1.5 (vision + description shootout)** — HAZIR: listing gold 10/30 dolu, shootout kodu güncel şemada (per-image aggregate + cleaned-parity). Başlanabilir.
+- **M3–M8** — M1.5 bitince başlar.
 
-Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset) + `archive/pre_scraper_fix/` (en eski yedek) + `data/raw/listings_PRE_FIX.jsonl`.
+Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). Not: `archive/hw6` + `pre_scraper_fix` + `data/_*` temizlikte silindi (bkz. checkpoint 6b019f7).
 
 **⚠️ Composer güvenilirlik uyarısı:** Bu projede Cursor Composer 2.5 ajanı 4 kere yalan rapor verdi (fake heating value, fake gold regen, fake satır sayısı, fake regen done mesajı). Her milestone'da raporu DOSYADAN doğrulayın, sadece ajan iddiasına güvenmeyin.
 
@@ -110,14 +110,15 @@ Karar kuralı:
 
 Eğer Gemma4 her ikisinde de yeterliyse M3'te tüm labeling'de Gemma kullanılabilir → 1239 listing × ~6 call = $0.
 
-### M2 — Manual gold sets (HAZIR — kullanıcı doldurmaya başlayabilir)
+### M2 — Manual gold sets (AKTİF — 10/30 dolu)
 
-**2026-05-26 13:00 regenerate** (schema refactor sonrası yeni `dataset.jsonl`'den 30 listing, mevcut ID'ler korundu):
+**2026-05-28 schema sadeleştirme** (kitchen_type çıktı, visual 12→7, imkanlar rename; 30 listing ID korundu, template regen):
 
-- `labeling/gold_listings_manual_todo.jsonl` — **30 satır**, yeni 22-facts şema:
-  - `facts_gold` (22 alan): 15 structured otomatik dolu (city, district, ..., title_deed_status, **heating_type, is_furnished**), 7 user-fill null (kitchen_type, has_balcony, has_elevator, has_parking, **has_aircon**, near_metro, near_metrobus)
-  - `visual_gold` (12 alan): **prefilled** — multi-select alanlar tüm enum array içinde, single-select alanlar '|'li string. Kullanıcı görülmeyen değerleri siler, single-select için tek değer bırakır.
-- `evaluation/gold_queries_manual_todo.jsonl` — **30 sorgu**, `expected_listing_ids=[]` (kullanıcı 1-3 ID seçecek)
+- `labeling/gold_listings_manual_todo.jsonl` — **30 satır**, sadeleştirilmiş 21-facts şema:
+  - `facts_gold` (21 alan): 15 structured otomatik dolu, 6 user-fill (has_balcony, has_elevator, has_parking, has_aircon, near_metro, near_metrobus). `kitchen_type` kaldırıldı.
+  - `visual_gold` (7 alan): balkon_ozellikleri, manzara, mutfak_tipi, banyo_ozellikleri, zemin_tipi, salon_ozellikleri, imkanlar. **10/30 dolduruldu**, kalan prefilled.
+  - Doldurma kuralı: gördüğün/emin olduğun → işaretle; negatif kanıtla emin "yok" → false/`[]`; emin değil/görünmüyor → null (benchmark'ta skip).
+- `evaluation/gold_queries_manual_todo.jsonl` — **30 sorgu**, `expected_listing_ids=[]`. **M4'e ertelendi** (retriever olmadan test edilemez).
 
 **Toplam manuel iş:** 30 listing × ~19 değerlendirme + 30 query expected_ids = **~3-4 saat**.
 
@@ -200,7 +201,7 @@ tests/test_scraper_extraction.py
 tests/test_cleaner_preserves_fields.py
 ```
 
-Komut: `.\.venv\Scripts\python.exe -m pytest -q` — **27 passed** (2026-05-26, schema refactor + Türkçe normalize bug fix sonrası).
+Komut: `.\.venv\Scripts\python.exe -m pytest -q` — **27 passed** (2026-05-28, schema sadeleştirme + imkanlar rename + shootout fix sonrası).
 
 ---
 

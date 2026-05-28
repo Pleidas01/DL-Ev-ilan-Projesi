@@ -38,13 +38,6 @@ def suggest_hybrid_facts(
     blob = _feature_blob(property_features, title, description)
     suggestions: dict[str, Any] = {field: None for field in HYBRID_FACT_FIELDS}
 
-    if "amerikan" in blob or "acik mutfak" in blob:
-        suggestions["kitchen_type"] = "amerikan_acik"
-    elif "yari acik" in blob:
-        suggestions["kitchen_type"] = "yari_acik"
-    elif "kapali mutfak" in blob or "ayri mutfak" in blob:
-        suggestions["kitchen_type"] = "kapali_ayri"
-
     checks = {
         "has_balcony": ("balkon", "teras"),
         "has_elevator": ("asansor",),
@@ -64,7 +57,7 @@ def suggest_visual_fields(property_features: list[Any]) -> dict[str, Any]:
     suggested: dict[str, Any] = {}
     if "somine" in blob:
         suggested["salon_ozellikleri"] = ["somine"]
-    site_imkanlari = []
+    imkanlar = []
     for needle, value in (
         ("havuz", "havuz"),
         ("kapali otopark", "kapali_otopark"),
@@ -75,18 +68,9 @@ def suggest_visual_fields(property_features: list[Any]) -> dict[str, Any]:
         ("yesil alan", "yesil_alan_peyzaj"),
     ):
         if needle in blob:
-            site_imkanlari.append(value)
-    if site_imkanlari:
-        suggested["site_imkanlari"] = site_imkanlari
-    depolama = []
-    if "gomme dolap" in blob:
-        depolama.append("gomme_dolap_yatak")
-    if "vestiyer" in blob:
-        depolama.append("vestiyer_giris")
-    if "gomme kitaplik" in blob:
-        depolama.append("gomme_kitaplik")
-    if depolama:
-        suggested["depolama_gomme"] = depolama
+            imkanlar.append(value)
+    if imkanlar:
+        suggested["imkanlar"] = imkanlar
     return suggested
 
 

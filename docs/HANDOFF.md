@@ -51,62 +51,52 @@ Bu projede Cursor Composer 2.5 **4 ayrı kerede yalan rapor verdi**:
 ## 1. Mevcut durum özeti
 
 ```
-M0 (scrape + clean)   ✅ DONE — 1239 ilan, 22 facts şeması (15 structured + 5 hybrid + 2 desc-only)
+M0 (scrape + clean)   ✅ DONE — 1239 ilan, 21 facts şeması (15 structured + 4 hybrid + 2 desc-only)
 M1 (slot shootout)    ✅ DONE — kimi_k2_6 winner
-M2.0 (schema refactor)✅ DONE — heating_type+is_furnished STRUCTURED'a, has_aircon hybrid eklendi, Türkçe İ bug fix, visual prefilled
-M2 (manuel gold)      🔄 AKTİF — kullanıcı doldurmaya başlayabilir
-M1.5 (vis+desc shoot) ⏳ BLOKE — M2 bekliyor
+M2.0 (schema refactor)✅ DONE — schema sadeleştirme: kitchen_type çıktı, visual 12→7, imkanlar rename
+M2 (manuel gold)      🔄 AKTİF — listing gold 10/30 dolu (query gold M4'e ertelendi)
+M1.5 (vis+desc shoot) ✅ HAZIR — 10/30 gold yeterli, shootout kodu güncel şemada
 M3-M8                 ⏳ PENDING
 ```
 
-**Acil sıradaki iş:** Kullanıcı M2 manuel gold doldurmaya başlasın. Helper'lar hazır, dataset (1239) hazır, template (30 satır prefilled visual ile) hazır.
+**Acil sıradaki iş:** M1.5 — vision + description shootout (10/30 gold yeterli). Veya kullanıcı kalan listing gold'u doldurmaya devam eder (workflow: kullanıcı `ID + özellik listesi` verir, supervisor JSON'a yazar).
 
 ---
 
-## 2. KULLANICI — Manuel gold doldurma (HAZIR — başlayabilirsin)
+## 2. KULLANICI — Manuel gold doldurma (AKTİF — 10/30 dolu)
 
-Kullanıcı bu workflow ile dolduracak:
+**Workflow:** Kullanıcı fotoğraflara (`data/images/<ID>/`) bakar, her ilan için özellikleri seçer, supervisor'a `ID + özellik listesi` verir; supervisor JSON'a çevirip `labeling/gold_listings_manual_todo.jsonl`'a yazar.
 
-### 2a. Tek listing inceleme
+### 2a. Tek listing inceleme (opsiyonel)
 
 ```powershell
-.\.venv\Scripts\python.exe -m labeling.gold_helper --listing 19364542
+.\.venv\Scripts\python.exe -m labeling.gold_helper --listing <ID>
 ```
 
-Çıktı: 15 structured facts (otomatik dolu) + 7 suggested hybrid + suggested visual fields + manuel doldurulacak alan listesi.
+Çıktı: 15 structured facts (otomatik dolu) + suggested hybrid + suggested visual + manuel TODO listesi.
 
-Kullanıcı:
-1. Önerilen değerleri doğrula (özellikle structured'lar — scraper otomatik doldurdu)
-2. `labeling/gold_listings_manual_todo.jsonl` içindeki ilgili satırı düzenle. **Tüm user-fill alanlar prefilled string/array** — syntax'ı tek tek hatırlamaya gerek yok, sadece olmayanları sil:
+**Doldurma kuralı (gold = ground truth):**
+- Gördüğün / emin olduğun → işaretle
+- Negatif kanıtla **emin** "yok" → `false` (bool) veya `[]` (multi-select)
+- Olabilir ama kanıt yok / görünmüyor → `null` (benchmark'ta skip edilir)
 
-   **`facts_gold` (7 hybrid alan — hepsi `"|"`li string prefilled):**
-   - `kitchen_type`: `"amerikan_acik | kapali_ayri | yari_acik"` → tek değer bırak (örn. `"amerikan_acik"`) veya `null`
-   - 6 bool alan (`has_balcony`, `has_elevator`, `has_parking`, `has_aircon`, `near_metro`, `near_metrobus`): `"true | false"` → tek değer bırak. **Quote'lar opsiyonel** — hem `"true"` hem `true` çalışır (normalize_gold_value otomatik bool'a çeviriyor). Bilinmiyorsa `null`.
-
-   **`visual_gold` (12 alan prefilled):**
-   - Multi-select (manzara, mutfak_ozellikleri, banyo_ozellikleri, salon_ozellikleri, site_imkanlari, depolama_gomme): tüm enum array içinde. **Fotoğrafta görmediklerini sil**, kalan değerler doğru. Hiçbiri görünmüyorsa `[]`.
-   - Single-select (balkon_tipi, teras_tipi, mutfak_tipi, banyo_dus, zemin_tipi, pencere_tipi): `"enum1 | enum2 | enum3"` string. **Tek değer bırak** ('|' karakterlerini de sil). Uymuyorsa `null`.
+**`facts_gold` user-fill (6 bool):** `has_balcony`, `has_elevator`, `has_parking`, `has_aircon`, `near_metro`, `near_metrobus`. (`kitchen_type` kaldırıldı; structured 15 alan otomatik dolu.)
 
 ### 2b. Visual gold doldurma rehberi
 
-Her listing'in `data/images/<listing_id>/` klasöründeki fotoğraflara bak. 12 alan:
+Her listing'in `data/images/<listing_id>/` klasöründeki fotoğraflara bak. **7 alan** (single-select: mutfak_tipi, zemin_tipi; diğerleri multi-select):
 
 | Alan | Tip | Değerler |
 |---|---|---|
-| balkon_tipi | single | cam_balkon \| acik_balkon \| fransiz_balkon \| cikma_balkon \| yok |
-| teras_tipi | single | cati_terasi \| normal_teras \| bahce_cikisli \| yok |
+| balkon_ozellikleri | multi | cam_balkon, acik_balkon, fransiz_balkon, cikma_balkon, teras |
 | manzara | multi | deniz, bogaz, orman_yesil, park, sehir_panorama, dag, ic_avlu, komsu_duvari |
-| mutfak_tipi | single | amerikan_acik \| kapali_ayri \| yari_acik |
-| mutfak_ozellikleri | multi | ada_tezgah, bar_tezgahi, ankastre, mutfakta_pencere |
-| banyo_dus | single | dusakabin \| kuvet \| jakuzi \| sade_dus \| kuvet_ve_dusakabin |
-| banyo_ozellikleri | multi | banyoda_pencere, cift_lavabo, hilton_tipi_ayri, ebeveyn_banyosu, duvardan_asma_klozet |
+| mutfak_tipi | single | amerikan_acik \| kapali_ayri |
+| banyo_ozellikleri | multi | dusakabin, kuvet, jakuzi, banyoda_pencere, birden_fazla_banyo |
 | zemin_tipi | single | parke \| laminat \| seramik \| granit \| mermer \| hali \| karma |
-| pencere_tipi | single | standart \| boy_pencere \| panoramik \| cumba \| giyotin |
 | salon_ozellikleri | multi | somine, nis, acik_plan_genis, ayri_yemek_alani |
-| site_imkanlari | multi | havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani |
-| depolama_gomme | multi | gomme_dolap_yatak, vestiyer_giris, gomme_kitaplik |
+| imkanlar | multi | havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani |
 
-**Multi-select** alanlar JSON array, **single** alanlar string. Fotoğrafta görünmeyen = `null`.
+**Multi-select** alanlar JSON array, **single** alanlar string. `imkanlar` site dışı binalarda da geçerli (güvenlik/otopark site olmadan da olabilir).
 
 ### 2c. Query için doğru ilan ID'leri bulma
 
