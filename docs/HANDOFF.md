@@ -178,7 +178,7 @@ Output şeması (her satır):
   "facts_gold": { ...21 alan, hybrid+desc-only LLM ile dolar... },
   "visual_qualities": {
     "per_image": [{"path": "...", "fields": {...}, "confidence": 0.85}],
-    "aggregated": { ...12 alan, multi-select için union... }
+    "aggregated": { ...6 alan, multi-select için union... }
   },
   "enriched_doc": "<embedding için TR composed string>"
 }

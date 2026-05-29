@@ -9,7 +9,7 @@ DEFAULT_GOLD_PATH = PROJECT_ROOT / "labeling" / "gold_listings_manual_todo.jsonl
 DEFAULT_DATASET_PATH = PROJECT_ROOT / "data" / "processed" / "dataset.jsonl"
 DEFAULT_RAW_PATH = PROJECT_ROOT / "data" / "raw" / "listings.jsonl"
 
-GOLD_BENCHMARK_LISTING_COUNT = 10
+GOLD_BENCHMARK_LISTING_COUNT = 16
 GOLD_BENCHMARK_PHOTO_COUNT = 12
 
 FACTS_GOLD_FIELDS = (
