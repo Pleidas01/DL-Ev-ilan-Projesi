@@ -19,7 +19,7 @@
 ```bash
 # macOS / zsh. (Eski PowerShell komutları 2026-05-30'da bash'e çevrildi.)
 source .venv/bin/activate
-python3 -m pytest -q   # 47 passed beklenir
+python3 -m pytest -q   # 62 passed beklenir
 
 # .env kontrolü — Read tool'una GÜVENME, gerçek key doluluğu için:
 python3 -c "from dotenv import dotenv_values; v=dotenv_values('.env'); [print(f'{k}: {\"FILLED\" if val else \"EMPTY\"}') for k,val in v.items() if 'API_KEY' in k]"
@@ -59,10 +59,11 @@ M2 (manuel gold)      🔄 AKTİF — listing gold 16/30 dolu (query gold 0/30, 
 M1.5 (vision shoot)   ✅ DONE — Kimi multi-image winner; description shootout açık
 M3 (labeling)         ✅ DONE iskele+pre-flight — run_labeling.py var; full build PENDING
 M4 (indexing+retr.)   ✅ DONE iskele (Codex) — composer/build_chroma/retriever; gerçek build PENDING
+Canonical filters     🔄 Task 6 pre-scrape checkpoint — full suite 62 passed; kullanıcı onayı bekleniyor
 M5, M6, M8            ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
 ```
 
-**Acil sıradaki iş:** `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 6**. Task 5 tamamlandı: composer canonical `filter_values` metadata üretiyor; multi-enum seçenekler exact option flag olarak yazılıyor; query slot schema canonical registry'yi kullanıyor; retrieval açıkça istenen destekli alanları hard filter yapıyor ve `null` eşleşmiyor. Önce full suite koş, mimari dokümanları senkronize et ve re-scrape öncesi kullanıcıya checkpoint ver. Kullanıcı onayı olmadan full scrape veya ücretli full API labeling başlatma. Historical JSON benchmark çıktıları ve mevcut gold dosyası silinmedi; gold Task 6'da API harcamasından önce registry'ye göre yeniden üretilecek.
+**Acil sıradaki iş:** kullanıcı onayı bekle. `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 6 pre-scrape checkpoint** noktasında. Full suite `62 passed`; mimari belgeler canonical registry'yle senkronize edildi. Onay gelince İstanbul kiralık konut full re-scrape yap, cleaner coverage raporla ve ücretli API harcamasından önce gold template'i registry'ye göre yeniden üret. Kullanıcı ayrıca onaylamadan ücretli full API labeling veya Kimi pre-flight başlatma. Historical JSON benchmark çıktıları ve mevcut gold dosyası silinmedi.
 
 > **Karar verilebilir önce-işler (opsiyonel/paralel):** (1) `qwen3_vl_local` gold visual benchmark — yerel/ücretsiz vision alternatifi (Kimi ≥0.70 mu) — M3 kararını etkilemez. (2) NN gereksinimi (M6) — M7 dışarı çıktı, hocanın "kendi NN'iniz" şartı yeniden açık (STATUS Açık sorular #6). İkisi de kullanıcı kararı bekler.
 

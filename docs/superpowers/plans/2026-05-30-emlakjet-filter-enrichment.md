@@ -192,7 +192,7 @@ def empty_filter_values() -> dict[str, Any]: ...
 - Modify after implementation: `docs/STATUS.md`
 - Modify after implementation: `docs/HANDOFF.md`
 
-- [ ] Run full tests: `.venv/bin/python3 -m pytest -q`
+- [x] Run full tests: `.venv/bin/python3 -m pytest -q`
 - [ ] Re-scrape Istanbul rental listings so newly captured structured fields such as balcony status are available.
 - [ ] Re-run cleaner and print coverage by source: scraper info, property feature, DeepSeek, Kimi, unresolved null.
 - [ ] Rebuild manual gold templates against the new registry before spending on APIs.
@@ -201,6 +201,8 @@ def empty_filter_values() -> dict[str, Any]: ...
 - [ ] Rebuild Chroma and evaluate retrieval using manually verified demo queries.
 - [ ] Document measured accuracy, latency, cost, and unresolved null coverage.
 - [ ] Commit: `docs: record canonical filter pipeline results`
+
+> Task 6 pre-scrape checkpoint (2026-05-30): full suite passed (`62 passed`). `PROJECT.md`, `STATUS.md`, and `HANDOFF.md` were synchronized with the canonical registry architecture. Full re-scrape and paid API validation remain blocked on explicit user approval.
 
 ## Acceptance Criteria
 
