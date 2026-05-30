@@ -137,14 +137,14 @@ def empty_filter_values() -> dict[str, Any]: ...
 - Modify: `labeling/run_labeling.py`
 - Modify: `tests/test_run_labeling.py`
 
-- [ ] Add tests proving the prompt contains title, description, and only the current null-field schema.
-- [ ] Add tests proving DeepSeek cannot overwrite scraper values.
-- [ ] Build the prompt from title + description only. Do not send `attributes` or `property_features`.
-- [ ] Ask DeepSeek for only fields whose registry allows `description_llm` and whose value is currently `null`.
-- [ ] Validate returned keys and enum values against the registry.
-- [ ] Merge accepted values with `filter_sources[field] = "deepseek_description"`.
-- [ ] Run: `.venv/bin/python3 -m pytest -q tests/test_run_labeling.py`
-- [ ] Commit: `feat: fill null filters from listing description`
+- [x] Add tests proving the prompt contains title, description, and only the current null-field schema.
+- [x] Add tests proving DeepSeek cannot overwrite scraper values.
+- [x] Build the prompt from title + description only. Do not send `attributes` or `property_features`.
+- [x] Ask DeepSeek for only fields whose registry allows `description_llm` and whose value is currently `null`.
+- [x] Validate returned keys and enum values against the registry.
+- [x] Merge accepted values with `filter_sources[field] = "deepseek_description"`.
+- [x] Run: `.venv/bin/python3 -m pytest -q tests/test_run_labeling.py`
+- [x] Commit: `feat: fill null filters from listing description`
 
 ## Task 4: Kimi Null-Only Visual Enrichment
 

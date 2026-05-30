@@ -34,6 +34,12 @@ from llm.gold_benchmark import (
     score_against_gold,
 )
 from llm.shootout_vision import VISION_SYSTEM_PROMPT, VISION_USER_PROMPT
+from schema.emlakjet_filters import (
+    empty_filter_values,
+    parse_filter_value,
+    spec_for_slug,
+    specs_for_source,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "data" / "processed" / "labeled.jsonl"
@@ -57,39 +63,27 @@ Sadece gecerli JSON dondur. Aciklama yazma."""
 
 
 def build_text_prompt(record: dict[str, Any]) -> str:
-    features = record.get("property_features") or (record.get("attributes") or {}).get("propertyFeatures") or []
-    existing = {field: record.get(field) for field in TEXT_FACT_FIELDS}
+    specs = _null_specs_for_source(record, "description_llm")
+    schema = {spec.slug: None for spec in specs}
+    enums = {spec.slug: spec.values for spec in specs if spec.values}
     return f"""Ilan basligi:
 {record.get("title") or ""}
 
 Ilan aciklamasi:
-{record.get("description") or record.get("text") or ""}
-
-Property features:
-{json.dumps(features, ensure_ascii=False)}
-
-Mevcut structured/keyword ipuclari:
-{json.dumps(existing, ensure_ascii=False)}
+{record.get("description") or ""}
 
 JSON semasi:
-{{
-  "facts": {{
-    "has_balcony": null,
-    "has_elevator": null,
-    "has_parking": null,
-    "has_aircon": null,
-    "near_metro": null,
-    "near_metrobus": null
-  }},
-  "imkanlar": []
-}}
+{{"filters": {json.dumps(schema, ensure_ascii=False, indent=2)}}}
+
+Enumlar:
+{json.dumps(enums, ensure_ascii=False, indent=2)}
 
 Kurallar:
-- heating_type ve is_furnished dondurme; bunlar structured alandir.
-- has_* alanlari icin true yalnizca metin/features/title acik kanit veriyorsa.
-- near_metro ve near_metrobus icin true yalnizca yurume mesafesi veya <15 dakika anlami varsa.
+- Yalnizca semadaki alanlari dondur.
+- Boolean alanlarda true/false yalnizca baslik veya aciklamada acik kanit varsa kullan.
+- Ulasim yakinligi icin yurume mesafesi veya <15 dakika anlami ara.
 - Bilinmeyen alanlar icin null kullan.
-- imkanlar sadece su enumlardan liste olsun: havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani."""
+"""
 
 
 def build_vision_prompt(image_count: int) -> str:
@@ -189,11 +183,52 @@ def _coerce_enum_list(field_name: str, value: Any) -> list[str] | None:
     return normalized
 
 
-def normalize_text_prediction(parsed: dict[str, Any]) -> dict[str, Any]:
-    facts_source = parsed.get("facts") if isinstance(parsed.get("facts"), dict) else parsed
-    facts = {field: _coerce_bool(facts_source.get(field)) for field in TEXT_FACT_FIELDS}
+def _current_filter_values(record: dict[str, Any]) -> tuple[dict[str, Any], dict[str, str]]:
+    values = empty_filter_values()
+    values.update(record.get("filter_values") or {})
+    sources = dict(record.get("filter_sources") or {})
+    for slug in values:
+        if values[slug] is None and record.get(slug) is not None:
+            values[slug] = record[slug]
+            sources.setdefault(slug, "legacy_top_level")
+    if values["price_amount"] is None and record.get("price_tl") is not None:
+        values["price_amount"] = record["price_tl"]
+        values["price_currency"] = "TL"
+        sources.setdefault("price_amount", "legacy_top_level")
+        sources.setdefault("price_currency", "legacy_top_level")
+    return values, sources
+
+
+def _null_specs_for_source(record: dict[str, Any], source: str):
+    values, _sources = _current_filter_values(record)
+    return tuple(spec for spec in specs_for_source(source) if values[spec.slug] is None)
+
+
+def normalize_text_prediction(parsed: dict[str, Any], record: dict[str, Any] | None = None) -> dict[str, Any]:
+    facts_source = parsed.get("filters") if isinstance(parsed.get("filters"), dict) else parsed.get("facts")
+    facts_source = facts_source if isinstance(facts_source, dict) else parsed
+    allowed = _null_specs_for_source(record, "description_llm") if record is not None else specs_for_source("description_llm")
+    facts: dict[str, Any] = {}
+    for spec in allowed:
+        if spec.slug not in facts_source:
+            continue
+        value = parse_filter_value(spec, facts_source.get(spec.slug), strict=True)
+        if value is not None:
+            facts[spec.slug] = value
     imkanlar = _coerce_enum_list("imkanlar", parsed.get("imkanlar"))
     return {**facts, "imkanlar": imkanlar or []}
+
+
+def merge_filter_values(record: dict[str, Any], prediction: dict[str, Any], source: str) -> tuple[dict[str, Any], dict[str, str]]:
+    values, sources = _current_filter_values(record)
+    for slug, value in prediction.items():
+        spec = spec_for_slug(slug)
+        if spec is None or source == "deepseek_description" and "description_llm" not in spec.sources:
+            continue
+        if values[slug] is None and value is not None:
+            values[slug] = value
+            sources[slug] = source
+    return values, sources
 
 
 def normalize_visual_fields(raw_fields: dict[str, Any] | None, fields: tuple[str, ...]) -> dict[str, Any]:
@@ -382,7 +417,7 @@ def extract_text_labels(record: dict[str, Any], candidate: ModelCandidate, cost_
     user_prompt = build_text_prompt(record)
     cost_tracker.reserve(_estimate_text_call(candidate, TEXT_SYSTEM_PROMPT, user_prompt), "text labeling")
     raw = _provider_json_call(complete_json, candidate, TEXT_SYSTEM_PROMPT, user_prompt)
-    return normalize_text_prediction(_parse_json_object(raw))
+    return normalize_text_prediction(_parse_json_object(raw), record)
 
 
 def _resolve_image_paths(record: dict[str, Any]) -> list[str]:
@@ -511,6 +546,7 @@ def label_record(
     vision_chunk_size: int = DEFAULT_VISION_CHUNK_SIZE,
 ) -> dict[str, Any]:
     text_prediction = extract_text_labels(record, text_candidate, cost_tracker)
+    filter_values, filter_sources = merge_filter_values(record, text_prediction, "deepseek_description")
     visual_qualities = extract_visual_labels(
         record,
         vision_candidate,
@@ -529,6 +565,8 @@ def label_record(
         "url": record.get("url"),
         "price_tl": record.get("price_tl"),
         "facts_gold": facts,
+        "filter_values": filter_values,
+        "filter_sources": filter_sources,
         "visual_qualities": visual_qualities,
         "enriched_doc": compose_enriched_doc(record, facts, visual_qualities["aggregated"]),
         "labeling_metadata": {

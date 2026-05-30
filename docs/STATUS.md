@@ -1,6 +1,6 @@
 # STATUS.md — Mevcut Durum (snapshot)
 
-> Son güncelleme: 2026-05-30, **canonical Emlakjet filter enrichment Task 2 revizyonu DONE**: scraper ve cleaner kategori zinciri ile çoklu para birimi fiyatını deterministic canonical alanlara taşıyor. `price_tl` yalnız `TL` ilanlarda geçici compatibility output olarak doluyor; örn. USD ilan `price_amount=1250`, `price_currency=USD`, `price_tl=null`. Task 2 ilgili testleri: `16 passed`.
+> Son güncelleme: 2026-05-30, **canonical Emlakjet filter enrichment Task 3 DONE**: DeepSeek yalnız ilan başlığı + açıklamayı ve halen `null` kalan `description_llm` izinli canonical alanları görüyor. Registry dışı anahtarlar ve enum dışı değerler reddediliyor; scraper değerleri overwrite edilmiyor; kabul edilen yeni değerler `deepseek_description` provenance ile birleşiyor. Task 3 testi: `12 passed`.
 > Önceki (2026-05-29): vision multi-image refactor (tek çağrı/ilan), Kimi multi-image gold testi geçti (bkz. M1.5).
 > Bu dosyayı sıradaki agent her milestone bitince güncellemeli.
 
@@ -16,7 +16,7 @@
 - **M3 (labeling pipeline)** — **DONE** (iskele + pre-flight): `labeling/run_labeling.py` mevcut (multi-image VLM + text LLM, eşzamanlı çağrı, resume, cost cap, pre-flight gold gate). Pre-flight kapısı **`facts_all`** (eşik facts ≥0.75, visual ≥0.70). **Full 1239-ilan build henüz çalıştırılmadı** (`data/processed/labeled.jsonl` yok; sadece pre-flight smoke çıktıları var).
 - **M4 (indexing + retrieval)** — **DONE (iskele, Codex 2026-05-30)**: `indexing/composer.py`, `indexing/build_chroma.py`, `retrieval/retriever.py` + testler. Gerçek index build M3 `labeled.jsonl`'e bağlı (henüz koşulmadı).
 - **M5–M8** — PENDING. **M7 kapsam dışı** (arkadaş yaptı). Sıradaki: M3 full labeling build → M4 gerçek index → M5 RAG/Streamlit.
-- **Canonical filter enrichment** — **AKTİF**: Task 2 revizyonu DONE. Sıradaki Task 3: DeepSeek yalnız title + description okuyarak hâlâ `null` canonical alanları dolduracak.
+- **Canonical filter enrichment** — **AKTİF**: Task 3/6 DONE. Sıradaki Task 4: Kimi yalnız görsellerden, visually defensible ve halen `null` canonical alanları true-only dolduracak.
 
 Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). Not: `archive/hw6` + `pre_scraper_fix` + `data/_*` temizlikte silindi (bkz. checkpoint 6b019f7).
 

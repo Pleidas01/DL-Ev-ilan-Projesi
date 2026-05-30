@@ -62,7 +62,7 @@ M4 (indexing+retr.)   ✅ DONE iskele (Codex) — composer/build_chroma/retrieve
 M5, M6, M8            ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
 ```
 
-**Acil sıradaki iş:** `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 3**. Task 2 authoritative tam listeye göre düzeltildi: scraper ve cleaner kategori zinciri ile `price_amount` / `price_currency` canonical alanlarını deterministic dolduruyor; top-level `price_tl` yalnız TL ilanlar için compatibility output. Şimdi `labeling/run_labeling.py` DeepSeek prompt ve merge akışını title + description only, null-only canonical enrichment yapacak şekilde değişmeli. Full re-scrape ve ücretli API labeling kullanıcı checkpoint onayı olmadan başlatılmayacak.
+**Acil sıradaki iş:** `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 4**. Task 3 tamamlandı: DeepSeek title + description only prompt ile yalnız `null` canonical alanları dolduruyor; registry dışı/enum dışı model çıktıları reddediliyor ve scraper değerleri overwrite edilmiyor. Şimdi Kimi prompt ve merge akışı yalnız görselden doğrulanabilir, halen `null` canonical alanları positive-only dolduracak; `salon_ozellikleri` kaldırılacak. İlk ücretli Kimi pre-flight kod bittikten sonra kullanıcı checkpoint onayı bekleyecek.
 
 > **Karar verilebilir önce-işler (opsiyonel/paralel):** (1) `qwen3_vl_local` gold visual benchmark — yerel/ücretsiz vision alternatifi (Kimi ≥0.70 mu) — M3 kararını etkilemez. (2) NN gereksinimi (M6) — M7 dışarı çıktı, hocanın "kendi NN'iniz" şartı yeniden açık (STATUS Açık sorular #6). İkisi de kullanıcı kararı bekler.
 

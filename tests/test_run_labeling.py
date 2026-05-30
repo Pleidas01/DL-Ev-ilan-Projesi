@@ -36,6 +36,52 @@ def _sample_record():
     }
 
 
+def test_text_prompt_contains_only_title_description_and_current_null_schema():
+    from labeling.run_labeling import build_text_prompt
+
+    record = _sample_record()
+    record["attributes"] = {"private": "must not leak"}
+    prompt = build_text_prompt(record)
+
+    assert record["title"] in prompt
+    assert record["description"] in prompt
+    assert "property_features" not in prompt.lower()
+    assert "must not leak" not in prompt
+    assert "has_balcony" in prompt
+    assert "has_fiber" in prompt
+    assert "has_elevator" not in prompt
+
+
+def test_deepseek_filter_merge_fills_only_null_and_rejects_unknown_enum():
+    from labeling.run_labeling import merge_filter_values, normalize_text_prediction
+
+    record = _sample_record()
+    record["filter_values"] = {"has_elevator": True, "has_balcony": None, "balcony_type": None}
+    record["filter_sources"] = {"has_elevator": "scraper_property_feature"}
+    prediction = normalize_text_prediction(
+        {
+            "filters": {
+                "has_elevator": False,
+                "has_balcony": True,
+                "balcony_type": ["uydurma"],
+                "has_fiber": True,
+                "not_a_filter": True,
+            }
+        },
+        record,
+    )
+
+    values, sources = merge_filter_values(record, prediction, "deepseek_description")
+
+    assert values["has_elevator"] is True
+    assert sources["has_elevator"] == "scraper_property_feature"
+    assert values["has_balcony"] is True
+    assert sources["has_balcony"] == "deepseek_description"
+    assert values["has_fiber"] is True
+    assert values["balcony_type"] is None
+    assert "not_a_filter" not in values
+
+
 def test_merge_facts_preserves_structured_and_prefers_existing_hybrid():
     from labeling.run_labeling import TEXT_FACT_FIELDS, merge_facts
 

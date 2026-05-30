@@ -247,15 +247,15 @@ def _parse_int(value: Any) -> int | None:
     return int(match.group()) if match else None
 
 
-def _parse_enum(spec: FilterSpec, value: Any) -> str | None:
+def _parse_enum(spec: FilterSpec, value: Any, *, strict: bool = False) -> str | None:
     folded = normalize_label(value)
     for label, enum_value in spec.values.items():
         if normalize_label(label) == folded:
             return enum_value
-    return _enum_slug(str(value)) or None
+    return None if strict else (_enum_slug(str(value)) or None)
 
 
-def parse_filter_value(spec: FilterSpec, value: Any) -> Any:
+def parse_filter_value(spec: FilterSpec, value: Any, *, strict: bool = False) -> Any:
     if value is None:
         return None
     if spec.value_type == "bool":
@@ -264,11 +264,19 @@ def parse_filter_value(spec: FilterSpec, value: Any) -> Any:
         return _parse_int(value)
     if spec.value_type == "multi_enum":
         raw_values = value if isinstance(value, list) else [value]
-        values = [_parse_enum(spec, item) for item in raw_values]
+        values = [_parse_enum(spec, item, strict=strict) for item in raw_values]
         return [item for item in values if item] or None
     if spec.value_type == "enum":
-        return _parse_enum(spec, value)
+        return _parse_enum(spec, value, strict=strict)
     return str(value).strip() or None
+
+
+def spec_for_slug(slug: str) -> FilterSpec | None:
+    return _SPEC_BY_SLUG.get(slug)
+
+
+def specs_for_source(source: str) -> tuple[FilterSpec, ...]:
+    return tuple(spec for spec in EMLAKJET_FILTERS if source in spec.sources)
 
 
 def extract_scraper_filter_facts(
