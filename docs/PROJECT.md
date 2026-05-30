@@ -59,10 +59,8 @@ QUERY TIME (Milestone 4-5)
     → top-K listings + match reason
   → Streamlit chat UI
 
-TIME SERIES (parallel ödev)
-  - Scraped fiyat istatistikleri ile sentetik kira zaman serisi
-  - LSTM / GRU forecaster
-  → notebooks/timeseries_report.ipynb
+TIME SERIES (parallel ödev) — KAPSAM DIŞI (2026-05-30, sınıf arkadaşı yaptı)
+  - (bu projede yapılmayacak) sentetik kira zaman serisi + LSTM/GRU forecaster
 ```
 
 ## 5. Model seçimleri ve neden
@@ -81,6 +79,8 @@ Tüm adaylar `llm/clients.py:CANDIDATES` içinde. Pricing $/M token.
 
 **Karar kuralı:** Gold benchmark accuracy ≥ %75 olan en ucuz modeli seç. Gemma4 yeterince iyiyse production'da Gemma4 (sıfır maliyet); değilse vision için Gemini/Kimi.
 
+> **Güncel seçim (`llm/selected.json`, 2026-05-30):** `text_model = deepseek_v4_pro`, `vision_model = kimi_k2_6`. Tabloya sonradan eklenen iki aday: `deepseek_v4_pro` (%75 indirimli $0.435/$0.87 text-only, gold A/B kazananı) ve `qwen3_vl_local` (qwen3-vl:8b, Ollama — ücretsiz/yerel vision aday, gold benchmark'ı henüz koşulmadı). Detaylı gerekçe için STATUS.md M1 revize.
+
 ### 5b. Embedding modeli
 
 - **BGE-M3** (`BAAI/bge-m3`) — multilingual, 1024-dim, Türkçe destekli.
@@ -95,8 +95,10 @@ Tüm adaylar `llm/clients.py:CANDIDATES` içinde. Pricing $/M token.
 
 1. **BGE-M3 LoRA** (text embedding, domain adapt)
 2. **ResNet-18 / ViT-small classifier** (image özellikleri için — VLM ile karşılaştırma noktası)
-3. **LSTM / GRU forecaster** (time series ödevi)
+3. ~~**LSTM / GRU forecaster** (time series ödevi)~~ — **KAPSAM DIŞI (2026-05-30):** time series ödevini sınıf arkadaşı yaptı, bu projede yapılmayacak.
 4. (Opsiyonel) Slot extraction için küçük distilled model
+
+> **NN gereksinimi uyarısı (2026-05-30):** Hocanın "kendi eğittiğiniz NN olsun" şartı önceden #3 (LSTM/GRU) ile karşılanıyor sayılıyordu. #3 dışarı çıktığı için bu proje kendi öz-eğitimli NN'ini **#1 (BGE-M3 LoRA) veya #2 (ResNet/ViT)** üzerinden vermeli (M6). Kullanıcı kararı bekleniyor — sessizce atlanmasın.
 
 Bu 4 model **"hoca, sadece API çağırmadık, kendi de eğittik"** argümanını taşır.
 
@@ -197,18 +199,20 @@ DL-Ev-ilan-Projesi/
 │                      # shootout_description.py, gold_benchmark.py
 ├── labeling/          # gold_helper.py, gold_listings_manual_todo.jsonl
 ├── evaluation/        # gold_helper.py, gold_queries_manual_todo.jsonl
-├── retrieval/         # (boş) — indexer.py + retriever.py burada olacak
+├── labeling/run_labeling.py  # M3 labeling pipeline (VLM+LLM merge, pre-flight gate)
+├── indexing/          # composer.py + build_chroma.py (M4, Codex)
+├── retrieval/         # retriever.py (M4, Codex) — slot extract + filter + rerank
 ├── model/             # (boş) — fine-tune scriptleri
-├── finetune/          # (boş) — BGE-M3 LoRA + ResNet classifier
-├── indexing/          # (boş) — composer + chroma builder
-├── chat/              # (boş) — RAG response composition
-├── timeseries/        # (boş) — LSTM/GRU
-├── ui/                # (boş) — Streamlit app
-├── tests/             # test_llm_shootout, test_gold_helpers, test_scraper_description_limit
+├── finetune/          # (boş) — BGE-M3 LoRA + ResNet classifier (M6)
+├── chat/              # (boş) — RAG response composition (M5)
+├── ui/                # (boş) — Streamlit app (M5)
+│                      # timeseries/ KALDIRILDI — M7 kapsam dışı (arkadaş yaptı)
+├── tests/             # 47 test: shootout, gold_helpers, scraper, cleaner, run_labeling, composer, retriever
 ├── data/
 │   ├── raw/           # Playwright çıktısı (listings.jsonl 1483 unique)
 │   ├── processed/dataset.jsonl  (1239 satır, yeni 21 facts şeması)
-│   ├── chroma/        # vector store (henüz yok)
+│   ├── processed/labeled.jsonl  (M3 full build çıktısı — HENÜZ YOK; sadece labeled_preflight* smoke var)
+│   ├── processed/chroma/  # vector store (M4 build sonrası; henüz yok)
 │   └── eval/manual_queries.jsonl  (eski auto-BM25 çıktısı, kullanma)
 ├── docs/              # llm_setup_tr.md, manual_gold_todo_tr.md, + bu dosya
 ├── archive/           # eski CLIP işleri
@@ -220,14 +224,14 @@ DL-Ev-ilan-Projesi/
 | # | Ad | Çıktı | Durum |
 |---|---|---|---|
 | 0 | Scaffold + scraper + cleaner (yeni şema) | clean repo, 21 facts + visual_qualities | **DONE** (2026-05-26, 1239 ilan) |
-| 1 | LLM slot shootout | `selected.json` text aday | **DONE** (kimi_k2_6 winner) |
-| 2 | Manual gold sets | facts_gold + visual_gold + query gold | **AKTİF** (template hazır, kullanıcı dolduruyor) |
-| 1.5 | Vision + Description shootout | `vision_model`+`text_model` kararı | **BLOKE** (M2 bitince) |
-| 3 | Labeling pipeline | `labeled.jsonl` | PENDING |
-| 4 | Indexing + retrieval | chroma + retriever | PENDING |
+| 1 | LLM slot shootout | `selected.json` text aday | **DONE** — text=deepseek_v4_pro (A/B revize), vision=kimi_k2_6 |
+| 2 | Manual gold sets | facts_gold + visual_gold + query gold | **AKTİF** (listing 16/30, query 0/30 M4'e ertelendi) |
+| 1.5 | Vision shootout | `vision_model` kararı | **DONE** — Kimi multi-image winner |
+| 3 | Labeling pipeline | `labeled.jsonl` | **DONE iskele+pre-flight** (gate=facts_all); full 1239 build PENDING |
+| 4 | Indexing + retrieval | chroma + retriever | **DONE iskele** (Codex); gerçek index build PENDING |
 | 5 | RAG chat + UI | Streamlit demo | PENDING |
-| 6 | Fine-tune NN'ler | BGE-M3 LoRA + ResNet | PENDING |
-| 7 | Time series | LSTM/GRU + notebook | PENDING |
+| 6 | Fine-tune NN'ler | BGE-M3 LoRA + ResNet | PENDING — **NN gereksinimi için kritik** (M7 dışarı çıktı) |
+| 7 | Time series | LSTM/GRU + notebook | ⛔ **KAPSAM DIŞI** (sınıf arkadaşı yaptı) |
 | 8 | Final report | rapor notebook + sunum | PENDING |
 
 Detaylı durum için `STATUS.md`.

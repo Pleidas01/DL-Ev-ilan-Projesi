@@ -1,4 +1,9 @@
-from llm.clients import CANDIDATES, _openai_chat_temperature, candidate_by_id, estimate_cost_usd
+import base64
+from io import BytesIO
+
+from PIL import Image
+
+from llm.clients import CANDIDATES, _image_data_url, _openai_chat_temperature, candidate_by_id, estimate_cost_usd
 from llm.shootout import (
     FEW_SHOT_SLOT_EXAMPLES,
     build_slot_prompt,
@@ -38,6 +43,7 @@ def test_feasibility_first_candidate_set_excludes_prohibitive_models():
         "gemini_3_5_flash",
         "glm_4_6",
         "gemma_4_local",
+        "qwen3_vl_local",
     }
     assert not any("gpt" in candidate.id or "claude" in candidate.id for candidate in CANDIDATES)
 
@@ -72,6 +78,21 @@ def test_choose_winners_requires_feasible_quality_and_modality_fit():
 def test_openai_chat_temperature_for_moonshot_is_one():
     assert _openai_chat_temperature(candidate_by_id("kimi_k2_6")) == 1.0
     assert _openai_chat_temperature(candidate_by_id("deepseek_v4_flash")) == 0.0
+
+
+def test_image_data_url_downsizes_large_images(tmp_path):
+    from llm.clients import VISION_MAX_IMAGE_EDGE
+
+    image_path = tmp_path / "large.png"
+    Image.new("RGB", (2400, 1600), "white").save(image_path)
+
+    data_url = _image_data_url(str(image_path))
+
+    prefix = "data:image/jpeg;base64,"
+    assert data_url.startswith(prefix)
+    decoded = base64.b64decode(data_url[len(prefix):])
+    resized = Image.open(BytesIO(decoded))
+    assert max(resized.size) == VISION_MAX_IMAGE_EDGE
 
 
 def test_score_expected_slots_accepts_scalar_actual_for_list_fields():

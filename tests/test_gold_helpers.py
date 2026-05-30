@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from evaluation.gold_helper import extract_hard_filters, search_candidates
 from labeling.gold_helper import HYBRID_FACT_FIELDS, suggest_hybrid_facts, suggest_visual_fields
 from llm.gold_benchmark import (
@@ -5,6 +7,7 @@ from llm.gold_benchmark import (
     STRUCTURED_FACT_FIELDS,
     VISUAL_GOLD_FIELDS,
     build_prefilled_visual_gold,
+    listing_image_paths,
     score_against_gold,
 )
 
@@ -69,6 +72,12 @@ def test_build_prefilled_visual_gold_returns_correct_structure():
     assert isinstance(prefilled["mutfak_tipi"], str)
     assert "amerikan_acik" in prefilled["mutfak_tipi"]
     assert " | " in prefilled["mutfak_tipi"]
+
+
+def test_listing_image_paths_normalizes_windows_separators_for_current_platform():
+    paths = listing_image_paths({"all_image_paths": [r"data\images\123\00.jpg"]}, None)
+
+    assert paths == [str(Path("data/images/123/00.jpg"))]
 
 
 def test_suggest_visual_fields_cross_validates_property_features():

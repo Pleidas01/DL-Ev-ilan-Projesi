@@ -16,21 +16,22 @@
 
 ### İlk 30 saniye sağlık kontrolü
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-.\.venv\Scripts\python.exe -m pytest -q   # 27 passed beklenir
+```bash
+# macOS / zsh. (Eski PowerShell komutları 2026-05-30'da bash'e çevrildi.)
+source .venv/bin/activate
+python3 -m pytest -q   # 47 passed beklenir
 
-# .env kontrolü — Cursor Read tool'una GÜVENME, gerçek key dolulğu için:
-.\.venv\Scripts\python.exe -c "from dotenv import dotenv_values; v=dotenv_values('.env'); [print(f'{k}: {\"FILLED\" if val else \"EMPTY\"}') for k,val in v.items() if 'API_KEY' in k]"
+# .env kontrolü — Read tool'una GÜVENME, gerçek key doluluğu için:
+python3 -c "from dotenv import dotenv_values; v=dotenv_values('.env'); [print(f'{k}: {\"FILLED\" if val else \"EMPTY\"}') for k,val in v.items() if 'API_KEY' in k]"
 # Beklenen: DEEPSEEK_API_KEY=FILLED, MOONSHOT_API_KEY=FILLED, GEMINI_API_KEY=FILLED
 # OPENROUTER_API_KEY EMPTY OK (GLM-4.6 skip ediliyor)
 
 # Dataset sağlık kontrolü
-.\.venv\Scripts\python.exe -c "import json; rows=[json.loads(l) for l in open('data/processed/dataset.jsonl', encoding='utf-8')]; print(f'total={len(rows)}, has_facts={sum(1 for r in rows if r.get(\"city\"))}, has_heating={sum(1 for r in rows if r.get(\"heating_type\"))}, has_in_gated={sum(1 for r in rows if r.get(\"in_gated_complex\") is not None)}')"
+python3 -c "import json; rows=[json.loads(l) for l in open('data/processed/dataset.jsonl', encoding='utf-8')]; print(f'total={len(rows)}, has_facts={sum(1 for r in rows if r.get(\"city\"))}, has_heating={sum(1 for r in rows if r.get(\"heating_type\"))}, has_in_gated={sum(1 for r in rows if r.get(\"in_gated_complex\") is not None)}')"
 # Beklenen: total=1239, has_facts=1239, has_heating~1222, has_in_gated=1239
 
 # Gold template doğrulama (YENİ ŞEMA)
-.\.venv\Scripts\python.exe -c "import json; rows=[json.loads(l) for l in open('labeling/gold_listings_manual_todo.jsonl', encoding='utf-8')]; print(f'total={len(rows)}, has_facts_gold={sum(1 for r in rows if \"facts_gold\" in r)}, has_visual_gold={sum(1 for r in rows if \"visual_gold\" in r)}, has_old_text_gold={sum(1 for r in rows if \"text_gold\" in r)}')"
+python3 -c "import json; rows=[json.loads(l) for l in open('labeling/gold_listings_manual_todo.jsonl', encoding='utf-8')]; print(f'total={len(rows)}, has_facts_gold={sum(1 for r in rows if \"facts_gold\" in r)}, has_visual_gold={sum(1 for r in rows if \"visual_gold\" in r)}, has_old_text_gold={sum(1 for r in rows if \"text_gold\" in r)}')"
 # Beklenen: total=30, has_facts_gold=30, has_visual_gold=30, has_old_text_gold=0
 ```
 
@@ -52,25 +53,29 @@ Bu projede Cursor Composer 2.5 **4 ayrı kerede yalan rapor verdi**:
 
 ```
 M0 (scrape + clean)   ✅ DONE — 1239 ilan, 21 facts şeması (15 structured + 4 hybrid + 2 desc-only)
-M1 (slot shootout)    ✅ DONE — kimi_k2_6 winner
+M1 (slot shootout)    ✅ DONE — text=deepseek_v4_pro (A/B revize), vision=kimi_k2_6
 M2.0 (schema refactor)✅ DONE — schema sadeleştirme: kitchen_type çıktı, visual 12→7, imkanlar rename
-M2 (manuel gold)      🔄 AKTİF — listing gold 10/30 dolu (query gold M4'e ertelendi)
-M1.5 (vis+desc shoot) ✅ HAZIR — 10/30 gold yeterli, shootout kodu güncel şemada
-M3-M8                 ⏳ PENDING
+M2 (manuel gold)      🔄 AKTİF — listing gold 16/30 dolu (query gold 0/30, M4'e ertelendi)
+M1.5 (vision shoot)   ✅ DONE — Kimi multi-image winner; description shootout açık
+M3 (labeling)         ✅ DONE iskele+pre-flight — run_labeling.py var; full build PENDING
+M4 (indexing+retr.)   ✅ DONE iskele (Codex) — composer/build_chroma/retriever; gerçek build PENDING
+M5, M6, M8            ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
 ```
 
-**Acil sıradaki iş:** M3 — `labeling/run_labeling.py` yaz (multi-image + Kimi). Multi-image refactor + gold testi **BİTTİ** (2026-05-29): Kimi multi-image 10/10 ilan tamamladı, ortak 3 ilanda 0.931 ≥ per-image 0.917 (dilution yok), $0.036/ilan (~3x ucuz), robust. `complete_vision_json` artık `image_paths: list[str]`; `shootout_vision` tek çağrı/ilan + listing-başına resilience. **M3 kritik nokta:** seri run 1239 ilan ≈ 39 saat → `run_labeling.py` **eşzamanlı** olmalı (20-30 worker, Moonshot rate limit'e göre) → ~1-2 saat. Vision karar dosyası: `llm/shootout_vision_multi_rows.json`.
+**Acil sıradaki iş:** **M3 full labeling build** — `labeling/run_labeling.py`'yi 1239 ilana koş (`data/processed/labeled.jsonl` üret). Pipeline hazır: multi-image VLM (Kimi) + text LLM (deepseek_v4_pro), eşzamanlı çağrı, resume, cost cap, pre-flight gold gate (**`facts_all`** ≥0.75, visual ≥0.70). **Kritik:** seri run ≈ 39 saat → eşzamanlı (20-30 worker, Moonshot rate limit'e göre) → ~1-2 saat. Build bitince M4 gerçek index (`indexing/build_chroma.py`) koşulabilir. Vision karar dosyası: `llm/shootout_vision_multi_rows.json`.
+
+> **Karar verilebilir önce-işler (opsiyonel/paralel):** (1) `qwen3_vl_local` gold visual benchmark — yerel/ücretsiz vision alternatifi (Kimi ≥0.70 mu) — M3 kararını etkilemez. (2) NN gereksinimi (M6) — M7 dışarı çıktı, hocanın "kendi NN'iniz" şartı yeniden açık (STATUS Açık sorular #6). İkisi de kullanıcı kararı bekler.
 
 ---
 
-## 2. KULLANICI — Manuel gold doldurma (AKTİF — 10/30 dolu)
+## 2. KULLANICI — Manuel gold doldurma (AKTİF — 16/30 dolu)
 
 **Workflow:** Kullanıcı fotoğraflara (`data/images/<ID>/`) bakar, her ilan için özellikleri seçer, supervisor'a `ID + özellik listesi` verir; supervisor JSON'a çevirip `labeling/gold_listings_manual_todo.jsonl`'a yazar.
 
 ### 2a. Tek listing inceleme (opsiyonel)
 
-```powershell
-.\.venv\Scripts\python.exe -m labeling.gold_helper --listing <ID>
+```bash
+python3 -m labeling.gold_helper --listing <ID>
 ```
 
 Çıktı: 15 structured facts (otomatik dolu) + suggested hybrid + suggested visual + manuel TODO listesi.
@@ -100,8 +105,8 @@ Her listing'in `data/images/<listing_id>/` klasöründeki fotoğraflara bak. **7
 
 ### 2c. Query için doğru ilan ID'leri bulma
 
-```powershell
-.\.venv\Scripts\python.exe -m evaluation.gold_helper --query "Kadıköy'de 45 bin TL altı eşyalı 2+1"
+```bash
+python3 -m evaluation.gold_helper --query "Kadıköy'de 45 bin TL altı eşyalı 2+1"
 ```
 
 Çıktı: top-10 candidate ID + title + price + URL. Kullanıcı en alakalı 1-3 ID'yi seçer.
@@ -111,8 +116,8 @@ Kullanıcı:
 
 ### 2d. Doluluk kontrolü
 
-```powershell
-.\.venv\Scripts\python.exe -c "import json; from llm.gold_benchmark import build_prefilled_visual_gold, build_prefilled_hybrid_facts; rows=[json.loads(l) for l in open('labeling/gold_listings_manual_todo.jsonl', encoding='utf-8')]; ph=build_prefilled_hybrid_facts(); pv=build_prefilled_visual_gold(); touched_facts=sum(1 for r in rows if any(r['facts_gold'].get(k)!=ph[k] for k in ph)); touched_visual=sum(1 for r in rows if r['visual_gold']!=pv); print(f'facts düzenlenmiş: {touched_facts}/30, visual düzenlenmiş: {touched_visual}/30')"
+```bash
+python3 -c "import json; from llm.gold_benchmark import build_prefilled_visual_gold, build_prefilled_hybrid_facts; rows=[json.loads(l) for l in open('labeling/gold_listings_manual_todo.jsonl', encoding='utf-8')]; ph=build_prefilled_hybrid_facts(); pv=build_prefilled_visual_gold(); touched_facts=sum(1 for r in rows if any(r['facts_gold'].get(k)!=ph[k] for k in ph)); touched_visual=sum(1 for r in rows if r['visual_gold']!=pv); print(f'facts düzenlenmiş: {touched_facts}/30, visual düzenlenmiş: {touched_visual}/30')"
 ```
 
 > Bir alan "düzenlenmiş" sayılır eğer prefilled string'den farklıysa (tek değer, null, boolean, veya kısaltılmış array). Hâlâ `"true | false"` veya `"amerikan_acik | kapali_ayri | ..."` ise dokunulmamış sayılır.
@@ -123,22 +128,23 @@ Kullanıcı:
 
 ## 3. AGENT — Vision + Description shootout (M2 dolduktan SONRA)
 
-> **Vision kısmı BİTTİ (2026-05-29):** multi-image refactor + Kimi gold testi tamamlandı (bkz. STATUS.md M1.5). Vision modeli = **kimi_k2_6 multi-image**. Aşağıdaki vision shootout komutu artık `--max-photos` opsiyonu alır (varsayılan: tüm foto) ve sonucu `llm/shootout_vision_multi_rows.json`'a yazılır. **Description shootout hâlâ açık** (heating_type/is_furnished structured haksızlığı düzeltilmeli).
+> **Vision kısmı BİTTİ (2026-05-29):** multi-image refactor + Kimi gold testi tamamlandı (bkz. STATUS.md M1.5). Vision modeli = **kimi_k2_6 multi-image**. Aşağıdaki vision shootout komutu artık `--max-photos` opsiyonu alır (varsayılan: tüm foto) ve sonucu `llm/shootout_vision_multi_rows.json`'a yazılır.
+> **Text/description kararı da BİTTİ (2026-05-30):** `text_model = deepseek_v4_pro` — ayrı bir description shootout yerine **gold A/B** ile seçildi (slot 0.815 > kimi 0.792, ~3.5x ucuz, ~5x hızlı; STATUS M1 revize). Aşağıdaki description shootout komutu yalnızca yeniden-doğrulamak istersen referans; `selected.json` zaten güncel.
 
 Kullanıcı M2'yi bitirdiğini söyleyene kadar başlama. Gold dolduğunu doğrulamak için yukarıdaki 2d (doluluk kontrolü) komutu. En az 10/30 listing dolu olmalı.
 
 Sonra:
 
-```powershell
+```bash
 # Description (text) shootout — 3 model x 10 listing
-.\.venv\Scripts\python.exe -m llm.shootout_description `
-  --models deepseek_v4_flash kimi_k2_6 gemma_4_local `
-  --out llm\shootout_description_rows.json
+python3 -m llm.shootout_description \
+  --models deepseek_v4_flash kimi_k2_6 gemma_4_local \
+  --out llm/shootout_description_rows.json
 
 # Vision shootout — 2 multimodal model x 10 listing x ~5 foto
-.\.venv\Scripts\python.exe -m llm.shootout_vision `
-  --models gemma_4_local kimi_k2_6 `
-  --out llm\shootout_vision_rows.json
+python3 -m llm.shootout_vision \
+  --models gemma_4_local kimi_k2_6 \
+  --out llm/shootout_vision_rows.json
 ```
 
 > Gemini hariç tutuldu (429 free-tier sorunu). Eğer billing açılırsa eklenebilir.
@@ -153,21 +159,19 @@ Sonra `llm/selected.json`'u güncelle:
 
 ---
 
-## 4. M3 — Labeling pipeline (M1.5 bitince başla)
+## 4. M3 — Labeling pipeline (iskele + pre-flight DONE; sıradaki = full build)
 
-Önkoşul: `llm/selected.json` final, gold 10+/30 dolu.
+`labeling/run_labeling.py` **yazıldı ve pre-flight smoke koşuldu** (`data/processed/labeled_preflight*.jsonl`). Önkoşullar sağlandı: `llm/selected.json` final (text=deepseek_v4_pro, vision=kimi_k2_6), gold 16/30 dolu. **Kalan: full 1239-ilan build** → `data/processed/labeled.jsonl` (henüz yok).
 
-İskele (henüz yazılmadı):
+CLI (gerçek argümanlar için `python3 -m labeling.run_labeling --help`):
 
 ```
 labeling/run_labeling.py
   --input data/processed/dataset.jsonl
   --output data/processed/labeled.jsonl
-  --batch-size 20
   --resume                    # idempotent, ID bazlı
-  --max-cost-usd 50           # cost cap, aşılınca dur
-  --vision-model <selected>
-  --text-model <selected>
+  --max-cost-usd <cap>        # cost cap, aşılınca dur
+  # vision/text model llm/selected.json'dan okunur
 ```
 
 Output şeması (her satır):
@@ -184,9 +188,10 @@ Output şeması (her satır):
 }
 ```
 
-**Pre-flight test:** Önce gold'daki 10 listing'i etiketle, `facts_gold` + `visual_gold` ile karşılaştır, accuracy raporla. Threshold:
-- facts (8 alan): ≥ 0.75
+**Pre-flight test (kodda mevcut):** Gold'daki ilk 16 listing'i etiketle, `facts_gold` + `visual_gold` ile karşılaştır, accuracy raporla. Kapı:
+- **`facts_all` (tam birleştirilmiş pipeline, 21 alan): ≥ 0.75** — gate budur.
 - visual (Jaccard ortalaması): ≥ 0.70
+- `facts_llm` (TEXT_FACT_FIELDS, 6 hybrid/desc alan): **sadece teşhis, kapı DEĞİL.** Text-only model fotoğraftan dolan alanlarda null üretir, gold false der → null-vs-false yüzünden yapısal 0; kapı olsa güçlü modeli haksız eler (bkz. `tests/test_run_labeling.py::test_passes_thresholds_uses_facts_all_not_facts_llm`).
 
 > **`imkanlar` vision'dan ÇIKARMA — text ile etiketle (karar 2026-05-29, STATUS Açık Soru #5).** Vision hata analizi: gold `imkanlar` kullanıcı tarafından image+text birlikte dolduruldu; site özellikleri (guvenlik_kabini, kapali_otopark, cocuk_parki, spor_alani) iç-mekan fotolarında yok, ilan açıklaması/property_features metninde. M3'te `imkanlar`'ı description+property_features'tan LLM ile çıkar (gerekirse vision union); vision-prompt'u imkanlar için zorlama → halüsinasyon. Vision'ın gerçek görsel alan doğruluğu imkanlar hariç **0.789** (mutfak 0.900, banyo 0.738). İkincil vision-tunable zayıflık (küçük-n, M3 pre-flight gold=30'da doğrula): `fransiz_balkon` 0/2 (model acik_balkon/null diyor), `manzara` hafif aşırı-tahmin.
 
@@ -214,10 +219,10 @@ PROJECT.md'nin section 4 (mimari) ve section 10 (milestone tablosu) ile STATUS.m
 4. **`OLLAMA_HOST` env key check'i** atlanıyor (`missing_environment` içinde). Gemma local için Ollama service'in çalıştığını ayrıca kontrol et (`ollama list`).
 5. **Image data URL** Gemini için bytes, OpenAI-compat için base64 data URL. `complete_vision_json` ikisini de hallediyor.
 6. **`data/eval/manual_queries.jsonl` ESKİ** dosya, kullanma. Yeni `evaluation/gold_queries_manual_todo.jsonl` kullan.
-7. **Windows encoding gotcha:** Console cp1254, dosyalar UTF-8. Print'lerde özel karakter (`→`, `…`) crash yaratabilir. Düzgün fix: `sys.stdout.reconfigure(encoding='utf-8')`.
+7. **Ortam: macOS / zsh (2026-05-30'dan beri).** Konsol UTF-8 native; eski Windows cp1254 `→`/`…` crash sorunu artık geçerli değil. Venv: `source .venv/bin/activate`, yorumlayıcı `python3`. Bu dosyadaki eski PowerShell komutları bash'e çevrildi.
 8. **`archive/`** klasörü yedek, dokunma. `pre_scraper_fix/` ve `pre_schema_refactor/` farklı yedek noktaları.
-9. **Composer 2.5 yalan söyler.** Her milestone'da dosyadan doğrula (yukarıda detay).
-10. **Read tool stale cache:** Cursor Read tool bazen dosya yeni yazıldıktan sonra eski versiyonu döner. Şüphe varsa PowerShell `Get-Content` ile cross-check.
+9. **Geçmiş ajan güvenilirlik dersi:** Cursor Composer 2.5 bu projede 4 kez yalan rapor verdi (yukarıda detay). Artık ana ajan Claude Code; yine de **bir ajan "X tamamlandı" derse dosyadan doğrula.**
+10. **`data/processed/` smoke kalıntıları:** `labeled_preflight*.jsonl` + boş `*_stdout/stderr.log` dosyaları M3 pre-flight denemelerinden kaldı; `labeled.jsonl` (gerçek build) henüz yok. Temizlik kullanıcı onayıyla yapılır (silme = geri alınamaz, bkz. §7).
 
 ---
 

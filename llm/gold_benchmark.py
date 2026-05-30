@@ -166,7 +166,7 @@ def listing_image_paths(record: dict[str, Any], max_photos: int | None = GOLD_BE
     if not paths and record.get("image_path"):
         paths = [record["image_path"]]
     # max_photos=None -> tüm fotoğraflar (paths[:None] tüm listeyi döndürür)
-    return [str(path) for path in paths[:max_photos]]
+    return [str(Path(str(path).replace("\\", "/"))) for path in paths[:max_photos]]
 
 
 def gold_is_filled(gold: dict[str, Any] | None) -> bool:

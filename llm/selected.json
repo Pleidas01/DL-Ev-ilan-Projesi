@@ -1,5 +1,5 @@
 {
-  "text_model": "kimi_k2_6",
+  "text_model": "deepseek_v4_pro",
   "vision_model": "kimi_k2_6",
   "candidate_rows": [
     {
@@ -41,5 +41,5 @@
   ],
   "cost_budget_usd": 100,
   "max_100k_listing_cost_usd": 500,
-  "notes_tr": "GPT-5.5 ve Claude Opus 4.7 aday seti dışında bırakıldı: TR erişim ve production maliyeti uygun değil. text_model + vision_model FINAL = kimi_k2_6 (slot M1 + vision M1.5 multi-image kazananı, 2026-05-29); description shootout atlandı çünkü Kimi zaten slot+vision kazandı."
+  "notes_tr": "GPT-5.5 ve Claude Opus 4.7 aday seti dışında bırakıldı: TR erişim ve production maliyeti uygun değil. vision_model = kimi_k2_6 (M1.5 multi-image kazananı, 2026-05-29). text_model 2026-05-30'da kimi_k2_6 -> deepseek_v4_pro'ya çevrildi: gold A/B (16 ilan labeling + 30 query slot) deepseek slot quality 0.815 > kimi 0.792, labeling text-fact ~berabere (0.315 vs 0.333, ikisi de null-vs-false artefaktıyla düşük), maliyet ~3.5x ucuz ($0.0088 vs $0.0310/14 ilan), latency ~5x hızlı. Kimi'nin 0.897 M1 slot skoru ESKİ dataset + temperature=1 varyansından; aynı-koşul head-to-head'de deepseek önde. Geri almak için text_model'i kimi_k2_6 yap."
 }

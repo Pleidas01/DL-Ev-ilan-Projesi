@@ -12,8 +12,8 @@ Bu adımda amaç GPT-5.5 veya Claude Opus kullanmadan, plandaki feasible adaylar
 
 `.env.example` dosyasını referans alıp proje kökünde `.env` oluştur. `.env` git'e eklenmez.
 
-```powershell
-Copy-Item .env.example .env
+```bash
+cp .env.example .env
 ```
 
 Sonra erişebildiğin servislerin key'lerini doldur:
@@ -42,17 +42,17 @@ Tüm key'ler hazır değilse harness ilgili modeli `missing_env:*` olarak işare
 
 API kullanmak istemiyorsan Ollama kurup local Gemma modelini çalıştırabilirsin.
 
-1. Ollama'yı Windows'a kur.
+1. Ollama'yı kur (macOS: `brew install ollama` veya ollama.com).
 2. Yeni terminal aç.
 3. Kurulu modeli kontrol et:
 
-```powershell
+```bash
 ollama list
 ```
 
 4. Planlanan Gemma model tag'i neyse onu indir:
 
-```powershell
+```bash
 ollama pull <gemma-model-tag>
 ```
 
@@ -62,14 +62,15 @@ ollama pull <gemma-model-tag>
 
 Bağımlılıkları kur:
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```bash
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
 
 Shootout:
 
-```powershell
-.\.venv\Scripts\python.exe -m llm.shootout --rows-out llm\shootout_rows.json --out llm\selected.json
+```bash
+python3 -m llm.shootout --rows-out llm/shootout_rows.json --out llm/selected.json
 ```
 
 Başarılı koşuda iki dosya oluşur:
@@ -77,4 +78,4 @@ Başarılı koşuda iki dosya oluşur:
 - `llm/shootout_rows.json`: tüm adayların skor ve maliyet satırları
 - `llm/selected.json`: seçilen text ve vision modelleri
 
-`llm/selected.json` oluşmadan Milestone 3 labeling başlatılmaz.
+> **Not (2026-05-30):** Bu rehber M1 slot shootout kurulumu içindir ve **tamamlandı**. Güncel seçim `llm/selected.json`'da: `text_model=deepseek_v4_pro` (gold A/B revize), `vision_model=kimi_k2_6`. M3 labeling zaten başlatılabilir durumda (iskele hazır). Aday listesine sonradan `deepseek_v4_pro` ve `qwen3_vl_local` (yerel vision) eklendi.

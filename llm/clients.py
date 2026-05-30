@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+from io import BytesIO
 import mimetypes
 import os
 from dataclasses import dataclass
@@ -9,6 +10,10 @@ from typing import Any, Literal
 
 
 Modality = Literal["text", "vision"]
+# Düşük çözünürlük = küçük payload + az image token → 20+ fotolu ilanlarda
+# Moonshot tek-çağrı timeout'unu azaltır. Env ile tune edilebilir (1024/1280/1536).
+VISION_MAX_IMAGE_EDGE = int(os.getenv("VISION_MAX_IMAGE_EDGE", "1024"))
+VISION_JPEG_QUALITY = int(os.getenv("VISION_JPEG_QUALITY", "85"))
 
 
 @dataclass(frozen=True)
@@ -95,6 +100,17 @@ CANDIDATES: tuple[ModelCandidate, ...] = (
         env_keys=("OLLAMA_HOST",),
         local=True,
     ),
+    ModelCandidate(
+        id="qwen3_vl_local",
+        display_name="Qwen3-VL 8B local",
+        provider="ollama",
+        model_name=os.getenv("OLLAMA_VISION_MODEL", "qwen3-vl:8b"),
+        modalities=("text", "vision"),
+        input_usd_per_million=0.0,
+        output_usd_per_million=0.0,
+        env_keys=("OLLAMA_HOST",),
+        local=True,
+    ),
 )
 
 
@@ -141,7 +157,7 @@ def complete_json(candidate: ModelCandidate, system_prompt: str, user_prompt: st
         from openai import OpenAI
 
         api_key = os.environ[candidate.env_keys[0]]
-        client = OpenAI(api_key=api_key, base_url=candidate.base_url)
+        client = OpenAI(api_key=api_key, base_url=candidate.base_url, timeout=120)
         response = client.chat.completions.create(
             model=candidate.model_name,
             messages=[
@@ -193,6 +209,20 @@ def _image_data_url(image_path: str) -> str:
     path = Path(image_path)
     if not path.is_file():
         raise FileNotFoundError(f"Image not found: {image_path}")
+    try:
+        from PIL import Image, ImageOps
+
+        with Image.open(path) as image:
+            image = ImageOps.exif_transpose(image)
+            image.thumbnail((VISION_MAX_IMAGE_EDGE, VISION_MAX_IMAGE_EDGE))
+            if image.mode not in ("RGB", "L"):
+                image = image.convert("RGB")
+            buffer = BytesIO()
+            image.save(buffer, format="JPEG", quality=VISION_JPEG_QUALITY, optimize=True)
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+        return f"data:image/jpeg;base64,{encoded}"
+    except Exception:
+        pass
     mime_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
     return f"data:{mime_type};base64,{encoded}"

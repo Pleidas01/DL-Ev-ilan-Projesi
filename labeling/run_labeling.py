@@ -29,10 +29,11 @@ from llm.gold_benchmark import (
     VISUAL_GOLD_FIELDS,
     field_score,
     gold_listing_ids,
+    listing_image_paths,
     load_gold_rows,
     score_against_gold,
 )
-from llm.shootout_vision import VISION_SYSTEM_PROMPT
+from llm.shootout_vision import VISION_SYSTEM_PROMPT, VISION_USER_PROMPT
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "data" / "processed" / "labeled.jsonl"
@@ -40,6 +41,7 @@ DEFAULT_SELECTED_PATH = PROJECT_ROOT / "llm" / "selected.json"
 
 TEXT_FACT_FIELDS = tuple(field for field in FACTS_GOLD_FIELDS if field not in STRUCTURED_FACT_FIELDS)
 VISION_FIELDS = VISUAL_GOLD_FIELDS
+PARKING_IMKANLAR = {"kapali_otopark", "acik_otopark"}
 
 FACTS_THRESHOLD = 0.75
 VISUAL_THRESHOLD = 0.70
@@ -47,6 +49,7 @@ DEFAULT_MIN_CONFIDENCE = 0.70
 DEFAULT_VISION_IMAGE_TOKENS = 60
 DEFAULT_TEXT_OUTPUT_TOKENS = 350
 DEFAULT_VISION_OUTPUT_TOKENS = 700
+DEFAULT_VISION_CHUNK_SIZE = 8
 PROVIDER_MAX_RETRIES = 3
 
 TEXT_SYSTEM_PROMPT = """Sen Turkce emlak ilani metninden kesin JSON alanlari cikaran bir asistansin.
@@ -90,46 +93,7 @@ Kurallar:
 
 
 def build_vision_prompt(image_count: int) -> str:
-    return f"""Bu {image_count} fotografin her birini sira numarasina gore etiketle ve sonra aggregate et.
-Fotografta gorunmeyen alanlar icin null kullan. imkanlar hibrittir: fotografta acikca gorunen havuz, spor alani, cocuk parki, otopark, guvenlik kabini veya yesil alan varsa etiketle; sadece ic mekan fotografindan site imkani tahmin etme.
-
-ONEMLI: Degerlerde Turkce karakter KULLANMA. Sadece asagidaki enum degerlerini aynen kullan.
-
-JSON semasi:
-{{
-  "per_image": [
-    {{
-      "image_index": 0,
-      "fields": {{
-        "balkon_ozellikleri": null,
-        "manzara": null,
-        "mutfak_tipi": null,
-        "banyo_ozellikleri": null,
-        "salon_ozellikleri": null,
-        "imkanlar": null
-      }},
-      "confidence": 0.0
-    }}
-  ],
-  "aggregated": {{
-    "balkon_ozellikleri": null,
-    "manzara": null,
-    "mutfak_tipi": null,
-    "banyo_ozellikleri": null,
-    "salon_ozellikleri": null,
-    "imkanlar": null
-  }}
-}}
-
-Enumlar:
-- balkon_ozellikleri (liste): cam_balkon, acik_balkon, fransiz_balkon, cikma_balkon, teras
-- manzara (liste): deniz, bogaz, orman_yesil, park, sehir_panorama, dag, ic_avlu, komsu_duvari
-- mutfak_tipi (tek deger): amerikan_acik | kapali_ayri
-- banyo_ozellikleri (liste): dusakabin, kuvet, jakuzi, banyoda_pencere, birden_fazla_banyo
-- salon_ozellikleri (liste): somine, nis, acik_plan_genis, ayri_yemek_alani
-- imkanlar (liste): havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani
-
-Confidence 0 ile 1 arasinda sayi olmali. Belirsiz veya uzaktan gorunen alanlarda confidence dusuk ver."""
+    return VISION_USER_PROMPT
 
 
 class CostCapExceeded(RuntimeError):
@@ -243,11 +207,29 @@ def normalize_visual_fields(raw_fields: dict[str, Any] | None, fields: tuple[str
     return normalized
 
 
-def merge_facts(record: dict[str, Any], text_prediction: dict[str, Any]) -> dict[str, Any]:
+def _visual_fields_source(parsed: dict[str, Any]) -> dict[str, Any]:
+    for key in ("aggregated", "visual_gold", "fields"):
+        value = parsed.get(key)
+        if isinstance(value, dict):
+            return value
+    return parsed
+
+
+def merge_facts(
+    record: dict[str, Any],
+    text_prediction: dict[str, Any],
+    visual_aggregated: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     facts = {field: record.get(field) for field in STRUCTURED_FACT_FIELDS}
     for field_name in TEXT_FACT_FIELDS:
         existing_value = record.get(field_name)
         facts[field_name] = existing_value if existing_value is not None else text_prediction.get(field_name)
+
+    visual = visual_aggregated or {}
+    if facts.get("has_balcony") is None and visual.get("balkon_ozellikleri"):
+        facts["has_balcony"] = True
+    if facts.get("has_parking") is None and any(value in PARKING_IMKANLAR for value in visual.get("imkanlar") or []):
+        facts["has_parking"] = True
     return {field: facts.get(field) for field in FACTS_GOLD_FIELDS}
 
 
@@ -324,7 +306,7 @@ def aggregate_visual_qualities(
                 "confidence": _item_confidence(raw_item, parsed),
             })
     else:
-        fields = normalize_visual_fields(parsed.get("aggregated") if isinstance(parsed.get("aggregated"), dict) else parsed, VISION_FIELDS)
+        fields = normalize_visual_fields(_visual_fields_source(parsed), VISION_FIELDS)
         per_image.append({
             "path": None,
             "image_paths": image_paths,
@@ -333,7 +315,7 @@ def aggregate_visual_qualities(
         })
 
     aggregated = _aggregate_from_items(per_image, min_confidence)
-    raw_aggregated = parsed.get("aggregated") if isinstance(parsed.get("aggregated"), dict) else parsed
+    raw_aggregated = _visual_fields_source(parsed)
     vision_imkanlar = []
     for value in aggregated.get("imkanlar") or []:
         if value not in vision_imkanlar:
@@ -404,11 +386,8 @@ def extract_text_labels(record: dict[str, Any], candidate: ModelCandidate, cost_
 
 
 def _resolve_image_paths(record: dict[str, Any]) -> list[str]:
-    paths = record.get("all_image_paths") or []
-    if not paths and record.get("image_path"):
-        paths = [record["image_path"]]
     resolved: list[str] = []
-    for value in paths:
+    for value in listing_image_paths(record, None):
         path = Path(str(value))
         if not path.is_absolute():
             path = PROJECT_ROOT / path
@@ -432,6 +411,37 @@ def _call_vision_once(
     return _parse_json_object(raw)
 
 
+def _chunk_paths(image_paths: list[str], chunk_size: int) -> list[list[str]]:
+    if chunk_size and chunk_size > 0 and len(image_paths) > chunk_size:
+        return [image_paths[index : index + chunk_size] for index in range(0, len(image_paths), chunk_size)]
+    return [image_paths]
+
+
+def _vision_pass(
+    image_paths: list[str],
+    candidate: ModelCandidate,
+    cost_tracker: CostTracker,
+    image_tokens_per_image: int,
+    *,
+    chunk_size: int,
+    min_confidence: float,
+) -> list[dict[str, Any]]:
+    # Büyük ilanlar tek çağrıda Moonshot timeout veriyor; fotoları chunk'lara bölüp
+    # per_image sonuçlarını birleştiriyoruz — foto kaybı yok, union/vote aggregate aynı.
+    per_image: list[dict[str, Any]] = []
+    for chunk in _chunk_paths(image_paths, chunk_size):
+        parsed = _call_vision_once(chunk, candidate, cost_tracker, image_tokens_per_image)
+        chunk_aggregate = aggregate_visual_qualities(
+            parsed,
+            image_paths=chunk,
+            text_imkanlar=[],
+            min_confidence=min_confidence,
+            confidence_method="self",
+        )
+        per_image.extend(chunk_aggregate["per_image"])
+    return per_image
+
+
 def extract_visual_labels(
     record: dict[str, Any],
     candidate: ModelCandidate,
@@ -442,6 +452,7 @@ def extract_visual_labels(
     agreement_k: int = 3,
     min_confidence: float = DEFAULT_MIN_CONFIDENCE,
     image_tokens_per_image: int = DEFAULT_VISION_IMAGE_TOKENS,
+    vision_chunk_size: int = DEFAULT_VISION_CHUNK_SIZE,
 ) -> dict[str, Any]:
     image_paths = _resolve_image_paths(record)
     if not image_paths:
@@ -452,26 +463,26 @@ def extract_visual_labels(
     if confidence_mode == "agreement":
         run_aggregates = []
         for _ in range(agreement_k):
-            parsed = _call_vision_once(image_paths, candidate, cost_tracker, image_tokens_per_image)
-            run_aggregates.append(
-                aggregate_visual_qualities(
-                    parsed,
-                    image_paths=image_paths,
-                    text_imkanlar=[],
-                    min_confidence=min_confidence,
-                    confidence_method="self",
-                )["aggregated"]
+            per_image = _vision_pass(
+                image_paths, candidate, cost_tracker, image_tokens_per_image,
+                chunk_size=vision_chunk_size, min_confidence=min_confidence,
             )
+            run_aggregates.append(_aggregate_from_items(per_image, min_confidence))
         return _agreement_aggregate(run_aggregates, text_imkanlar=text_imkanlar, min_confidence=min_confidence)
 
-    parsed = _call_vision_once(image_paths, candidate, cost_tracker, image_tokens_per_image)
-    return aggregate_visual_qualities(
-        parsed,
-        image_paths=image_paths,
-        text_imkanlar=text_imkanlar,
-        min_confidence=min_confidence,
-        confidence_method="self",
+    per_image = _vision_pass(
+        image_paths, candidate, cost_tracker, image_tokens_per_image,
+        chunk_size=vision_chunk_size, min_confidence=min_confidence,
     )
+    aggregated = _aggregate_from_items(per_image, min_confidence)
+    vision_imkanlar = list(aggregated.get("imkanlar") or [])
+    _merge_imkanlar(aggregated, text_imkanlar, vision_imkanlar)
+    return {
+        "per_image": per_image,
+        "aggregated": aggregated,
+        "confidence_method": "self",
+        "min_confidence": min_confidence,
+    }
 
 
 def compose_enriched_doc(record: dict[str, Any], facts: dict[str, Any], visual: dict[str, Any]) -> str:
@@ -497,9 +508,9 @@ def label_record(
     agreement_k: int = 3,
     min_confidence: float = DEFAULT_MIN_CONFIDENCE,
     image_tokens_per_image: int = DEFAULT_VISION_IMAGE_TOKENS,
+    vision_chunk_size: int = DEFAULT_VISION_CHUNK_SIZE,
 ) -> dict[str, Any]:
     text_prediction = extract_text_labels(record, text_candidate, cost_tracker)
-    facts = merge_facts(record, text_prediction)
     visual_qualities = extract_visual_labels(
         record,
         vision_candidate,
@@ -509,7 +520,9 @@ def label_record(
         agreement_k=agreement_k,
         min_confidence=min_confidence,
         image_tokens_per_image=image_tokens_per_image,
+        vision_chunk_size=vision_chunk_size,
     )
+    facts = merge_facts(record, text_prediction, visual_qualities["aggregated"])
     return {
         "id": record.get("id"),
         "title": record.get("title"),
@@ -566,6 +579,7 @@ def run_labeling(
     agreement_k: int = 3,
     min_confidence: float = DEFAULT_MIN_CONFIDENCE,
     image_tokens_per_image: int = DEFAULT_VISION_IMAGE_TOKENS,
+    vision_chunk_size: int = DEFAULT_VISION_CHUNK_SIZE,
     cost_tracker: CostTracker | None = None,
 ) -> list[dict[str, Any]]:
     text_candidate = candidate_by_id(text_model_id)
@@ -594,6 +608,7 @@ def run_labeling(
             agreement_k=agreement_k,
             min_confidence=min_confidence,
             image_tokens_per_image=image_tokens_per_image,
+            vision_chunk_size=vision_chunk_size,
         )
 
     if batch_size <= 1:
@@ -652,7 +667,11 @@ def score_preflight(predictions: list[dict[str, Any]], gold_rows: list[dict[str,
         "visual_gold",
         lambda row: (row.get("visual_qualities") or {}).get("aggregated") or {},
     )
-    facts_accuracy = facts_llm["accuracy"] if facts_llm["accuracy"] is not None else 0.0
+    # Gate, tam birleştirilmiş pipeline (structured + vision + text) çıktısını ölçen
+    # facts_all'a bağlı. facts_llm sadece teşhis: text-only model fotoğraftan dolan
+    # HYBRID alanlarda (has_balcony=false vb.) null üretir → null-vs-false yüzünden
+    # yapısal olarak 0 alır; bu metrik kapı olarak kullanılırsa güçlü modeli haksızca eler.
+    facts_accuracy = facts_all["accuracy"] if facts_all["accuracy"] is not None else 0.0
     visual_accuracy = visual["accuracy"] if visual["accuracy"] is not None else 0.0
     return {
         "facts_all": facts_all,
@@ -696,6 +715,7 @@ def calibrate_confidence(
     agreement_k: int,
     min_confidence: float,
     image_tokens_per_image: int,
+    vision_chunk_size: int,
 ) -> dict[str, Any]:
     text_candidate = candidate_by_id(text_model_id)
     vision_candidate = candidate_by_id(vision_model_id)
@@ -713,6 +733,7 @@ def calibrate_confidence(
                 agreement_k=agreement_k,
                 min_confidence=min_confidence,
                 image_tokens_per_image=image_tokens_per_image,
+                vision_chunk_size=vision_chunk_size,
             )
             for record in records
         ]
@@ -746,6 +767,7 @@ def run_preflight(args: argparse.Namespace, text_model_id: str, vision_model_id:
             agreement_k=args.agreement_k,
             min_confidence=args.min_confidence,
             image_tokens_per_image=args.vision_image_tokens,
+            vision_chunk_size=args.vision_chunk_size,
         )
         confidence_mode = confidence_calibration["selected_mode"]
     predictions = run_labeling(
@@ -761,6 +783,7 @@ def run_preflight(args: argparse.Namespace, text_model_id: str, vision_model_id:
         agreement_k=args.agreement_k,
         min_confidence=args.min_confidence,
         image_tokens_per_image=args.vision_image_tokens,
+        vision_chunk_size=args.vision_chunk_size,
         cost_tracker=cost_tracker,
     )
     if args.resume:
@@ -798,6 +821,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--agreement-k", type=int, default=3)
     parser.add_argument("--min-confidence", type=float, default=DEFAULT_MIN_CONFIDENCE)
     parser.add_argument("--vision-image-tokens", type=int, default=DEFAULT_VISION_IMAGE_TOKENS)
+    parser.add_argument("--vision-chunk-size", type=int, default=DEFAULT_VISION_CHUNK_SIZE,
+                        help="Bir ilanın fotoğraflarını kaç'arlı VLM çağrısına böl (timeout azaltır). 0 = tek çağrı.")
     return parser
 
 
@@ -838,6 +863,7 @@ def main() -> None:
         agreement_k=args.agreement_k,
         min_confidence=args.min_confidence,
         image_tokens_per_image=args.vision_image_tokens,
+        vision_chunk_size=args.vision_chunk_size,
     )
     print(json.dumps({"written": len(rows), "output": args.output}, ensure_ascii=False, indent=2))
 

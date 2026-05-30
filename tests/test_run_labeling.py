@@ -61,6 +61,96 @@ def test_merge_facts_preserves_structured_and_prefers_existing_hybrid():
     assert len(merged) == 21
 
 
+def test_resolve_image_paths_accepts_windows_separators_after_transfer(tmp_path, monkeypatch):
+    from labeling import run_labeling
+
+    image_path = tmp_path / "data" / "images" / "1" / "00.jpg"
+    image_path.parent.mkdir(parents=True)
+    image_path.write_bytes(b"image")
+    monkeypatch.setattr(run_labeling, "PROJECT_ROOT", tmp_path)
+
+    resolved = run_labeling._resolve_image_paths({"all_image_paths": [r"data\images\1\00.jpg"]})
+
+    assert resolved == [str(image_path)]
+
+
+def test_label_record_applies_visual_fallback_to_hybrid_facts(monkeypatch):
+    from llm.clients import candidate_by_id
+    from labeling import run_labeling
+
+    record = _sample_record()
+    record["has_balcony"] = None
+    record["has_parking"] = None
+
+    monkeypatch.setattr(
+        run_labeling,
+        "extract_text_labels",
+        lambda *_args, **_kwargs: {
+            "has_balcony": None,
+            "has_elevator": None,
+            "has_parking": None,
+            "has_aircon": None,
+            "near_metro": None,
+            "near_metrobus": None,
+            "imkanlar": [],
+        },
+    )
+    monkeypatch.setattr(
+        run_labeling,
+        "extract_visual_labels",
+        lambda *_args, **_kwargs: {
+            "per_image": [],
+            "aggregated": {
+                "balkon_ozellikleri": ["acik_balkon"],
+                "manzara": None,
+                "mutfak_tipi": None,
+                "banyo_ozellikleri": None,
+                "salon_ozellikleri": None,
+                "imkanlar": ["kapali_otopark"],
+            },
+            "confidence_method": "self",
+        },
+    )
+
+    labeled = run_labeling.label_record(
+        record,
+        candidate_by_id("kimi_k2_6"),
+        candidate_by_id("kimi_k2_6"),
+        cost_tracker=run_labeling.CostTracker(max_cost_usd=1.0),
+    )
+
+    assert labeled["facts_gold"]["has_balcony"] is True
+    assert labeled["facts_gold"]["has_parking"] is True
+
+
+def test_build_vision_prompt_reuses_shootout_winner():
+    from labeling.run_labeling import build_vision_prompt
+    from llm.shootout_vision import VISION_USER_PROMPT
+
+    assert build_vision_prompt(9) == VISION_USER_PROMPT
+
+
+def test_visual_aggregation_accepts_visual_gold_wrapper():
+    from labeling.run_labeling import aggregate_visual_qualities
+
+    result = aggregate_visual_qualities(
+        {
+            "visual_gold": {
+                "mutfak_tipi": "amerikan_acik",
+                "banyo_ozellikleri": ["dusakabin"],
+                "imkanlar": ["spor_alani"],
+            }
+        },
+        image_paths=["image-a.jpg"],
+        text_imkanlar=["kapali_otopark"],
+        min_confidence=0.7,
+    )
+
+    assert result["aggregated"]["mutfak_tipi"] == "amerikan_acik"
+    assert result["aggregated"]["banyo_ozellikleri"] == ["dusakabin"]
+    assert result["aggregated"]["imkanlar"] == ["kapali_otopark", "spor_alani"]
+
+
 def test_visual_aggregation_unions_text_and_high_confidence_visual_imkanlar():
     from labeling.run_labeling import aggregate_visual_qualities
 
@@ -175,6 +265,79 @@ def test_score_preflight_reports_llm_facts_separately():
     assert report["visual"]["accuracy"] == 0.9
     assert "visual_no_imkanlar" not in report
     assert "imkanlar_text" not in report
+    assert report["passes_thresholds"] is True
+
+
+def test_passes_thresholds_uses_facts_all_not_facts_llm():
+    """Gate full pipeline (facts_all) skoruna bağlı olmalı; text-only modelin
+    HYBRID alanlarda null-vs-false yüzünden düşük aldığı facts_llm'e DEĞİL.
+    Aksi halde güçlü bir text modeli yapısal artefakt yüzünden haksızca elenir."""
+    from labeling.run_labeling import FACTS_THRESHOLD, score_preflight
+
+    structured = {
+        "city": "istanbul",
+        "district": "kadikoy",
+        "neighborhood": "caddebostan",
+        "price_tl": 30000,
+        "room_count": "1+1",
+        "gross_size_m2": 75,
+        "net_size_m2": 65,
+        "building_age": 5,
+        "floor": 3,
+        "total_floors": 8,
+        "deposit_tl": 30000,
+        "in_gated_complex": True,
+        "title_deed_status": "kat_mulkiyeti",
+        "heating_type": "dogalgaz",
+        "is_furnished": True,
+    }
+    visual = {
+        "balkon_ozellikleri": ["cam_balkon"],
+        "manzara": ["deniz"],
+        "mutfak_tipi": "amerikan_acik",
+        "banyo_ozellikleri": ["dusakabin"],
+        "salon_ozellikleri": ["somine"],
+        "imkanlar": ["havuz"],
+    }
+    predictions = [
+        {
+            "id": "1",
+            "facts_gold": {
+                **structured,
+                # text-only model: kanıt yoksa null üretir (asla false demez)
+                "has_balcony": None,
+                "has_elevator": None,
+                "has_parking": None,
+                "has_aircon": None,
+                "near_metro": None,
+                "near_metrobus": True,
+            },
+            "visual_qualities": {"aggregated": dict(visual)},
+        }
+    ]
+    gold_rows = [
+        {
+            "listing_id": "1",
+            "facts_gold": {
+                **structured,
+                "has_balcony": False,
+                "has_elevator": False,
+                "has_parking": False,
+                "has_aircon": False,
+                "near_metro": False,
+                "near_metrobus": True,
+            },
+            "visual_gold": dict(visual),
+        }
+    ]
+
+    report = score_preflight(predictions, gold_rows)
+
+    # facts_llm (yalnız 6 HYBRID/desc alan): 5 null-vs-false + 1 doğru → eşiğin altında
+    assert report["facts_llm"]["accuracy"] < FACTS_THRESHOLD
+    # facts_all (structured dahil tam pipeline) eşiğin üstünde
+    assert report["facts_all"]["accuracy"] >= FACTS_THRESHOLD
+    # Gate facts_all'a baktığı için GEÇER; eski facts_llm davranışında KALIRDI
     assert report["passes_thresholds"] is True
 
 
