@@ -62,7 +62,7 @@ M4 (indexing+retr.)   ✅ DONE iskele (Codex) — composer/build_chroma/retrieve
 M5, M6, M8            ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
 ```
 
-**Acil sıradaki iş:** `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 2 revizyonu**. Task 1 authoritative tam listeye göre düzeltildi: kategori zinciri, `price_amount` / `price_currency`, `Saten Boya` eklendi; canonical registry `27` structured + `124` checkbox filtre içeriyor. Şimdi scraper ve cleaner canonical kategori ve çoklu para birimi alanlarını deterministic doldurmalı; mevcut top-level `price_tl` yalnız TL ilanlar için compatibility output olarak kalmalı. Full re-scrape ve ücretli API labeling kullanıcı checkpoint onayı olmadan başlatılmayacak.
+**Acil sıradaki iş:** `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 3**. Task 2 authoritative tam listeye göre düzeltildi: scraper ve cleaner kategori zinciri ile `price_amount` / `price_currency` canonical alanlarını deterministic dolduruyor; top-level `price_tl` yalnız TL ilanlar için compatibility output. Şimdi `labeling/run_labeling.py` DeepSeek prompt ve merge akışını title + description only, null-only canonical enrichment yapacak şekilde değişmeli. Full re-scrape ve ücretli API labeling kullanıcı checkpoint onayı olmadan başlatılmayacak.
 
 > **Karar verilebilir önce-işler (opsiyonel/paralel):** (1) `qwen3_vl_local` gold visual benchmark — yerel/ücretsiz vision alternatifi (Kimi ≥0.70 mu) — M3 kararını etkilemez. (2) NN gereksinimi (M6) — M7 dışarı çıktı, hocanın "kendi NN'iniz" şartı yeniden açık (STATUS Açık sorular #6). İkisi de kullanıcı kararı bekler.
 

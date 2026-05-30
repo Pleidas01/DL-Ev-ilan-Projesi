@@ -4,6 +4,7 @@ from pathlib import Path
 
 from scraper.playwright_scraper import (
     extract_images_from_html,
+    build_listing_record,
     is_template_description,
     parse_description_from_dom_html,
     parse_listing_info_table,
@@ -103,3 +104,22 @@ def test_ilan_ozellikleri_bullet_features_extracted():
     assert "ADSL" in features
     assert "Parke" in features
     assert len(features) >= 8
+
+
+def test_json_listing_record_captures_category_and_multicurrency_price_filters():
+    record = build_listing_record({
+        "id": "1",
+        "title": "USD kiralik daire",
+        "price": {"value": "1250", "currency": "USD"},
+        "location": {"cityName": "İstanbul", "districtName": "Kadıköy", "neighborhoodName": "Moda"},
+        "tradeType": "Kiralık",
+        "category": "Konut",
+        "propertyType": "Daire",
+    })
+
+    assert record["filter_values"]["trade_type"] == "kiralik"
+    assert record["filter_values"]["property_category"] == "konut"
+    assert record["filter_values"]["property_type"] == "daire"
+    assert record["filter_values"]["price_amount"] == 1250
+    assert record["filter_values"]["price_currency"] == "USD"
+    assert record["filter_sources"]["price_amount"] == "scraper_info"

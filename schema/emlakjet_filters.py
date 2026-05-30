@@ -181,6 +181,9 @@ _INFO_ATTRIBUTE_KEYS = {
     "kimden": "sellerType",
 }
 _ATTRIBUTE_FILTER_SLUGS = {
+    "tradeType": "trade_type",
+    "category": "property_category",
+    "propertyType": "property_type",
     "grossSize": "gross_size_m2",
     "roomCount": "room_count",
     "buildingAge": "building_age",
@@ -210,6 +213,15 @@ def spec_for_property_feature(label: str) -> FilterSpec | None:
 
 def empty_filter_values() -> dict[str, Any]:
     return {spec.slug: None for spec in EMLAKJET_FILTERS}
+
+
+def parse_price(value: Any) -> tuple[int | None, str | None]:
+    text = str(value or "").strip().upper()
+    amount = _parse_int(text)
+    currency = next((currency for currency in ("USD", "EUR", "GBP", "TL") if currency in text), None)
+    if currency is None and "₺" in text:
+        currency = "TL"
+    return amount, currency
 
 
 def raw_attribute_key_for_info_label(label: str) -> str | None:
@@ -259,7 +271,15 @@ def parse_filter_value(spec: FilterSpec, value: Any) -> Any:
     return str(value).strip() or None
 
 
-def extract_scraper_filter_facts(attributes: dict[str, Any], property_features: list[str] | None = None) -> tuple[dict[str, Any], dict[str, str]]:
+def extract_scraper_filter_facts(
+    attributes: dict[str, Any],
+    property_features: list[str] | None = None,
+    *,
+    city: str | None = None,
+    district: str | None = None,
+    neighborhood: str | None = None,
+    price: Any = None,
+) -> tuple[dict[str, Any], dict[str, str]]:
     values = empty_filter_values()
     sources: dict[str, str] = {}
     for attribute_key, slug in _ATTRIBUTE_FILTER_SLUGS.items():
@@ -274,4 +294,15 @@ def extract_scraper_filter_facts(attributes: dict[str, Any], property_features: 
         if spec and values[spec.slug] is None:
             values[spec.slug] = True
             sources[spec.slug] = "scraper_property_feature"
+    for slug, value in (("city", city), ("district", district), ("neighborhood", neighborhood)):
+        if value:
+            values[slug] = str(value)
+            sources[slug] = "scraper_info"
+    price_amount, price_currency = parse_price(price)
+    if price_amount is not None:
+        values["price_amount"] = price_amount
+        sources["price_amount"] = "scraper_info"
+    if price_currency is not None:
+        values["price_currency"] = price_currency
+        sources["price_currency"] = "scraper_info"
     return values, sources

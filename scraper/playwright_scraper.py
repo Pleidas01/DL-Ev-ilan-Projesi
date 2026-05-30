@@ -339,12 +339,12 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
 
     loc = obj.get('location') or obj.get('address') or {}
     if isinstance(loc, dict):
-        district = ' - '.join(filter(None, [
-            loc.get('city') or loc.get('cityName') or '',
-            loc.get('district') or loc.get('districtName') or '',
-            loc.get('neighborhood') or loc.get('neighborhoodName') or '',
-        ]))
+        city = loc.get('city') or loc.get('cityName') or ''
+        town = loc.get('district') or loc.get('districtName') or ''
+        neighborhood = loc.get('neighborhood') or loc.get('neighborhoodName') or ''
+        district = ' - '.join(filter(None, [city, town, neighborhood]))
     else:
+        city = town = neighborhood = ''
         district = str(loc)
 
     description = str(obj.get('description') or obj.get('shortDescription') or '').strip()[:MAX_DESCRIPTION_LEN]
@@ -380,10 +380,12 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
     image_urls = list(dict.fromkeys(image_urls))
 
     attrs = {k: obj[k] for k in ['roomCount', 'grossSize', 'netSize', 'floor',
-                                   'buildingAge', 'propertyType', 'tradeType']
+                                   'buildingAge', 'propertyType', 'tradeType', 'category']
              if k in obj}
 
-    filter_values, filter_sources = extract_scraper_filter_facts(attrs)
+    filter_values, filter_sources = extract_scraper_filter_facts(
+        attrs, city=city, district=town, neighborhood=neighborhood, price=price,
+    )
     return {
         'id': lid,
         'url': listing_url,
@@ -666,7 +668,9 @@ class EmlakjetScraper:
                         attrs[key] = val
                     if dom_features:
                         attrs['propertyFeatures'] = dom_features
-                    filter_values, filter_sources = extract_scraper_filter_facts(attrs, dom_features)
+                    filter_values, filter_sources = extract_scraper_filter_facts(
+                        attrs, dom_features, city=city, district=town, neighborhood=nbhd, price=price,
+                    )
 
                     if not title:
                         return None

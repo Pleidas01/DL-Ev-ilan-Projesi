@@ -100,3 +100,24 @@ def test_clean_record_keeps_m3_source_fields_separate_from_short_text():
     assert record["visual_qualities"] == {}
     assert len(record["text"]) <= 256
     assert record["text"] != record["description"]
+
+
+def test_clean_record_keeps_foreign_currency_canonical_and_tl_compatibility_null():
+    record = clean_record(
+        {
+            "id": "2",
+            "title": "USD kiralik daire",
+            "price": "1.250 USD",
+            "district": "Istanbul - Kadikoy - Moda",
+            "attributes": {"tradeType": "Kiralık", "category": "Konut", "propertyType": "Daire"},
+        },
+        image_path="data/images/2/01.jpg",
+        all_image_paths=["data/images/2/01.jpg"],
+    )
+
+    assert record["filter_values"]["trade_type"] == "kiralik"
+    assert record["filter_values"]["property_category"] == "konut"
+    assert record["filter_values"]["property_type"] == "daire"
+    assert record["filter_values"]["price_amount"] == 1250
+    assert record["filter_values"]["price_currency"] == "USD"
+    assert record["price_tl"] is None

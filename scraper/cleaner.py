@@ -22,7 +22,7 @@ from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
-from schema.emlakjet_filters import extract_scraper_filter_facts
+from schema.emlakjet_filters import extract_scraper_filter_facts, parse_price
 
 
 # ─── Sabitler ─────────────────────────────────────────────────────────────────
@@ -69,6 +69,8 @@ def normalize_price(price_str: str) -> str:
         currency = "USD"
     elif "EUR" in price_str.upper() or "€" in price_str:
         currency = "EUR"
+    elif "GBP" in price_str.upper() or "£" in price_str:
+        currency = "GBP"
     else:
         currency = "TL"
 
@@ -111,6 +113,11 @@ def _parse_tl(value: object) -> int | None:
         return None
     digits = re.sub(r"[^\d]", "", str(value))
     return int(digits) if digits else None
+
+
+def _price_tl(value: object) -> int | None:
+    amount, currency = parse_price(value)
+    return amount if currency in {None, "TL"} else None
 
 
 def _parse_int(value: object) -> int | None:
@@ -227,16 +234,14 @@ def clean_record(raw: dict, *, image_path: str, all_image_paths: list[str]) -> d
     city, district, neighborhood = _split_location(raw.get("district", ""))
     features = attrs.get("propertyFeatures") or []
     feature_blob = _feature_blob(attrs, raw)
-    filter_values, filter_sources = extract_scraper_filter_facts(attrs, features)
-    filter_values.update({
-        "city": city or None,
-        "district": district or None,
-        "neighborhood": neighborhood or None,
-        "price_tl": _parse_tl(raw.get("price", "")),
-    })
-    for field in ("city", "district", "neighborhood", "price_tl"):
-        if filter_values[field] is not None:
-            filter_sources[field] = "scraper_info"
+    filter_values, filter_sources = extract_scraper_filter_facts(
+        attrs,
+        features,
+        city=city,
+        district=district,
+        neighborhood=neighborhood,
+        price=raw.get("price", ""),
+    )
     is_furnished_value = filter_values["is_furnished"]
     has_parking = True if filter_values["has_open_parking"] or filter_values["has_closed_parking"] else None
     return {
@@ -250,7 +255,7 @@ def clean_record(raw: dict, *, image_path: str, all_image_paths: list[str]) -> d
         "city": city,
         "district": district,
         "neighborhood": neighborhood,
-        "price_tl": _parse_tl(raw.get("price", "")),
+        "price_tl": _price_tl(raw.get("price", "")),
         "room_count": attrs.get("roomCount"),
         "gross_size_m2": _parse_int(attrs.get("grossSize")),
         "net_size_m2": _parse_int(attrs.get("netSize")),

@@ -131,6 +131,8 @@ def empty_filter_values() -> dict[str, Any]: ...
 
 ## Task 3: DeepSeek Null-Only Text Enrichment
 
+> Task 2 checkpoint revision (2026-05-30): deterministic scraper extraction also fills canonical category chain and multi-currency listing price. Temporary top-level `price_tl` is populated only when canonical `price_currency` is `TL`.
+
 **Files:**
 - Modify: `labeling/run_labeling.py`
 - Modify: `tests/test_run_labeling.py`
