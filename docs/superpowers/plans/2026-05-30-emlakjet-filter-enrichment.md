@@ -193,16 +193,19 @@ def empty_filter_values() -> dict[str, Any]: ...
 - Modify after implementation: `docs/HANDOFF.md`
 
 - [x] Run full tests: `.venv/bin/python3 -m pytest -q`
-- [ ] Re-scrape Istanbul rental listings so newly captured structured fields such as balcony status are available.
-- [ ] Re-run cleaner and print coverage by source: scraper info, property feature, DeepSeek, Kimi, unresolved null.
-- [ ] Rebuild manual gold templates against the new registry before spending on APIs.
-- [ ] Run a small DeepSeek pre-flight.
-- [ ] Run a 16-listing Kimi pre-flight at `512px`, `--batch-size 20`, `--confidence-mode self`, `--vision-chunk-size 0`, and an explicit cost cap.
+- [x] Re-scrape Istanbul rental listings so newly captured structured fields such as balcony status are available.
+- [x] Download `4804/4804` image URLs and re-run cleaner: 305 raw → 303 active listings (`%99.3` retention).
+- [x] Skip canonical gold template rebuild by user decision; use direct manual inspection of 10 new listings.
+- [x] Add `--phase text|vision|combined` so DeepSeek and Kimi can be timed separately without breaking monotonic merge.
+- [x] Run a 10-listing DeepSeek text-only measurement: `192.12s`, estimated `$0.007736`, 38 filled null fields.
+- [x] Run Kimi timing variants at `512px`: chunk=0/worker=1 baseline, chunk=5/worker=3 comparison, then selected chunk=0/worker=10 (`10 listings: 144.34s`, estimated `$0.040671`, 15 filled null fields).
 - [ ] Rebuild Chroma and evaluate retrieval using manually verified demo queries.
 - [ ] Document measured accuracy, latency, cost, and unresolved null coverage.
 - [ ] Commit: `docs: record canonical filter pipeline results`
 
 > Task 6 pre-scrape checkpoint (2026-05-30): full suite passed (`62 passed`). `PROJECT.md`, `STATUS.md`, and `HANDOFF.md` were synchronized with the canonical registry architecture. Full re-scrape and paid API validation remain blocked on explicit user approval.
+
+> Task 6 first-batch checkpoint (2026-05-31): full suite passed (`68 passed`). User manual review of the two 10-listing benchmark JSONL files is the gate before the full 303-listing paid labeling build. M4/M5 were scaffolded before the canonical scraper architecture and must be reviewed after M3 full output exists.
 
 ## Acceptance Criteria
 

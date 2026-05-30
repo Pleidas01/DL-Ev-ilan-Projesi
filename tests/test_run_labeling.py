@@ -484,6 +484,199 @@ def test_resume_skips_existing_output_ids(tmp_path, monkeypatch):
     assert [row["id"] for row in rows] == ["2"]
 
 
+def test_text_phase_preserves_second_pass_inputs_and_accepts_explicit_false(monkeypatch):
+    from llm.clients import candidate_by_id
+    from labeling import run_labeling
+
+    record = _sample_record()
+    monkeypatch.setattr(
+        run_labeling,
+        "extract_text_labels",
+        lambda *_args, **_kwargs: {"has_balcony": False, "imkanlar": []},
+    )
+    monkeypatch.setattr(
+        run_labeling,
+        "extract_visual_labels",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("vision must not run")),
+    )
+
+    labeled = run_labeling.label_text_record(
+        record,
+        candidate_by_id("deepseek_v4_pro"),
+        cost_tracker=run_labeling.CostTracker(max_cost_usd=1.0),
+    )
+
+    assert labeled["description"] == record["description"]
+    assert labeled["all_image_paths"] == record["all_image_paths"]
+    assert labeled["filter_values"]["has_balcony"] is False
+    assert labeled["filter_sources"]["has_balcony"] == "deepseek_description"
+    assert labeled["labeling_metadata"]["text_model"] == "deepseek_v4_pro"
+    assert "vision_model" not in labeled["labeling_metadata"]
+
+
+def test_vision_phase_uses_text_output_without_calling_text_and_keeps_false_unknown(monkeypatch):
+    from llm.clients import candidate_by_id
+    from labeling import run_labeling
+
+    record = _sample_record()
+    record["filter_values"] = {"has_balcony": False, "has_aircon": None}
+    record["filter_sources"] = {"has_balcony": "deepseek_description"}
+    record["facts_gold"] = {"has_balcony": False}
+    record["visual_qualities"] = {"aggregated": {"imkanlar": ["kapali_otopark"]}}
+    record["labeling_metadata"] = {"text_model": "deepseek_v4_pro"}
+    monkeypatch.setattr(
+        run_labeling,
+        "extract_text_labels",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("text must not run")),
+    )
+    monkeypatch.setattr(
+        run_labeling,
+        "extract_visual_labels",
+        lambda *_args, **_kwargs: {
+            "per_image": [],
+            "aggregated": {"balkon_ozellikleri": None, "imkanlar": ["kapali_otopark"]},
+            "filter_values": {"has_balcony": False, "has_aircon": None},
+            "filter_sources": {"has_balcony": "deepseek_description"},
+            "confidence_method": "self",
+        },
+    )
+
+    labeled = run_labeling.label_vision_record(
+        record,
+        candidate_by_id("kimi_k2_6"),
+        cost_tracker=run_labeling.CostTracker(max_cost_usd=1.0),
+    )
+
+    assert labeled["filter_values"]["has_balcony"] is False
+    assert labeled["filter_values"]["has_aircon"] is None
+    assert labeled["labeling_metadata"]["text_model"] == "deepseek_v4_pro"
+    assert labeled["labeling_metadata"]["vision_model"] == "kimi_k2_6"
+
+
+def test_validate_environment_checks_only_models_used_by_phase(monkeypatch):
+    from labeling import run_labeling
+
+    checked = []
+    monkeypatch.setattr(run_labeling, "candidate_by_id", lambda model_id: model_id)
+    monkeypatch.setattr(run_labeling, "missing_environment", lambda candidate: checked.append(candidate) or [])
+
+    run_labeling._validate_environment("text-model", "vision-model", phase="text")
+    assert checked == ["text-model"]
+
+    checked.clear()
+    run_labeling._validate_environment("text-model", "vision-model", phase="vision")
+    assert checked == ["vision-model"]
+
+
+def test_clean_json_row_groups_only_readable_source_facts_without_image_paths():
+    from labeling.run_labeling import clean_json_row
+
+    row = {
+        "id": "1",
+        "url": "https://example.test/1",
+        "title": "Balkonlu daire",
+        "description": "Metroya yakın.",
+        "image_path": "data/images/1/00.jpg",
+        "all_image_paths": ["data/images/1/00.jpg"],
+        "filter_values": {
+            "price_amount": 30000,
+            "has_elevator": True,
+            "has_balcony": False,
+            "near_metro": True,
+            "balcony_type": ["acik_balkon"],
+            "has_aircon": None,
+        },
+        "filter_sources": {
+            "price_amount": "scraper_info",
+            "has_elevator": "scraper_property_feature",
+            "has_balcony": "deepseek_description",
+            "near_metro": "kimi_image",
+            "balcony_type": "kimi_image",
+        },
+    }
+
+    assert clean_json_row(row) == {
+        "id": "1",
+        "url": "https://example.test/1",
+        "title": "Balkonlu daire",
+        "description": "Metroya yakın.",
+        "scraper": {
+            "price_amount": 30000,
+            "has_elevator": True,
+        },
+        "deepseek": {
+            "has_balcony": False,
+        },
+        "kimi": {
+            "near_metro": True,
+        },
+    }
+
+
+def test_run_labeling_refreshes_clean_json_after_each_written_row(tmp_path, monkeypatch):
+    from labeling import run_labeling
+
+    input_path = tmp_path / "input.jsonl"
+    output_path = tmp_path / "labeled.jsonl"
+    clean_path = tmp_path / "clean_json.json"
+    input_path.write_text(
+        "\n".join(json.dumps({**_sample_record(), "id": value}) for value in ("1", "2")) + "\n",
+        encoding="utf-8",
+    )
+
+    def fake_label_record(record, *_args, **_kwargs):
+        return {
+            "id": record["id"],
+            "url": record["url"],
+            "title": record["title"],
+            "description": record["description"],
+            "filter_values": {"has_balcony": True},
+            "filter_sources": {"has_balcony": "deepseek_description"},
+        }
+
+    refresh_snapshots = []
+
+    def capture_refresh(source_path, clean_json_path):
+        refresh_snapshots.append([row["id"] for row in run_labeling.load_jsonl(source_path)])
+        return run_labeling.write_clean_json(source_path, clean_json_path)
+
+    monkeypatch.setattr(run_labeling, "label_record", fake_label_record)
+    monkeypatch.setattr(run_labeling, "_refresh_clean_json", capture_refresh)
+
+    run_labeling.run_labeling(
+        input_path=input_path,
+        output_path=output_path,
+        clean_json_path=clean_path,
+        text_model_id="kimi_k2_6",
+        vision_model_id="kimi_k2_6",
+        batch_size=1,
+        resume=False,
+        max_cost_usd=1.0,
+    )
+
+    assert refresh_snapshots == [[], ["1"], ["1", "2"]]
+    assert json.loads(clean_path.read_text(encoding="utf-8")) == [
+        {
+            "id": "1",
+            "url": "https://example.test/1",
+            "title": "Metroya yakin balkonlu 2+1",
+            "description": "Metroya 5 dakika, balkonlu, kapali otoparkli.",
+            "scraper": {},
+            "deepseek": {"has_balcony": True},
+            "kimi": {},
+        },
+        {
+            "id": "2",
+            "url": "https://example.test/1",
+            "title": "Metroya yakin balkonlu 2+1",
+            "description": "Metroya 5 dakika, balkonlu, kapali otoparkli.",
+            "scraper": {},
+            "deepseek": {"has_balcony": True},
+            "kimi": {},
+        },
+    ]
+
+
 def test_text_extraction_retries_transient_concurrency_rate_limit(monkeypatch):
     from llm.clients import candidate_by_id
     from labeling import run_labeling

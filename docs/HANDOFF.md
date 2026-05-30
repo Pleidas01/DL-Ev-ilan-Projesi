@@ -19,23 +19,19 @@
 ```bash
 # macOS / zsh. (Eski PowerShell komutları 2026-05-30'da bash'e çevrildi.)
 source .venv/bin/activate
-python3 -m pytest -q   # 62 passed beklenir
+python3 -m pytest -q   # 68 passed beklenir (2026-05-31)
 
 # .env kontrolü — Read tool'una GÜVENME, gerçek key doluluğu için:
 python3 -c "from dotenv import dotenv_values; v=dotenv_values('.env'); [print(f'{k}: {\"FILLED\" if val else \"EMPTY\"}') for k,val in v.items() if 'API_KEY' in k]"
 # Beklenen: DEEPSEEK_API_KEY=FILLED, MOONSHOT_API_KEY=FILLED, GEMINI_API_KEY=FILLED
 # OPENROUTER_API_KEY EMPTY OK (GLM-4.6 skip ediliyor)
 
-# Dataset sağlık kontrolü
-python3 -c "import json; rows=[json.loads(l) for l in open('data/processed/dataset.jsonl', encoding='utf-8')]; print(f'total={len(rows)}, has_facts={sum(1 for r in rows if r.get(\"city\"))}, has_heating={sum(1 for r in rows if r.get(\"heating_type\"))}, has_in_gated={sum(1 for r in rows if r.get(\"in_gated_complex\") is not None)}')"
-# Beklenen: total=1239, has_facts=1239, has_heating~1222, has_in_gated=1239
-
-# Gold template doğrulama (YENİ ŞEMA)
-python3 -c "import json; rows=[json.loads(l) for l in open('labeling/gold_listings_manual_todo.jsonl', encoding='utf-8')]; print(f'total={len(rows)}, has_facts_gold={sum(1 for r in rows if \"facts_gold\" in r)}, has_visual_gold={sum(1 for r in rows if \"visual_gold\" in r)}, has_old_text_gold={sum(1 for r in rows if \"text_gold\" in r)}')"
-# Beklenen: total=30, has_facts_gold=30, has_visual_gold=30, has_old_text_gold=0
+# Aktif canonical dataset sağlık kontrolü
+python3 -c "import json; rows=[json.loads(l) for l in open('data/processed/dataset.jsonl', encoding='utf-8')]; print(f'total={len(rows)}, slug={len(rows[0][\"filter_values\"])}, avg_images={sum(len(r[\"all_image_paths\"]) for r in rows)/len(rows):.2f}')"
+# Beklenen: total=303, slug=150, avg_images=15.81
 ```
 
-**Test kırmızıysa, key EMPTY ise, dataset eksikse, gold eski şemadaysa: durup kullanıcıya sor.**
+**Test kırmızıysa, key EMPTY ise veya dataset eksikse: durup kullanıcıya sor.**
 
 ### ⚠️ Composer güvenilirlik uyarısı
 
@@ -52,24 +48,33 @@ Bu projede Cursor Composer 2.5 **4 ayrı kerede yalan rapor verdi**:
 ## 1. Mevcut durum özeti
 
 ```
-M0 (scrape + clean)   ✅ DONE — 1239 ilan, 21 facts şeması (15 structured + 4 hybrid + 2 desc-only)
+M0 (scrape + clean)   ✅ DONE — 305 raw → 303 aktif ilan, 150 canonical slug
 M1 (slot shootout)    ✅ DONE — text=deepseek_v4_pro (A/B revize), vision=kimi_k2_6
 M2.0 (schema refactor)✅ DONE — schema sadeleştirme: kitchen_type çıktı, visual 12→7, imkanlar rename
-M2 (manuel gold)      🔄 AKTİF — listing gold 16/30 dolu (query gold 0/30, M4'e ertelendi)
+M2 (manuel kontrol)   🔄 AKTİF — yeni 10 ilanlık JSONL çıktıları kullanıcı göz kontrolünde
 M1.5 (vision shoot)   ✅ DONE — Kimi multi-image winner; description shootout açık
 M3 (labeling)         ✅ DONE iskele+pre-flight — run_labeling.py var; full build PENDING
-M4 (indexing+retr.)   ✅ DONE iskele (Codex) — composer/build_chroma/retriever; gerçek build PENDING
-Canonical filters     🔄 Task 6 pre-scrape checkpoint — full suite 62 passed; kullanıcı onayı bekleniyor
-M5, M6, M8            ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
+M4 (indexing+retr.)   ⚠️ ESKİ MİMARİ İSKELET — canonical uyarlama + gerçek build PENDING
+Canonical filters     ✅ scrape + download + cleaner + 10 ilan ölçüm DONE; 68 passed
+M5                    ⚠️ ESKİ MİMARİ İSKELET — canonical uyarlama PENDING
+M6, M8                ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
 ```
 
-**Acil sıradaki iş:** kullanıcı onayı bekle. `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 6 pre-scrape checkpoint** noktasında. Full suite `62 passed`; mimari belgeler canonical registry'yle senkronize edildi. Onay gelince İstanbul kiralık konut full re-scrape yap, cleaner coverage raporla ve ücretli API harcamasından önce gold template'i registry'ye göre yeniden üret. Kullanıcı ayrıca onaylamadan ücretli full API labeling veya Kimi pre-flight başlatma. Historical JSON benchmark çıktıları ve mevcut gold dosyası silinmedi.
+**Acil sıradaki iş:** Kullanıcı şu iki 10-ilan çıktısını gözle incelesin:
+> 1. `data/processed/labeled_benchmark_deepseek_text_10.jsonl`
+> 2. `data/processed/labeled_benchmark_kimi_vision_10.jsonl`
+
+Tekrarsız göz kontrolü için doğrudan `data/processed/clean_json.json` aç. Bu dosya her labeling row append'inde otomatik yenilenir; görsel yolları içermez.
+
+Yeterliyse full 303 ilan build için önce `--phase text`, sonra text çıktısını input alarak `--phase vision` koş. Kimi ayarı: `VISION_MAX_IMAGE_EDGE=512`, `--vision-chunk-size 0`, `--batch-size 10`. Yeni gold template rebuild **yapılmayacak**.
+
+> **Ücret/onay:** Kullanıcı onaylamadan ücretli full 303 labeling başlatma. Historical JSON benchmark çıktıları ve mevcut gold dosyası silinmedi.
 
 > **Karar verilebilir önce-işler (opsiyonel/paralel):** (1) `qwen3_vl_local` gold visual benchmark — yerel/ücretsiz vision alternatifi (Kimi ≥0.70 mu) — M3 kararını etkilemez. (2) NN gereksinimi (M6) — M7 dışarı çıktı, hocanın "kendi NN'iniz" şartı yeniden açık (STATUS Açık sorular #6). İkisi de kullanıcı kararı bekler.
 
 ---
 
-## 2. KULLANICI — Manuel gold doldurma (AKTİF — 16/30 dolu)
+## 2. TARİHSEL REFERANS — Eski manuel gold (yeni rebuild yok)
 
 **Workflow:** Kullanıcı fotoğraflara (`data/images/<ID>/`) bakar, her ilan için özellikleri seçer, supervisor'a `ID + özellik listesi` verir; supervisor JSON'a çevirip `labeling/gold_listings_manual_todo.jsonl`'a yazar.
 
@@ -160,17 +165,27 @@ Sonra `llm/selected.json`'u güncelle:
 
 ## 4. M3 — Labeling pipeline (iskele + pre-flight DONE; sıradaki = full build)
 
-`labeling/run_labeling.py` **yazıldı ve pre-flight smoke koşuldu** (`data/processed/labeled_preflight*.jsonl`). Önkoşullar sağlandı: `llm/selected.json` final (text=deepseek_v4_pro, vision=kimi_k2_6), gold 16/30 dolu. **Kalan: full 1239-ilan build** → `data/processed/labeled.jsonl` (henüz yok).
+> **GÜNCEL (2026-05-31):** Aktif input `data/processed/dataset.jsonl`: 303 ilan, 150-slug `filter_values`. `--phase text|vision|combined` mevcut. DeepSeek yalnız başlık+açıklamadan null alanlara açık kanıtla true/false yazar. Kimi yalnız görsellerden kalan null boolean alanlara açık kanıtla true yazar; görünmeyen özellik false olmaz.
+
+10 ilanlık ölçüm çıktıları: `data/processed/labeled_benchmark_deepseek_text_10.jsonl` ve `data/processed/labeled_benchmark_kimi_vision_10.jsonl`. Kullanıcı göz kontrolü sonrası **kalan: full 303-ilan build** → `data/processed/labeled.jsonl`.
 
 CLI (gerçek argümanlar için `python3 -m labeling.run_labeling --help`):
 
 ```
 labeling/run_labeling.py
   --input data/processed/dataset.jsonl
-  --output data/processed/labeled.jsonl
+  --output data/processed/labeled_text.jsonl
+  --phase text
   --resume                    # idempotent, ID bazlı
   --max-cost-usd <cap>        # cost cap, aşılınca dur
-  # vision/text model llm/selected.json'dan okunur
+
+VISION_MAX_IMAGE_EDGE=512 python3 -m labeling.run_labeling \
+  --input data/processed/labeled_text.jsonl \
+  --output data/processed/labeled.jsonl \
+  --phase vision \
+  --batch-size 10 \
+  --vision-chunk-size 0 \
+  --max-cost-usd <cap>
 ```
 
 Output şeması (her satır):
@@ -187,12 +202,12 @@ Output şeması (her satır):
 }
 ```
 
-**Pre-flight test (kodda mevcut):** Gold'daki ilk 16 listing'i etiketle, `facts_gold` + `visual_gold` ile karşılaştır, accuracy raporla. Kapı:
-- **`facts_all` (tam birleştirilmiş pipeline, 21 alan): ≥ 0.75** — gate budur.
+**Tarihsel pre-flight test (kodda mevcut):** Gold'daki ilk 16 listing'i etiketle, `facts_gold` + `visual_gold` ile karşılaştır, accuracy raporla. Eski kapı:
+- **`facts_all` (tam birleştirilmiş pipeline, 21 alan): ≥ 0.75** — eski compatibility gate buydu.
 - visual (Jaccard ortalaması): ≥ 0.70
-- `facts_llm` (TEXT_FACT_FIELDS, 6 hybrid/desc alan): **sadece teşhis, kapı DEĞİL.** Text-only model fotoğraftan dolan alanlarda null üretir, gold false der → null-vs-false yüzünden yapısal 0; kapı olsa güçlü modeli haksız eler (bkz. `tests/test_run_labeling.py::test_passes_thresholds_uses_facts_all_not_facts_llm`).
+- `facts_llm` (TEXT_FACT_FIELDS, 6 hybrid/desc alan): tarihsel compatibility raporunda **sadece teşhis, kapı DEĞİL** idi (bkz. `tests/test_run_labeling.py::test_passes_thresholds_uses_facts_all_not_facts_llm`).
 
-> **`imkanlar` vision'dan ÇIKARMA — text ile etiketle (karar 2026-05-29, STATUS Açık Soru #5).** Vision hata analizi: gold `imkanlar` kullanıcı tarafından image+text birlikte dolduruldu; site özellikleri (guvenlik_kabini, kapali_otopark, cocuk_parki, spor_alani) iç-mekan fotolarında yok, ilan açıklaması/property_features metninde. M3'te `imkanlar`'ı description+property_features'tan LLM ile çıkar (gerekirse vision union); vision-prompt'u imkanlar için zorlama → halüsinasyon. Vision'ın gerçek görsel alan doğruluğu imkanlar hariç **0.789** (mutfak 0.900, banyo 0.738). İkincil vision-tunable zayıflık (küçük-n, M3 pre-flight gold=30'da doğrula): `fransiz_balkon` 0/2 (model acik_balkon/null diyor), `manzara` hafif aşırı-tahmin.
+> **Canonical modalite ayrımı (2026-05-31):** scraper `İlan Özellikleri` bullet'larını deterministik fact olarak önceden doldurur. DeepSeek yalnız başlık+açıklamayı okur ve kalan null alanlara açık kanıtla `true`/`false` yazar. Kimi yalnız görselleri okur ve kalan null boolean alanlara açık kanıtla positive-only `true` ekler.
 
 Tutmazsa M3 batch'i koşma; prompt'u tune et veya supervisor'a dön.
 

@@ -1,6 +1,7 @@
 # STATUS.md — Mevcut Durum (snapshot)
 
-> Son güncelleme: 2026-05-30, **canonical Emlakjet filter enrichment Task 6 PRE-SCRAPE CHECKPOINT**: full suite `62 passed`. Registry-first mimari belgeleri senkronize edildi. Full re-scrape, cleaner coverage, gold template rebuild ve ücretli API pre-flight adımları kullanıcı onayı bekliyor; scrape veya ücretli API çağrısı başlatılmadı.
+> Son güncelleme: 2026-05-31, **canonical filter enrichment ilk batch doğrulaması DONE**: 305 ham ilan, `4804/4804` görsel indirme, cleaner sonrası **303 aktif ilan** (`%99.3` retention), iki geçişli `--phase text|vision` labeling CLI ve 10 ilanlık DeepSeek/Kimi ölçümü tamamlandı. Full suite `68 passed`. Sıradaki: 10 örnek çıktıyı kullanıcı gözle incelesin; yeterliyse full 303 DeepSeek → Kimi build, sonra eski mimari M4/M5 iskeletlerini canonical sözleşmeye uyarla.
+> Önceki (2026-05-30): canonical Emlakjet filter enrichment Task 6 pre-scrape checkpoint, `62 passed`, registry-first mimari belgeleri senkronize.
 > Önceki (2026-05-29): vision multi-image refactor (tek çağrı/ilan), Kimi multi-image gold testi geçti (bkz. M1.5).
 > Bu dosyayı sıradaki agent her milestone bitince güncellemeli.
 
@@ -8,15 +9,15 @@
 
 ## TL;DR
 
-- **M0 (scraper + cleaner + yeni şema)** — **DONE** (2026-05-26 13:00 schema refactor sonrası): 1483 ham → **1239** temizlenmiş ilan, **21 facts** top-level (15 structured + 4 hybrid + 2 desc-only) + boş `visual_qualities` object.
+- **M0 (scraper + cleaner)** — **DONE**: aktif canonical batch 305 ham → **303** temiz ilan, 150 slug. Aşağıdaki 1239-ilan bölümü yalnız tarihsel arşiv bilgisidir.
 - **M1 (slot shootout)** — **DONE** (2026-05-25, 2026-05-30 revize): M1'de kazanan `kimi_k2_6` (quality 0.897) idi; **2026-05-30 gold A/B** ile `text_model` **`deepseek_v4_pro`**'ya çevrildi (aynı koşullu head-to-head: slot 0.815 > kimi 0.792, ~3.5x ucuz, ~5x hızlı). `llm/selected.json`: **text=deepseek_v4_pro, vision=kimi_k2_6**.
 - **M2.0 (helper + schema refactor)** — **DONE** (2026-05-26 13:00): heating_type + is_furnished STRUCTURED'a taşındı, `has_aircon` hybrid alan eklendi, `_normalize_blob` Türkçe büyük harf bug'ı fix, visual gold prefilled regen.
-- **M2 (manuel gold)** — **AKTİF / REBUILD BEKLİYOR**: mevcut dosyada registry geçişi öncesi 21 facts + eski visual alanlar var; önceki doldurma **16/30** (`GOLD_BENCHMARK_LISTING_COUNT=16`). Re-scrape sonrası ve API harcamasından önce canonical registry + 5 aktif compatibility visual alan için template yeniden üretilecek. Query gold (30 sorgu) M4'e ertelendi (expected_ids hâlâ 0/30).
+- **M2 (manuel kontrol)** — **AKTİF**: önceki gold tarihsel referans olarak korunuyor. Canonical registry için yeni template rebuild yapılmayacak; zaman maliyeti yerine yeni 10 ilanlık benchmark çıktısı kullanıcı tarafından gözle incelenecek.
 - **M1.5 (vision shootout)** — **VISION DONE** (2026-05-29, multi-image refactor): Kimi multi-image (tek çağrı/ilan, tüm foto) **10/10 ilan tamamladı**, accuracy **0.748** (10 ilan); per-image ile ortak 3 ilanda **0.931 ≥ 0.917** → dilution yok, robust, **~3x ucuz ($0.036/ilan)**. Karar: M3 multi-image+Kimi. (Description shootout kısmı hâlâ açık — heating_type haksızlığı düzeltilmeli.)
-- **M3 (labeling pipeline)** — **DONE** (iskele + pre-flight): `labeling/run_labeling.py` mevcut (multi-image VLM + text LLM, eşzamanlı çağrı, resume, cost cap, pre-flight gold gate). Pre-flight kapısı **`facts_all`** (eşik facts ≥0.75, visual ≥0.70). **Full 1239-ilan build henüz çalıştırılmadı** (`data/processed/labeled.jsonl` yok; sadece pre-flight smoke çıktıları var).
-- **M4 (indexing + retrieval)** — **DONE (iskele, Codex 2026-05-30)**: `indexing/composer.py`, `indexing/build_chroma.py`, `retrieval/retriever.py` + testler. Gerçek index build M3 `labeled.jsonl`'e bağlı (henüz koşulmadı).
-- **M5–M8** — PENDING. **M7 kapsam dışı** (arkadaş yaptı). Sıradaki: M3 full labeling build → M4 gerçek index → M5 RAG/Streamlit.
-- **Canonical filter enrichment** — **AKTİF**: Task 6 pre-scrape checkpoint'e ulaştı. Full suite: **62 passed**. Sıradaki işlem kullanıcı onayıyla İstanbul kiralık konut full re-scrape; ardından cleaner coverage ve API harcamasından önce gold template rebuild.
+- **M3 (labeling pipeline)** — **DONE iskele + iki geçişli CLI**: `--phase text` yalnız DeepSeek'i, `--phase vision` yalnız Kimi'yi çalıştırıyor; ara JSONL ikinci geçiş girdilerini koruyor. **Full 303-ilan build henüz çalıştırılmadı.**
+- **M4 (indexing + retrieval)** — **ESKİ MİMARİ İSKELET**: canonical metadata kodu kısmen eklendi ancak yeni full labeled output ile entegrasyon ve gerçek index build doğrulanmadı.
+- **M5 (RAG + UI)** — **ESKİ MİMARİ İSKELET**: `chat/rag_response.py` ve `ui/app.py` var; retriever'ın yeni `filters` çıktısına uyarlama bekliyor. M6/M8 pending; M7 kapsam dışı.
+- **Canonical filter enrichment** — **ilk batch doğrulaması DONE (2026-05-31)**: 305 raw → 303 cleaned. Raw'da ortalama 34.47 dolu canonical filtre/ilan; cleaner sonrası ortalama 15.81 yerel görsel/ilan. DeepSeek 10 ilanda 38, Kimi 10 ilanda 15 ek alan doldurdu.
 
 Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). Not: `archive/hw6` + `pre_scraper_fix` + `data/_*` temizlikte silindi (bkz. checkpoint 6b019f7).
 
@@ -26,7 +27,7 @@ Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). No
 
 ## Milestone-by-milestone
 
-### M0 — Scraper + cleaner + yeni şema (**DONE**, 2026-05-26)
+### M0 — Scraper + cleaner tarihçesi (**ARŞİV**, 2026-05-26)
 
 **Tarihçe:**
 - 2026-05-24: İlk re-scrape (1430 ilan). Eski şema (`text_gold` 10 alan + `image_gold` 11 alan).
@@ -47,7 +48,7 @@ Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). No
 - `_normalize_heating` enum normalize (`kombi|dogalgaz|merkezi|klima|yerden_isitma|null`).
 - HTML leakage regex (`<[^<]*$`).
 
-**Re-scrape sonuçları (2026-05-26):**
+**Arşiv re-scrape sonuçları (2026-05-26; aktif dataset değil):**
 - Ham: `data/raw/listings.jsonl` — **1483 unique** ilan (toplam 2928 satır, resume duplicate dahil)
 - Görseller: `data/images/` — ~25k foto
 - İşlenmiş: `data/processed/dataset.jsonl` — **1239** ilan (`cleaning_report.json`)
@@ -146,13 +147,13 @@ Kimi multi-image (10 gold listing, tüm foto = 161, `llm/shootout_vision_multi_r
 
 **Karar:** M3 labeling **multi-image + Kimi** ile yapılır. Caveat: 10 gold küçük örneklem, zayıf per-field'lar düşük-n; M3 pre-flight'ta prompt tune + gold 10→30 önerilir.
 
-### M2 — Manual gold sets (AKTİF — 16/30 dolu)
+### M2 — Tarihsel manual gold seti (REFERANS — yeni rebuild yok)
 
 **2026-05-28 schema sadeleştirme** (kitchen_type çıktı, visual 12→7, imkanlar rename; 30 listing ID korundu, template regen):
 
 - `labeling/gold_listings_manual_todo.jsonl` — **30 satır**, sadeleştirilmiş 21-facts şema:
   - `facts_gold` (21 alan): 15 structured otomatik dolu, 6 user-fill (has_balcony, has_elevator, has_parking, has_aircon, near_metro, near_metrobus). `kitchen_type` kaldırıldı.
-  - Eski manuel gold dosyası `salon_ozellikleri` kalıntıları içeriyor. Canonical registry sonrası Task 6'da API harcamasından önce yeniden üretilecek; mevcut dosya silinmedi.
+  - Eski manuel gold dosyası `salon_ozellikleri` kalıntıları içeriyor. Tarihsel ölçümleri açıklamak için korunuyor; canonical registry için yeniden üretilmeyecek.
   - Doldurma kuralı: gördüğün/emin olduğun → işaretle; negatif kanıtla emin "yok" → false/`[]`; emin değil/görünmüyor → null (benchmark'ta skip).
 - `evaluation/gold_queries_manual_todo.jsonl` — **30 sorgu**, `expected_listing_ids=[]`. **M4'e ertelendi** (retriever olmadan test edilemez).
 
@@ -162,21 +163,34 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 - `python -m labeling.gold_helper --listing <ID>` — listing detayı + 15 structured facts (otomatik dolu) + 7 suggested hybrid facts + suggested visual fields cross-validation + manual TODO listesi
 - `python -m evaluation.gold_helper --query "..."` — query için BM25 + hard-filter top-K candidate
 
-### M3 — Labeling pipeline (DONE iskele + pre-flight, full build PENDING)
+### M3 — Labeling pipeline (DONE iskele + iki geçişli CLI, full build PENDING)
 
-- `labeling/run_labeling.py` **mevcut**: her ilan için multi-image VLM (Kimi) + text LLM (deepseek_v4_pro) çağırıp merge eder; eşzamanlı çağrı, resume, cost cap, pre-flight gold gate.
-- **Pre-flight kapısı: `facts_all`** (eşik facts ≥0.75, visual ≥0.70). `facts_llm` (TEXT_FACT_FIELDS, 6 hybrid/desc alan) sadece teşhis amaçlı raporlanır — text-only model fotoğraftan dolan hybrid alanlarda null üretir, gold false der → null-vs-false yüzünden yapısal olarak 0 alır; kapı olarak kullanılırsa güçlü modeli haksızca eler. (bkz. `test_passes_thresholds_uses_facts_all_not_facts_llm`).
+- `labeling/run_labeling.py` **mevcut**: `--phase text` yalnız DeepSeek'i, `--phase vision` yalnız Kimi'yi, varsayılan `--phase combined` ikisini sırayla çalıştırır. Eşzamanlı çağrı, resume, cost cap ve pre-flight gold gate korunur.
+- Kanıt kuralı: scraper fact'leri ezilmez. DeepSeek yalnız başlık+açıklamadan kalan null alanlara açık kanıtla `true` veya `false` yazabilir. Kimi yalnız görsellerden kalan null boolean alanlara açık kanıtla `true` yazabilir; görünmeyen özellik `false` olmaz.
+- Tarihsel pre-flight kapısı `facts_all` idi. Yeni canonical batch için gold rebuild yapılmayacak; kullanıcı iki 10-ilan JSONL çıktısını doğrudan gözle inceleyecek.
 - Output şeması: dataset.jsonl + 21 facts (boş hybrid+desc alanları LLM ile dolar) + visual_qualities (7 alan VLM ile dolar) + enriched_doc (embedding metni) + labeling_metadata.
-- **Full 1239-ilan build henüz çalıştırılmadı.** `data/processed/`'te yalnızca pre-flight smoke çıktıları var (`labeled_preflight*.jsonl`); `labeled.jsonl` yok. M4 gerçek index buna bağlı.
+- **Full 303-ilan build henüz çalıştırılmadı.** Manuel kontrol için `data/processed/labeled_benchmark_deepseek_text_10.jsonl` ve `data/processed/labeled_benchmark_kimi_vision_10.jsonl` üretildi. `labeled.jsonl` yok; M4 gerçek index buna bağlı.
+- Göz kontrolü için `data/processed/clean_json.json` üretildi. `run_labeling.py`, asıl output JSONL'ye her row append edildiğinde bu okunabilir JSON listesini yeniden senkronlar. Listede görsel yolu yoktur; yalnız bağlam alanları ile source bazında `scraper`, `deepseek`, `kimi` fact grupları bulunur.
 
-### M4 — Indexing + retrieval (DONE iskele, Codex 2026-05-30; gerçek build PENDING)
+**10 ilan ölçümü (2026-05-31):**
+
+| Koşu | Ayar | Wall-clock | Tahmini maliyet | Ek dolu alan |
+|---|---|---:|---:|---:|
+| DeepSeek text-only | 3 worker | 192.12s | $0.007736 | 38 |
+| Kimi baseline | 512px, chunk=0, 1 worker, 3 ilan | 142.02s | — | — |
+| Kimi chunk deneyi | 512px, chunk=5, 3 worker, 3 ilan | 259.62s | — | — |
+| Kimi seçilen ayar | 512px, chunk=0, 10 worker, 10 ilan | 144.34s | $0.040671 | 15 |
+
+Karar: chunk=5 yavaşlattı. İlk full build adayı `VISION_MAX_IMAGE_EDGE=512`, `--vision-chunk-size 0`, `--batch-size 10`.
+
+### M4 — Indexing + retrieval (ESKİ MİMARİ İSKELET; canonical uyarlama PENDING)
 
 - `indexing/composer.py`: `embedding_text(record)` enriched_doc'u aynen döner (eksikse hata verir); `to_metadata(record)` canonical `filter_values` + title'ı **skalar** Chroma metadata'ya düzleştirir. List alanlar deterministik sıralı `|` ile birleşir; multi-enum alanlar ayrıca seçenek başına exact-match flag üretir.
 - `indexing/build_chroma.py`: ChromaDB persistent collection builder (CLI).
 - `retrieval/retriever.py`: query → slot extract (`selected.json` text_model, read-only) → registry-backed metadata hard filter (`filters`, `any_of`, fiyat/m² range) → vektör arama (BGE-M3) → CrossEncoder reranker (bge-reranker-v2-m3). `null` metadata yazılmadığı için explicit filtreyi karşılamaz. DI ile test edilebilir (collection/embedder/reranker/slot_extractor enjekte).
 - Testler: `tests/test_composer.py`, `tests/test_retriever.py`, `tests/test_llm_shootout.py` (embedder/reranker/API mocklu). Task 5 ilgili testleri: **18 passed**. **Gerçek full index build M3 labeled.jsonl hazır olunca koşulacak.**
 
-### M5 — RAG chat + Streamlit (PENDING)
+### M5 — RAG chat + Streamlit (ESKİ MİMARİ İSKELET; canonical uyarlama PENDING)
 
 - `chat/rag_response.py`: retrieved listings + soru → LLM ile cevap kompozisyonu.
 - `ui/app.py`: chat box + listing cards + 3 demo senaryo.
@@ -202,12 +216,18 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 
 1. **`is_furnished` re-scrape gerekli mi?** Cleaner şu an attribute-yoksa-keyword fallback ile çalışıyor (`furnishedStatus` raw'da yok). Mevcut 229 True/1010 None. Gelecek bir scrape'te scraper `furnishedStatus` çekecek (INFO_FIELD_MAP güncel). Re-scrape M3 öncesi yapılırsa is_furnished gerçek structured olur.
 2. **`heating_type` enum dışı değerler:** 17 ilanda heating_type=null (Sobalı, VRV, Fueloil, vs). Bunlar enum'a eklenmeli mi yoksa "diger" kategorisi mi açılmalı?
-3. **Scrape genişletme:** 1239 yeterli mi, ek 1500-2000 incremental scrape edilsin mi? — M3 + M4 retrieval sonuçlarına bakılmalı.
+3. **Scrape genişletme:** 303 aktif ilan demo için yeterli mi? — Full M3 + canonical M4 retrieval sonuçlarına göre incremental büyütme kararı verilecek.
 4. **Gemini free tier:** 429 sebebiyle shootout'larda kullanılamadı. Billing açma kararı? — şu an Kimi+Gemma yeterli.
-5. **null-vs-false artefaktı (M3 pre-flight) — TEŞHİS edildi, KARAR verildi:** Text prompt hybrid alanlarda (has_balcony vb.) "kanıt varsa true, yoksa null" üretir, hiç `false` demez; gold fotoğraftan türetilen bu alanlara `false` yazar. Sonuç: text-only model `facts_llm`'de yapısal olarak ~0 alır. **Karar:** pre-flight kapısı `facts_all`'a bağlandı; `facts_llm` sadece teşhis. İki model de eşit etkilendiği için A/B göreli karşılaştırması adil kaldı. İstenirse text prompt "emin negatifte false" üretecek şekilde tune edilebilir (opsiyonel iyileştirme).
+5. **DeepSeek negatif kanıt — KARAR (2026-05-31):** DeepSeek başlık+açıklamada açık negatif kanıt varsa kalan null alanı `false` yapabilir; kanıt yoksa `null` bırakır. Kimi için bu geçerli değildir: görselde görünmeyen özellik `false` olmaz.
 6. **NN gereksinimi — AÇIK (2026-05-30):** Hocanın "kendi eğittiğiniz NN olsun" şartı önceden M7 (LSTM/GRU) ile karşılanıyor sayılıyordu. M7 artık dışarıdan (arkadaş) geldiği için bu proje **kendi öz-eğitimli NN'ini içermeli**: ya M6 BGE-M3 LoRA, ya ResNet/ViT görsel sınıflandırıcı (M6 image_classifier). Hangi NN, ne zaman, hangi gold ile? — kullanıcı kararı gerekiyor. Sessizce atlama.
-7. **Qwen3-VL local vision testi — ERTELENDİ (2026-05-30):** `qwen3_vl_local` (qwen3-vl:8b) MacBook Air M4 16GB'ı darlıyor (mouse takılıyor); probe: tek 8-fotolu çağrı **62.5s** + boş `{}` çıktı (format=json olsa da). 16GB çok-fotoğraflı vision'a yetmiyor. Kullanıcının asıl makinesi (ev kasası: 32GB DDR5 + RTX 5070 Ti) ev wifi'si gelince kullanılacak; test oraya **ertelendi**, rapora "future work / dipnot". **Sonuç: vision_model = kimi_k2_6 ile devam (zorunlu).** 500 ilan ≈ ~$18, 1239 ilan ≈ ~$45 (bütçe $100, sorun yok).
-8. **`imkanlar` modalite uyuşmazlığı — KARAR (2026-05-29):** Vision multi-image hata analizi (kullanıcı teyitli) gösterdi ki gold `imkanlar` **image+text birlikte** dolduruldu; site özellikleri (guvenlik_kabini, kapali_otopark, cocuk_parki, spor_alani) genelde iç-mekan fotoğraflarında değil, ilan **açıklaması/property_features metninde**. Kanıt: 19382188 gold `[guvenlik_kabini]` ama 7 fotonun hepsi iç mekan + açıklamada amenity yok + `in_gated_complex=False` (muhtemel gold hatası); 19392370 & 19376408 amenity'leri doğrudan description kelimelerinden (site/güvenlik/havuz/otopark/fitness/çocuk). Ayrıca gold bazı görünür özellikleri eksik etiketlemiş (19382188 banyoda_pencere foto 05'te net, model doğru bildi, gold atlamış). **Karar:** M3'te `imkanlar` vision'dan DEĞİL, description+property_features'tan LLM ile (gerekirse vision union) etiketlenecek; vision-prompt'u imkanlar için zorlama (halüsinasyon riski). Vision gerçek doğruluğu imkanlar hariç **0.789** (mutfak 0.900, banyo 0.738). Gold 10→30 genişletmesinde 19382188 gözden geçirilsin.
+7. **Qwen3-VL local vision testi — ERTELENDİ (2026-05-30):** `qwen3_vl_local` (qwen3-vl:8b) MacBook Air M4 16GB'ı darlıyor (mouse takılıyor); probe: tek 8-fotolu çağrı **62.5s** + boş `{}` çıktı (format=json olsa da). 16GB çok-fotoğraflı vision'a yetmiyor. Kullanıcının asıl makinesi (ev kasası: 32GB DDR5 + RTX 5070 Ti) ev wifi'si gelince kullanılacak; test oraya **ertelendi**, rapora "future work / dipnot". **Sonuç: vision_model = kimi_k2_6 ile devam (zorunlu).** Yeni canonical 10-ilan Kimi ölçümü `$0.040671`; full 303 koşusu maliyet limitiyle başlatılacak.
+8. **`imkanlar` modalite uyuşmazlığı — TARİHSEL NOT (2026-05-29):** Eski gold hata analizi `imkanlar` alanında image+text karışımı olduğunu gösterdi. Canonical akış bu karışımı kaldırır: scraper `İlan Özellikleri` bullet'larını deterministik fact olarak yazar; DeepSeek yalnız başlık+açıklamayı okur; Kimi yalnız görsellerden kalan null boolean alanlara positive-only `true` ekler.
+
+9. **Bağımsız iki-geçişli labeling — DONE (2026-05-31):** `--phase text|vision|combined` eklendi. Text ara çıktısı açıklama ve görsel yollarını koruyor; vision geçişi bu JSONL üzerine yalnız kalan null alanları dolduruyor.
+
+10. **JSON çıktı formatı — KARAR (2026-05-31): `filter_values` DÜZ kalır (150 slug), canvas hiyerarşisine GÖMÜLMEZ.** Gerekçe: labeling (`run_labeling.py`) düz slug→değer okuyup monotonik null-only merge yapıyor; indexing (`composer.to_metadata`) Chroma için yalnızca düz skaler metadata yazabiliyor. Canvas (Ana/İç/Dış/Konum) bir *sunum* meselesi — `spec.group` zaten taşıyor, gerekirse görüntüleyici üretilir. Raw aşamada her dolu slot'un kaynağının `scraper_info`/`scraper_property_feature` olması hata değil: yalnız scraper koştu; DeepSeek/Kimi labeling'de null'ları doldurup kendi damgalarını (`deepseek_description`/`kimi_image`) basar. Dolum monotonik ve null-only (önceden dolu değer ezilmez).
+
+11. **Kimi hız ayarı — KARAR (2026-05-31):** Görsel sayısını kısıtlama. `512px`, chunk kapalı (`--vision-chunk-size 0`) ve worker artışı kullan. Ölçümde chunk=5 yavaşlattı (`3 ilan: 259.62s`); chunk kapalı 10 worker ile `10 ilan: 144.34s`.
 
 ---
 
@@ -217,7 +237,7 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 |---|---|---|
 | Composer yalan rapor verir | Tamamlanmamış işi tamamlanmış sanma | Her milestone'da DOSYADAN doğrula |
 | Gemma4 vision Türkçe ev fotoğrafında zayıf çıkabilir | M3 labeling kalitesiz | Gold ile ölç, gerekirse Kimi'ye geç ($25-30 ek maliyet) |
-| 1239 ilan fine-tune için az olabilir | LoRA underfit/overfit | Synthetic pair generation veya hard-negative mining; pre/post karşılaştırma |
+| 303 ilan fine-tune için az olabilir | LoRA underfit/overfit | Synthetic pair generation veya hard-negative mining; pre/post karşılaştırma |
 | Time series için gerçek veri yok | Tek snapshot'tan trend yok | Sentetik + scraped ortalamayı calibration anchor |
 | Hocaya teslim deadline yaklaşıyor | Zaman baskısı | M5 minimal yap. **M6'yı atlama** — M7 dışarı çıktığı için NN gereksinimi M6'ya bağlı (bkz. Açık sorular #6); en hafif öz-eğitimli NN'i (BGE-M3 LoRA veya ResNet sınıflandırıcı) koru |
 
@@ -230,8 +250,10 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 | M1 4-model shootout | ~$2 | — | Kimi+Gemma+DeepSeek+Gemini (kısmî) |
 | M1.5 vision per-image (önceki) | ~$0.11 | — | 3 listing tamamlandı (timeout) |
 | M1.5 vision multi-image (2026-05-29) | **$0.36** | — | Kimi, 10 ilan, 161 foto, bakiye farkıyla ölçüldü |
-| M3 labeling 1239 ilan | $0 | ~$45 | Kimi multi-image ekstrapolasyon ($0.036/ilan) |
-| **TOPLAM** | ~$2.5 | ~$45 | $100 bütçenin altında |
+| M3 yeni batch 10 ilan DeepSeek | ~$0.0077 tahmini | — | text-only, 3 worker |
+| M3 yeni batch 10 ilan Kimi | ~$0.0407 tahmini | — | 512px, chunk=0, 10 worker |
+| M3 full 303 ilan | — | ölçülecek | kullanıcı 10 ilan göz kontrolü sonrası |
+| **TOPLAM** | ~$2.55 + önceki ölçümler | ölçülecek | $100 bütçenin altında |
 
 ---
 
@@ -249,20 +271,21 @@ tests/test_composer.py            # M4 (Codex)
 tests/test_retriever.py           # M4 (Codex)
 ```
 
-Komut (macOS/zsh): `source .venv/bin/activate && python3 -m pytest -q` — **62 passed** (2026-05-30; canonical registry, deterministic extraction, null-only enrichment ve hard-filter testleri dahil).
+Komut (macOS/zsh): `source .venv/bin/activate && python3 -m pytest -q` — **68 passed** (2026-05-31; iki-geçişli labeling testleri dahil).
 
 ---
 
 ## Sıradaki adımlar (2026-05-30 itibariyle)
 
-Tamamlanan: M0, M1 (+text revize), M1.5 vision, M2 gold 16/30, M3 iskele+pre-flight, M4 iskele.
+Tamamlanan: M0 canonical scrape+clean, M1 (+text revize), M1.5 vision, M3 iki-geçişli iskele ve 10-ilan benchmark. M2 yeni gold rebuild iptal; M4/M5 canonical uyarlama bekliyor.
 
 | # | İş | Kim | Wall-clock | Bağımlılık | Durum |
 |---|---|---|---|---|---|
-| Canonical re-scrape | İstanbul kiralık konut full re-scrape + cleaner coverage + gold template rebuild | Agent | ölçülecek | kullanıcı onayı | **sıradaki; onay bekliyor** |
-| M3-build | Full labeling build (`run_labeling.py` → ilanlar → `labeled.jsonl`), **vision=Kimi** | Agent | ~1-2 saat (eşzamanlı, ağ-bound) | canonical re-scrape + gold rebuild + ücretli pre-flight onayı | — |
+| Canonical batch | 305 raw → görseller → cleaner → **303 aktif ilan DONE** | Agent | download 106s, cleaner 5s | — | **DONE** |
+| 10 ilan göz kontrolü | `labeled_benchmark_deepseek_text_10.jsonl` + `labeled_benchmark_kimi_vision_10.jsonl` incele | Kullanıcı | — | — | **sıradaki** |
+| M3-build | Full 303 ilan: `--phase text`, sonra `--phase vision` (`512px`, chunk=0, worker=10) | Agent | ölçülecek | kullanıcı göz kontrolü + ücretli full batch onayı | — |
 | Qwen | `qwen3_vl_local` gold visual benchmark | Agent (ev kasası) | ~30-60 dk | ev wifi + 32GB makine | **ERTELENDİ** (16GB MacBook darlıyor; future work) |
-| M5-iskele | `chat/rag_response.py` + `ui/app.py` (Streamlit) — Retriever'ı tüketir | Codex | ~1 saat | M4 retriever (var) | Codex'e verildi (paralel, çakışmasız) |
+| M5-iskele | Eski `chat/rag_response.py` + `ui/app.py` canonical retriever sözleşmesine uyarla | Agent | ~1 saat | M4 uyarlama | — |
 | M4-build | Gerçek index build (composer → BGE-M3 → Chroma) + retriever smoke + 30 query gold | Agent + Sen | ~2.5 saat | M3-build | — |
 | M5 | RAG chat + Streamlit UI + 3 demo | Agent | ~3 saat | M4-build | — |
 | M6 | Öz-eğitimli NN (BGE-M3 LoRA **veya** ResNet/ViT görsel sınıflandırıcı) | Agent | ~6 saat (training dahil) | M3-build | **NN gereksinimi için kritik (Açık sorular #6)** |

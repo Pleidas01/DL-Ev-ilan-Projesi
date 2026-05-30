@@ -44,6 +44,7 @@ from schema.emlakjet_filters import (
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "data" / "processed" / "labeled.jsonl"
 DEFAULT_SELECTED_PATH = PROJECT_ROOT / "llm" / "selected.json"
+DEFAULT_CLEAN_JSON_NAME = "clean_json.json"
 
 TEXT_FACT_FIELDS = tuple(field for field in FACTS_GOLD_FIELDS if field not in STRUCTURED_FACT_FIELDS)
 VISION_FIELDS = VISUAL_GOLD_FIELDS
@@ -623,6 +624,99 @@ def compose_enriched_doc(record: dict[str, Any], facts: dict[str, Any], visual: 
     ]).strip()
 
 
+def _facts_with_filter_values(record: dict[str, Any], facts: dict[str, Any], filter_values: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(facts)
+    for field_name in TEXT_FACT_FIELDS:
+        if filter_values.get(field_name) is not None:
+            merged[field_name] = filter_values[field_name]
+    if merged.get("has_parking") is None and (
+        filter_values.get("has_open_parking") is True or filter_values.get("has_closed_parking") is True
+    ):
+        merged["has_parking"] = True
+    return merged
+
+
+def label_text_record(
+    record: dict[str, Any],
+    text_candidate: ModelCandidate,
+    *,
+    cost_tracker: CostTracker,
+) -> dict[str, Any]:
+    text_prediction = extract_text_labels(record, text_candidate, cost_tracker)
+    filter_values, filter_sources = merge_filter_values(record, text_prediction, "deepseek_description")
+    aggregated = _canonical_visual_compat(filter_values)
+    _merge_imkanlar(aggregated, text_prediction.get("imkanlar"), aggregated.get("imkanlar"))
+    facts = merge_facts(record, text_prediction, aggregated)
+    facts = _facts_with_filter_values(record, facts, filter_values)
+    visual_qualities = {
+        "per_image": [],
+        "aggregated": aggregated,
+        "filter_values": filter_values,
+        "filter_sources": filter_sources,
+        "confidence_method": None,
+        "min_confidence": DEFAULT_MIN_CONFIDENCE,
+    }
+    return {
+        **record,
+        "facts_gold": facts,
+        "filter_values": filter_values,
+        "filter_sources": filter_sources,
+        "visual_qualities": visual_qualities,
+        "enriched_doc": compose_enriched_doc(record, facts, aggregated),
+        "labeling_metadata": {
+            **(record.get("labeling_metadata") or {}),
+            "text_model": text_candidate.id,
+        },
+    }
+
+
+def label_vision_record(
+    record: dict[str, Any],
+    vision_candidate: ModelCandidate,
+    *,
+    cost_tracker: CostTracker,
+    confidence_mode: str = "self",
+    agreement_k: int = 3,
+    min_confidence: float = DEFAULT_MIN_CONFIDENCE,
+    image_tokens_per_image: int = DEFAULT_VISION_IMAGE_TOKENS,
+    vision_chunk_size: int = DEFAULT_VISION_CHUNK_SIZE,
+) -> dict[str, Any]:
+    previous_visual = record.get("visual_qualities") or {}
+    text_imkanlar = (previous_visual.get("aggregated") or {}).get("imkanlar")
+    visual_qualities = extract_visual_labels(
+        record,
+        vision_candidate,
+        cost_tracker,
+        text_imkanlar=text_imkanlar,
+        confidence_mode=confidence_mode,
+        agreement_k=agreement_k,
+        min_confidence=min_confidence,
+        image_tokens_per_image=image_tokens_per_image,
+        vision_chunk_size=vision_chunk_size,
+    )
+    filter_values = visual_qualities.get("filter_values") or {}
+    filter_sources = visual_qualities.get("filter_sources") or {}
+    facts = dict(record.get("facts_gold") or {})
+    visual_facts = merge_facts(record, {}, visual_qualities["aggregated"])
+    for field_name, value in visual_facts.items():
+        if facts.get(field_name) is None and value is not None:
+            facts[field_name] = value
+    facts = _facts_with_filter_values(record, facts, filter_values)
+    return {
+        **record,
+        "facts_gold": facts,
+        "filter_values": filter_values,
+        "filter_sources": filter_sources,
+        "visual_qualities": visual_qualities,
+        "enriched_doc": compose_enriched_doc(record, facts, visual_qualities["aggregated"]),
+        "labeling_metadata": {
+            **(record.get("labeling_metadata") or {}),
+            "vision_model": vision_candidate.id,
+            "confidence_mode": visual_qualities.get("confidence_method"),
+        },
+    }
+
+
 def label_record(
     record: dict[str, Any],
     text_candidate: ModelCandidate,
@@ -635,46 +729,17 @@ def label_record(
     image_tokens_per_image: int = DEFAULT_VISION_IMAGE_TOKENS,
     vision_chunk_size: int = DEFAULT_VISION_CHUNK_SIZE,
 ) -> dict[str, Any]:
-    text_prediction = extract_text_labels(record, text_candidate, cost_tracker)
-    filter_values, filter_sources = merge_filter_values(record, text_prediction, "deepseek_description")
-    enriched_record = {**record, "filter_values": filter_values, "filter_sources": filter_sources}
-    visual_qualities = extract_visual_labels(
-        enriched_record,
+    text_record = label_text_record(record, text_candidate, cost_tracker=cost_tracker)
+    return label_vision_record(
+        text_record,
         vision_candidate,
-        cost_tracker,
-        text_imkanlar=text_prediction.get("imkanlar"),
+        cost_tracker=cost_tracker,
         confidence_mode=confidence_mode,
         agreement_k=agreement_k,
         min_confidence=min_confidence,
         image_tokens_per_image=image_tokens_per_image,
         vision_chunk_size=vision_chunk_size,
     )
-    facts = merge_facts(record, text_prediction, visual_qualities["aggregated"])
-    filter_values = visual_qualities.get("filter_values", filter_values)
-    filter_sources = visual_qualities.get("filter_sources", filter_sources)
-    for field_name in TEXT_FACT_FIELDS:
-        if filter_values.get(field_name) is not None:
-            facts[field_name] = filter_values[field_name]
-    if facts.get("has_parking") is None and (
-        filter_values.get("has_open_parking") is True or filter_values.get("has_closed_parking") is True
-    ):
-        facts["has_parking"] = True
-    return {
-        "id": record.get("id"),
-        "title": record.get("title"),
-        "url": record.get("url"),
-        "price_tl": record.get("price_tl"),
-        "facts_gold": facts,
-        "filter_values": filter_values,
-        "filter_sources": filter_sources,
-        "visual_qualities": visual_qualities,
-        "enriched_doc": compose_enriched_doc(record, facts, visual_qualities["aggregated"]),
-        "labeling_metadata": {
-            "text_model": text_candidate.id,
-            "vision_model": vision_candidate.id,
-            "confidence_mode": visual_qualities.get("confidence_method"),
-        },
-    }
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -691,6 +756,47 @@ def _append_jsonl(path: Path, row: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+def clean_json_row(row: dict[str, Any]) -> dict[str, Any]:
+    values = row.get("filter_values") or {}
+    sources = row.get("filter_sources") or {}
+    scraper_sources = {"scraper_info", "scraper_property_feature"}
+    scraper = {
+        slug: value for slug, value in values.items()
+        if value is not None and sources.get(slug) in scraper_sources
+    }
+    deepseek = {
+        slug: value for slug, value in values.items()
+        if isinstance(value, bool) and sources.get(slug) == "deepseek_description"
+    }
+    kimi = {
+        slug: value for slug, value in values.items()
+        if value is True and sources.get(slug) == "kimi_image"
+    }
+    return {
+        "id": row.get("id"),
+        "url": row.get("url"),
+        "title": row.get("title"),
+        "description": row.get("description"),
+        "scraper": scraper,
+        "deepseek": deepseek,
+        "kimi": kimi,
+    }
+
+
+def write_clean_json(source_path: Path, clean_json_path: Path) -> list[dict[str, Any]]:
+    rows = load_jsonl(source_path) if source_path.exists() else []
+    clean_rows = [clean_json_row(row) for row in rows]
+    clean_json_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = clean_json_path.with_suffix(clean_json_path.suffix + ".tmp")
+    temp_path.write_text(json.dumps(clean_rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp_path.replace(clean_json_path)
+    return clean_rows
+
+
+def _refresh_clean_json(source_path: Path, clean_json_path: Path) -> None:
+    write_clean_json(source_path, clean_json_path)
 
 
 def _completed_ids(output_path: Path) -> set[str]:
@@ -718,10 +824,12 @@ def run_labeling(
     min_confidence: float = DEFAULT_MIN_CONFIDENCE,
     image_tokens_per_image: int = DEFAULT_VISION_IMAGE_TOKENS,
     vision_chunk_size: int = DEFAULT_VISION_CHUNK_SIZE,
+    phase: str = "combined",
     cost_tracker: CostTracker | None = None,
+    clean_json_path: Path | None = None,
 ) -> list[dict[str, Any]]:
-    text_candidate = candidate_by_id(text_model_id)
-    vision_candidate = candidate_by_id(vision_model_id)
+    text_candidate = candidate_by_id(text_model_id) if phase != "vision" else None
+    vision_candidate = candidate_by_id(vision_model_id) if phase != "text" else None
     records = load_jsonl(input_path)
     if listing_ids is not None:
         wanted = set(str(value) for value in listing_ids)
@@ -729,14 +837,30 @@ def run_labeling(
         records = sorted((row for row in records if str(row.get("id")) in wanted), key=lambda row: order[str(row["id"])])
 
     done = _completed_ids(output_path) if resume else set()
-    if not resume and output_path.exists():
+    clean_json_path = clean_json_path or output_path.parent / DEFAULT_CLEAN_JSON_NAME
+    if not resume:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text("", encoding="utf-8")
+    _refresh_clean_json(output_path, clean_json_path)
     pending = [record for record in records if str(record.get("id")) not in done]
     cost_tracker = cost_tracker or CostTracker(max_cost_usd)
     written: list[dict[str, Any]] = []
     write_lock = threading.Lock()
 
     def process(record: dict[str, Any]) -> dict[str, Any]:
+        if phase == "text":
+            return label_text_record(record, text_candidate, cost_tracker=cost_tracker)
+        if phase == "vision":
+            return label_vision_record(
+                record,
+                vision_candidate,
+                cost_tracker=cost_tracker,
+                confidence_mode=confidence_mode,
+                agreement_k=agreement_k,
+                min_confidence=min_confidence,
+                image_tokens_per_image=image_tokens_per_image,
+                vision_chunk_size=vision_chunk_size,
+            )
         return label_record(
             record,
             text_candidate,
@@ -753,6 +877,7 @@ def run_labeling(
         for record in pending:
             row = process(record)
             _append_jsonl(output_path, row)
+            _refresh_clean_json(output_path, clean_json_path)
             written.append(row)
         return written
 
@@ -762,6 +887,7 @@ def run_labeling(
             row = future.result()
             with write_lock:
                 _append_jsonl(output_path, row)
+                _refresh_clean_json(output_path, clean_json_path)
                 written.append(row)
     return written
 
@@ -825,8 +951,13 @@ def _load_selected(path: Path) -> tuple[str, str]:
     return data["text_model"], data["vision_model"]
 
 
-def _validate_environment(text_model_id: str, vision_model_id: str) -> None:
-    missing = sorted(set(missing_environment(candidate_by_id(text_model_id)) + missing_environment(candidate_by_id(vision_model_id))))
+def _validate_environment(text_model_id: str, vision_model_id: str, *, phase: str = "combined") -> None:
+    model_ids = [text_model_id, vision_model_id]
+    if phase == "text":
+        model_ids = [text_model_id]
+    elif phase == "vision":
+        model_ids = [vision_model_id]
+    missing = sorted(set(value for model_id in model_ids for value in missing_environment(candidate_by_id(model_id))))
     if missing:
         raise RuntimeError(f"Missing environment for selected models: {', '.join(missing)}")
 
@@ -949,6 +1080,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-cost-usd", type=float, default=None)
     parser.add_argument("--text-model", default=None)
     parser.add_argument("--vision-model", default=None)
+    parser.add_argument("--phase", choices=("combined", "text", "vision"), default="combined")
     parser.add_argument("--selected", default=str(DEFAULT_SELECTED_PATH))
     parser.add_argument("--preflight-gold", default=None)
     parser.add_argument("--preflight-limit", type=int, default=10)
@@ -979,7 +1111,7 @@ def main() -> None:
     selected_text_model, selected_vision_model = _load_selected(Path(args.selected))
     text_model_id = args.text_model or selected_text_model
     vision_model_id = args.vision_model or selected_vision_model
-    _validate_environment(text_model_id, vision_model_id)
+    _validate_environment(text_model_id, vision_model_id, phase=args.phase)
     _validate_full_batch_guard(args)
 
     if args.preflight_gold:
@@ -1002,6 +1134,7 @@ def main() -> None:
         min_confidence=args.min_confidence,
         image_tokens_per_image=args.vision_image_tokens,
         vision_chunk_size=args.vision_chunk_size,
+        phase=args.phase,
     )
     print(json.dumps({"written": len(rows), "output": args.output}, ensure_ascii=False, indent=2))
 
