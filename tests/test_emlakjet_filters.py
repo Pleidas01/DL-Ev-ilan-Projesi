@@ -11,17 +11,22 @@ from schema.emlakjet_filters import (
 def test_registry_covers_representative_live_rental_panel_fields():
     by_slug = {spec.slug: spec for spec in EMLAKJET_FILTERS}
 
-    assert by_slug["price_tl"].group == "structured"
+    assert by_slug["trade_type"].values == {"Kiralık": "kiralik"}
+    assert by_slug["property_category"].values == {"Konut": "konut"}
+    assert by_slug["property_type"].values["Yalı Dairesi"] == "yali_dairesi"
+    assert by_slug["price_amount"].group == "structured"
+    assert by_slug["price_currency"].values == {"TL": "TL", "USD": "USD", "EUR": "EUR", "GBP": "GBP"}
     assert by_slug["balcony_type"].values["Kapalı Teras"] == "kapali_teras"
     assert by_slug["has_fiber"].group == "ic_ozellikler.altyapi"
     assert by_slug["has_shower_cabin"].group == "ic_ozellikler.banyo"
     assert by_slug["has_aircon"].group == "ic_ozellikler.dekorasyon"
+    assert by_slug["has_satin_paint"].group == "ic_ozellikler.dekorasyon"
     assert by_slug["has_american_kitchen"].group == "ic_ozellikler.mutfak"
     assert by_slug["has_elevator"].group == "dis_ozellikler.bina"
     assert by_slug["has_closed_parking"].group == "dis_ozellikler.sosyal_imkanlar"
     assert by_slug["has_bosphorus_view"].group == "konum_ozellikleri.manzara"
     assert by_slug["near_metro"].group == "konum_ozellikleri.ulasim"
-    assert len(PROPERTY_FEATURE_SPECS) == 123
+    assert len(PROPERTY_FEATURE_SPECS) == 124
 
 
 def test_registry_slugs_and_source_labels_are_unique():

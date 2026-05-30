@@ -36,11 +36,22 @@ def _bool(slug: str, label: str, group: str, *, image: bool = False) -> FilterSp
 
 
 STRUCTURED_FILTERS = (
+    FilterSpec("trade_type", "structured", "enum", ("İlan Tipi",), ("listing_json",), {"Kiralık": "kiralik"}),
+    FilterSpec("property_category", "structured", "enum", ("Kategori",), ("listing_json",), {"Konut": "konut"}),
+    FilterSpec("property_type", "structured", "enum", ("Konut Tipi",), ("listing_json",), {
+        value: _enum_slug(value) for value in (
+            "Daire", "Residence", "Müstakil Ev", "Villa", "Yazlık", "Devremülk", "Çiftlik Evi",
+            "Dağ Evi", "Köy Evi", "Köşk", "Yalı", "Yalı Dairesi", "Bina", "Kooperatif", "Prefabrik",
+        )
+    }),
     FilterSpec("city", "structured", "str", ("İl",), ("listing_json",)),
     FilterSpec("district", "structured", "str", ("İlçe",), ("listing_json",)),
     FilterSpec("neighborhood", "structured", "str", ("Semt / Mahalle",), ("listing_json",)),
     FilterSpec("search_keyword", "structured", "str", ("Arama Kelimesi",), ()),
-    FilterSpec("price_tl", "structured", "int", ("Fiyat",), ("listing_json",)),
+    FilterSpec("price_amount", "structured", "int", ("Fiyat",), ("listing_json",)),
+    FilterSpec("price_currency", "structured", "enum", ("Para Birimi",), ("listing_json",), {
+        "TL": "TL", "USD": "USD", "EUR": "EUR", "GBP": "GBP",
+    }),
     FilterSpec("gross_size_m2", "structured", "int", ("Brüt Metrekare",), ("listing_info",)),
     _enum("room_count", "Oda Sayısı", ("Stüdyo", "1", "1+1", "1.5+1", "2+0", "2+1", "2.5+1", "2+2", "3+0", "3+1", "3.5+1", "3+2", "4+0", "4+1", "4.5+1", "4+2", "4+3", "4+4", "5+0", "5+1", "5+2", "5+3", "5+4", "6+1", "6+2", "6+3", "6+4", "7+1", "7+2", "7+3", "8+1", "8+2", "8+3", "8+4", "9+")),
     _enum("building_age", "Binanın Yaşı", ("0 (Yeni)", "1", "2", "3", "4", "5-10", "11-15", "16-20", "21 ve üzeri")),
@@ -79,7 +90,7 @@ _FEATURE_GROUPS = {
         ("has_white_goods", "Beyaz Eşya"), ("has_laundry_room", "Çamaşır Odası"), ("has_steel_door", "Çelik Kapı"), ("has_wallpaper", "Duvar Kağıdı"),
         ("has_dressing_room", "Giyinme Odası"), ("has_builtin_wardrobe", "Gömme Dolap"), ("has_cornice", "Kartonpiyer"), ("has_aircon", "Klima"),
         ("has_laminate_floor", "Laminant"), ("has_panel_door", "Panel Kapı"), ("has_shutter", "Panjur"), ("has_parquet_floor", "Parke"),
-        ("has_ceramic_floor", "Seramik Zemin"), ("has_spotlight", "Spot Işık"), ("has_coatroom", "Vestiyer"), ("has_high_ceiling", "Yüksek Tavan"),
+        ("has_satin_paint", "Saten Boya"), ("has_ceramic_floor", "Seramik Zemin"), ("has_spotlight", "Spot Işık"), ("has_coatroom", "Vestiyer"), ("has_high_ceiling", "Yüksek Tavan"),
     ),
     "ic_ozellikler.mutfak": (
         ("has_american_kitchen", "Amerikan Mutfak"), ("has_builtin_kitchen", "Ankastre Mutfak"), ("has_dishwasher", "Bulaşık Makinesi"),

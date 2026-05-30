@@ -90,6 +90,8 @@ FilterSpec(
 
 Copy all headings, subheadings, and options from the live rental filter panel into this registry. Do not invent fields outside that panel during this milestone.
 
+> Checkpoint revision (2026-05-30): Task 1 registry was re-verified against the user's authoritative full list. Added category chain (`trade_type`, `property_category`, `property_type`), canonical multi-currency price fields (`price_amount`, `price_currency`), and the omitted `Saten Boya` checkbox. `price_tl` remains a temporary compatibility output outside the canonical registry.
+
 ## Task 1: Central Filter Registry
 
 **Files:**
