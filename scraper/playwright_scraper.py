@@ -249,6 +249,40 @@ def parse_property_features(html: str) -> list[str]:
     return features
 
 
+# İlan Özellikleri sekmeleri lazy render edilir: yalnız ilk dolu sekme
+# (genelde İç) açılışta DOM'dadır; Dış/Konum içeriği ancak tıklanınca yüklenir.
+PROPERTY_FEATURE_TABS = ('İç Özellikler', 'Dış Özellikler', 'Konum Özellikleri')
+
+
+async def collect_property_features(detail_page, html: str) -> list[str]:
+    """Her İlan Özellikleri sekmesine tıklayıp özellikleri birleştirir.
+
+    Sekme yoksa (ilanda hiç özellik yoksa) no-op; yalnız mevcut HTML'i ayrıştırır.
+    """
+    features: list[str] = []
+
+    def _add(items: list[str]) -> None:
+        for feat in items:
+            if feat and feat not in features:
+                features.append(feat)
+
+    _add(parse_property_features(html))
+    for tab in PROPERTY_FEATURE_TABS:
+        try:
+            loc = detail_page.get_by_role('tab', name=tab, exact=True)
+            if await loc.count() == 0:
+                loc = detail_page.get_by_text(tab, exact=True)
+                if await loc.count() == 0:
+                    continue
+            await loc.first.scroll_into_view_if_needed(timeout=3000)
+            await loc.first.click(timeout=3000)
+            await detail_page.wait_for_timeout(700)
+            _add(parse_property_features(await detail_page.content()))
+        except Exception:
+            continue
+    return features
+
+
 def is_template_description(text: str) -> bool:
     """JSON-LD şablon açıklaması (ajans + m² + fiyat özeti) mi?"""
     if not text:
@@ -642,7 +676,7 @@ class EmlakjetScraper:
 
                     # ── DOM: İlan Bilgileri / Açıklama / Özellikler ─────────
                     dom_info = parse_listing_info_table(html)
-                    dom_features = parse_property_features(html)
+                    dom_features = await collect_property_features(detail_page, html)
                     description, html = await _resolve_description(
                         detail_page, html, ld_product,
                     )
