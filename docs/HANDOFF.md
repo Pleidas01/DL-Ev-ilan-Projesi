@@ -62,7 +62,7 @@ M4 (indexing+retr.)   ✅ DONE iskele (Codex) — composer/build_chroma/retrieve
 M5, M6, M8            ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
 ```
 
-**Acil sıradaki iş:** **M3 full labeling build** — `labeling/run_labeling.py`'yi 1239 ilana koş (`data/processed/labeled.jsonl` üret). Pipeline hazır: multi-image VLM (Kimi) + text LLM (deepseek_v4_pro), eşzamanlı çağrı, resume, cost cap, pre-flight gold gate (**`facts_all`** ≥0.75, visual ≥0.70). **Kritik:** seri run ≈ 39 saat → eşzamanlı (20-30 worker, Moonshot rate limit'e göre) → ~1-2 saat. Build bitince M4 gerçek index (`indexing/build_chroma.py`) koşulabilir. Vision karar dosyası: `llm/shootout_vision_multi_rows.json`.
+**Acil sıradaki iş:** `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 2**. Task 1 tamamlandı: canlı Emlakjet kiralık konut panelinden `schema/emlakjet_filters.py` merkezi registry'si eklendi (`22` structured + `123` checkbox filtre, `salon_ozellikleri` yok). Şimdi scraper ve cleaner registry-backed deterministic `filter_values` / `filter_sources` üretmeli. Full re-scrape ve ücretli API labeling kullanıcı checkpoint onayı olmadan başlatılmayacak.
 
 > **Karar verilebilir önce-işler (opsiyonel/paralel):** (1) `qwen3_vl_local` gold visual benchmark — yerel/ücretsiz vision alternatifi (Kimi ≥0.70 mu) — M3 kararını etkilemez. (2) NN gereksinimi (M6) — M7 dışarı çıktı, hocanın "kendi NN'iniz" şartı yeniden açık (STATUS Açık sorular #6). İkisi de kullanıcı kararı bekler.
 

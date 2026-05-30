@@ -1,6 +1,6 @@
 # STATUS.md — Mevcut Durum (snapshot)
 
-> Son güncelleme: 2026-05-30, **M3 pre-flight kararları + M4 iskele + scope**: (1) pre-flight kapısı `facts_llm` → **`facts_all`** (tam birleştirilmiş pipeline; `facts_llm` text-only modeli null-vs-false yüzünden haksızca eler, sadece teşhis). (2) `text_model` **kimi_k2_6 → deepseek_v4_pro** (gold A/B: slot 0.815 > 0.792, ~3.5x ucuz, ~5x hızlı; vision_model Kimi kalıyor). (3) **M4 iskele DONE** (Codex: composer + build_chroma + retriever). (4) **M7 (time series) kapsam dışı** — sınıf arkadaşı yaptı; NN gereksinimi yeniden açık (bkz. Açık sorular #6). (5) Gold listing **16/30**. Test **47 passed**.
+> Son güncelleme: 2026-05-30, **canonical Emlakjet filter enrichment Task 1 DONE**: canlı `kiralik-konut` sol paneli doğrulandı; `schema/emlakjet_filters.py` tek merkezi registry olarak eklendi. Registry `22` structured filtre + paneldeki `123` checkbox seçeneğini içeriyor; `salon_ozellikleri` canonical şemadan çıkarıldı. Task 1 testi: `4 passed`.
 > Önceki (2026-05-29): vision multi-image refactor (tek çağrı/ilan), Kimi multi-image gold testi geçti (bkz. M1.5).
 > Bu dosyayı sıradaki agent her milestone bitince güncellemeli.
 
@@ -16,6 +16,7 @@
 - **M3 (labeling pipeline)** — **DONE** (iskele + pre-flight): `labeling/run_labeling.py` mevcut (multi-image VLM + text LLM, eşzamanlı çağrı, resume, cost cap, pre-flight gold gate). Pre-flight kapısı **`facts_all`** (eşik facts ≥0.75, visual ≥0.70). **Full 1239-ilan build henüz çalıştırılmadı** (`data/processed/labeled.jsonl` yok; sadece pre-flight smoke çıktıları var).
 - **M4 (indexing + retrieval)** — **DONE (iskele, Codex 2026-05-30)**: `indexing/composer.py`, `indexing/build_chroma.py`, `retrieval/retriever.py` + testler. Gerçek index build M3 `labeled.jsonl`'e bağlı (henüz koşulmadı).
 - **M5–M8** — PENDING. **M7 kapsam dışı** (arkadaş yaptı). Sıradaki: M3 full labeling build → M4 gerçek index → M5 RAG/Streamlit.
+- **Canonical filter enrichment** — **AKTİF**: Task 1/6 DONE. Sıradaki Task 2: scraper exact facts → `filter_values` + `filter_sources`.
 
 Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). Not: `archive/hw6` + `pre_scraper_fix` + `data/_*` temizlikte silindi (bkz. checkpoint 6b019f7).
 

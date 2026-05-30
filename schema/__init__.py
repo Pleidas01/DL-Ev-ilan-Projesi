@@ -1,0 +1,1 @@
+"""Canonical search schema."""
