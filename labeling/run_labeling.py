@@ -33,7 +33,7 @@ from llm.gold_benchmark import (
     load_gold_rows,
     score_against_gold,
 )
-from llm.shootout_vision import VISION_SYSTEM_PROMPT, VISION_USER_PROMPT
+from llm.shootout_vision import VISION_SYSTEM_PROMPT, build_vision_user_prompt
 from schema.emlakjet_filters import (
     empty_filter_values,
     parse_filter_value,
@@ -55,7 +55,7 @@ DEFAULT_MIN_CONFIDENCE = 0.70
 DEFAULT_VISION_IMAGE_TOKENS = 60
 DEFAULT_TEXT_OUTPUT_TOKENS = 350
 DEFAULT_VISION_OUTPUT_TOKENS = 700
-DEFAULT_VISION_CHUNK_SIZE = 8
+DEFAULT_VISION_CHUNK_SIZE = 0
 PROVIDER_MAX_RETRIES = 3
 
 TEXT_SYSTEM_PROMPT = """Sen Turkce emlak ilani metninden kesin JSON alanlari cikaran bir asistansin.
@@ -86,8 +86,8 @@ Kurallar:
 """
 
 
-def build_vision_prompt(image_count: int) -> str:
-    return VISION_USER_PROMPT
+def build_vision_prompt(record: dict[str, Any]) -> str:
+    return build_vision_user_prompt(_null_specs_for_source(record, "image_vlm"))
 
 
 class CostCapExceeded(RuntimeError):
@@ -221,14 +221,31 @@ def normalize_text_prediction(parsed: dict[str, Any], record: dict[str, Any] | N
 
 def merge_filter_values(record: dict[str, Any], prediction: dict[str, Any], source: str) -> tuple[dict[str, Any], dict[str, str]]:
     values, sources = _current_filter_values(record)
+    required_spec_source = {"deepseek_description": "description_llm", "kimi_image": "image_vlm"}.get(source)
     for slug, value in prediction.items():
         spec = spec_for_slug(slug)
-        if spec is None or source == "deepseek_description" and "description_llm" not in spec.sources:
+        if spec is None or required_spec_source and required_spec_source not in spec.sources:
+            continue
+        if source == "kimi_image" and spec.value_type == "bool" and value is not True:
             continue
         if values[slug] is None and value is not None:
             values[slug] = value
             sources[slug] = source
     return values, sources
+
+
+def normalize_visual_filter_prediction(parsed: dict[str, Any], record: dict[str, Any]) -> dict[str, Any]:
+    source = parsed.get("filters") if isinstance(parsed.get("filters"), dict) else parsed
+    prediction: dict[str, Any] = {}
+    for spec in _null_specs_for_source(record, "image_vlm"):
+        if spec.slug not in source:
+            continue
+        value = parse_filter_value(spec, source.get(spec.slug), strict=True)
+        if spec.value_type == "bool" and value is not True:
+            continue
+        if value is not None:
+            prediction[spec.slug] = value
+    return prediction
 
 
 def normalize_visual_fields(raw_fields: dict[str, Any] | None, fields: tuple[str, ...]) -> dict[str, Any]:
@@ -436,8 +453,9 @@ def _call_vision_once(
     candidate: ModelCandidate,
     cost_tracker: CostTracker,
     image_tokens_per_image: int,
+    record: dict[str, Any],
 ) -> dict[str, Any]:
-    user_prompt = build_vision_prompt(len(image_paths))
+    user_prompt = build_vision_prompt(record)
     cost_tracker.reserve(
         _estimate_vision_call(candidate, user_prompt, len(image_paths), image_tokens_per_image),
         "vision labeling",
@@ -458,23 +476,70 @@ def _vision_pass(
     cost_tracker: CostTracker,
     image_tokens_per_image: int,
     *,
+    record: dict[str, Any],
     chunk_size: int,
     min_confidence: float,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, str]]:
     # Büyük ilanlar tek çağrıda Moonshot timeout veriyor; fotoları chunk'lara bölüp
     # per_image sonuçlarını birleştiriyoruz — foto kaybı yok, union/vote aggregate aynı.
     per_image: list[dict[str, Any]] = []
+    values, sources = _current_filter_values(record)
     for chunk in _chunk_paths(image_paths, chunk_size):
-        parsed = _call_vision_once(chunk, candidate, cost_tracker, image_tokens_per_image)
-        chunk_aggregate = aggregate_visual_qualities(
-            parsed,
-            image_paths=chunk,
-            text_imkanlar=[],
-            min_confidence=min_confidence,
-            confidence_method="self",
-        )
-        per_image.extend(chunk_aggregate["per_image"])
-    return per_image
+        current = {**record, "filter_values": values, "filter_sources": sources}
+        parsed = _call_vision_once(chunk, candidate, cost_tracker, image_tokens_per_image, current)
+        confidence = _item_confidence({}, parsed)
+        prediction = normalize_visual_filter_prediction(parsed, current)
+        if confidence >= min_confidence:
+            values, sources = merge_filter_values(current, prediction, "kimi_image")
+        per_image.append({
+            "path": None,
+            "image_paths": chunk,
+            "fields": prediction,
+            "confidence": confidence,
+        })
+    return per_image, values, sources
+
+
+def _canonical_visual_compat(values: dict[str, Any]) -> dict[str, Any]:
+    aggregated = _empty_visual_aggregate()
+    balcony_map = {
+        "acik_balkon": "acik_balkon",
+        "acik_teras": "teras",
+        "fransiz_balkon": "fransiz_balkon",
+    }
+    aggregated["balkon_ozellikleri"] = [
+        balcony_map[value] for value in values.get("balcony_type") or [] if value in balcony_map
+    ] or None
+    view_map = {
+        "has_sea_view": "deniz",
+        "has_bosphorus_view": "bogaz",
+        "has_green_view": "orman_yesil",
+        "has_city_view": "sehir_panorama",
+    }
+    aggregated["manzara"] = [label for slug, label in view_map.items() if values.get(slug) is True] or None
+    aggregated["mutfak_tipi"] = "amerikan_acik" if values.get("has_american_kitchen") is True else None
+    bathroom_map = {"has_shower_cabin": "dusakabin", "has_bathtub": "kuvet", "has_jacuzzi": "jakuzi"}
+    aggregated["banyo_ozellikleri"] = [label for slug, label in bathroom_map.items() if values.get(slug) is True] or None
+    amenity_map = {
+        "has_outdoor_pool": "havuz",
+        "has_indoor_pool": "havuz",
+        "has_private_pool": "havuz",
+        "has_private_garden": "yesil_alan_peyzaj",
+        "has_shared_garden": "yesil_alan_peyzaj",
+        "has_garden": "yesil_alan_peyzaj",
+        "has_closed_parking": "kapali_otopark",
+        "has_open_parking": "acik_otopark",
+        "has_playground": "cocuk_parki",
+        "has_fitness": "spor_alani",
+        "has_basketball_court": "spor_alani",
+        "has_football_field": "spor_alani",
+        "has_tennis_court": "spor_alani",
+        "has_volleyball_court": "spor_alani",
+    }
+    aggregated["imkanlar"] = list(dict.fromkeys(
+        label for slug, label in amenity_map.items() if values.get(slug) is True
+    )) or None
+    return aggregated
 
 
 def extract_visual_labels(
@@ -491,30 +556,55 @@ def extract_visual_labels(
 ) -> dict[str, Any]:
     image_paths = _resolve_image_paths(record)
     if not image_paths:
-        aggregated = _empty_visual_aggregate()
+        values, sources = _current_filter_values(record)
+        aggregated = _canonical_visual_compat(values)
         _merge_imkanlar(aggregated, text_imkanlar, None)
-        return {"per_image": [], "aggregated": aggregated, "confidence_method": confidence_mode, "min_confidence": min_confidence}
+        return {"per_image": [], "aggregated": aggregated, "filter_values": values, "filter_sources": sources, "confidence_method": confidence_mode, "min_confidence": min_confidence}
 
     if confidence_mode == "agreement":
-        run_aggregates = []
+        run_values = []
+        per_image = []
         for _ in range(agreement_k):
-            per_image = _vision_pass(
+            run_items, values, _sources = _vision_pass(
                 image_paths, candidate, cost_tracker, image_tokens_per_image,
-                chunk_size=vision_chunk_size, min_confidence=min_confidence,
+                record=record, chunk_size=vision_chunk_size, min_confidence=min_confidence,
             )
-            run_aggregates.append(_aggregate_from_items(per_image, min_confidence))
-        return _agreement_aggregate(run_aggregates, text_imkanlar=text_imkanlar, min_confidence=min_confidence)
+            per_image.extend(run_items)
+            run_values.append(values)
+        values, sources = _current_filter_values(record)
+        for spec in specs_for_source("image_vlm"):
+            observed = [run[spec.slug] for run in run_values if run.get(spec.slug) is not None]
+            if not observed:
+                continue
+            if spec.value_type == "multi_enum":
+                counts: Counter[str] = Counter(value for run in observed for value in run)
+                accepted = [value for value, count in counts.items() if count / agreement_k >= min_confidence]
+                prediction = accepted or None
+            else:
+                prediction, count = Counter(observed).most_common(1)[0]
+                if count / agreement_k < min_confidence:
+                    prediction = None
+            values, sources = merge_filter_values(
+                {**record, "filter_values": values, "filter_sources": sources},
+                {spec.slug: prediction},
+                "kimi_image",
+            )
+        aggregated = _canonical_visual_compat(values)
+        _merge_imkanlar(aggregated, text_imkanlar, aggregated.get("imkanlar"))
+        return {"per_image": per_image, "aggregated": aggregated, "filter_values": values, "filter_sources": sources, "confidence_method": "agreement", "min_confidence": min_confidence}
 
-    per_image = _vision_pass(
+    per_image, values, sources = _vision_pass(
         image_paths, candidate, cost_tracker, image_tokens_per_image,
-        chunk_size=vision_chunk_size, min_confidence=min_confidence,
+        record=record, chunk_size=vision_chunk_size, min_confidence=min_confidence,
     )
-    aggregated = _aggregate_from_items(per_image, min_confidence)
+    aggregated = _canonical_visual_compat(values)
     vision_imkanlar = list(aggregated.get("imkanlar") or [])
     _merge_imkanlar(aggregated, text_imkanlar, vision_imkanlar)
     return {
         "per_image": per_image,
         "aggregated": aggregated,
+        "filter_values": values,
+        "filter_sources": sources,
         "confidence_method": "self",
         "min_confidence": min_confidence,
     }
@@ -547,8 +637,9 @@ def label_record(
 ) -> dict[str, Any]:
     text_prediction = extract_text_labels(record, text_candidate, cost_tracker)
     filter_values, filter_sources = merge_filter_values(record, text_prediction, "deepseek_description")
+    enriched_record = {**record, "filter_values": filter_values, "filter_sources": filter_sources}
     visual_qualities = extract_visual_labels(
-        record,
+        enriched_record,
         vision_candidate,
         cost_tracker,
         text_imkanlar=text_prediction.get("imkanlar"),
@@ -559,6 +650,15 @@ def label_record(
         vision_chunk_size=vision_chunk_size,
     )
     facts = merge_facts(record, text_prediction, visual_qualities["aggregated"])
+    filter_values = visual_qualities.get("filter_values", filter_values)
+    filter_sources = visual_qualities.get("filter_sources", filter_sources)
+    for field_name in TEXT_FACT_FIELDS:
+        if filter_values.get(field_name) is not None:
+            facts[field_name] = filter_values[field_name]
+    if facts.get("has_parking") is None and (
+        filter_values.get("has_open_parking") is True or filter_values.get("has_closed_parking") is True
+    ):
+        facts["has_parking"] = True
     return {
         "id": record.get("id"),
         "title": record.get("title"),

@@ -1,6 +1,6 @@
 # STATUS.md — Mevcut Durum (snapshot)
 
-> Son güncelleme: 2026-05-30, **canonical Emlakjet filter enrichment Task 3 DONE**: DeepSeek yalnız ilan başlığı + açıklamayı ve halen `null` kalan `description_llm` izinli canonical alanları görüyor. Registry dışı anahtarlar ve enum dışı değerler reddediliyor; scraper değerleri overwrite edilmiyor; kabul edilen yeni değerler `deepseek_description` provenance ile birleşiyor. Task 3 testi: `12 passed`.
+> Son güncelleme: 2026-05-30, **canonical Emlakjet filter enrichment Task 4 DONE**: Kimi yalnız halen `null` kalan `image_vlm` izinli canonical alanları görüyor. Boolean image inference true-only; `false` görsel çıktısı reddediliyor. Confidence eşiğinin altı merge edilmiyor. `salon_ozellikleri` aktif gold/helper sözleşmesinden kaldırıldı. `VISION_MAX_IMAGE_EDGE` env ayarı korunuyor; ilk ücretli validation kullanıcı onayıyla `512px`, batch `20`, self confidence, chunk `0` olacak. Task 4 ilgili testleri: `24 passed`.
 > Önceki (2026-05-29): vision multi-image refactor (tek çağrı/ilan), Kimi multi-image gold testi geçti (bkz. M1.5).
 > Bu dosyayı sıradaki agent her milestone bitince güncellemeli.
 
@@ -16,7 +16,7 @@
 - **M3 (labeling pipeline)** — **DONE** (iskele + pre-flight): `labeling/run_labeling.py` mevcut (multi-image VLM + text LLM, eşzamanlı çağrı, resume, cost cap, pre-flight gold gate). Pre-flight kapısı **`facts_all`** (eşik facts ≥0.75, visual ≥0.70). **Full 1239-ilan build henüz çalıştırılmadı** (`data/processed/labeled.jsonl` yok; sadece pre-flight smoke çıktıları var).
 - **M4 (indexing + retrieval)** — **DONE (iskele, Codex 2026-05-30)**: `indexing/composer.py`, `indexing/build_chroma.py`, `retrieval/retriever.py` + testler. Gerçek index build M3 `labeled.jsonl`'e bağlı (henüz koşulmadı).
 - **M5–M8** — PENDING. **M7 kapsam dışı** (arkadaş yaptı). Sıradaki: M3 full labeling build → M4 gerçek index → M5 RAG/Streamlit.
-- **Canonical filter enrichment** — **AKTİF**: Task 3/6 DONE. Sıradaki Task 4: Kimi yalnız görsellerden, visually defensible ve halen `null` canonical alanları true-only dolduracak.
+- **Canonical filter enrichment** — **AKTİF**: Task 4/6 DONE. Sıradaki Task 5: canonical `filter_values` metadata ve her kullanıcı isteğini hard constraint yapan retrieval.
 
 Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). Not: `archive/hw6` + `pre_scraper_fix` + `data/_*` temizlikte silindi (bkz. checkpoint 6b019f7).
 
@@ -152,7 +152,7 @@ Kimi multi-image (10 gold listing, tüm foto = 161, `llm/shootout_vision_multi_r
 
 - `labeling/gold_listings_manual_todo.jsonl` — **30 satır**, sadeleştirilmiş 21-facts şema:
   - `facts_gold` (21 alan): 15 structured otomatik dolu, 6 user-fill (has_balcony, has_elevator, has_parking, has_aircon, near_metro, near_metrobus). `kitchen_type` kaldırıldı.
-  - `visual_gold` (7 alan): balkon_ozellikleri, manzara, mutfak_tipi, banyo_ozellikleri, zemin_tipi, salon_ozellikleri, imkanlar. **16/30 dolduruldu** (`GOLD_BENCHMARK_LISTING_COUNT=16`; benchmark ilk 16 satırı kullanır), kalan prefilled.
+  - Eski manuel gold dosyası `salon_ozellikleri` kalıntıları içeriyor. Canonical registry sonrası Task 6'da API harcamasından önce yeniden üretilecek; mevcut dosya silinmedi.
   - Doldurma kuralı: gördüğün/emin olduğun → işaretle; negatif kanıtla emin "yok" → false/`[]`; emin değil/görünmüyor → null (benchmark'ta skip).
 - `evaluation/gold_queries_manual_todo.jsonl` — **30 sorgu**, `expected_listing_ids=[]`. **M4'e ertelendi** (retriever olmadan test edilemez).
 

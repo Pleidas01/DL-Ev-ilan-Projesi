@@ -62,7 +62,6 @@ VISUAL_GOLD_FIELDS = (
     "manzara",
     "mutfak_tipi",
     "banyo_ozellikleri",
-    "salon_ozellikleri",
     "imkanlar",
 )
 
@@ -70,7 +69,6 @@ MULTI_SELECT_FIELDS = {
     "balkon_ozellikleri",
     "manzara",
     "banyo_ozellikleri",
-    "salon_ozellikleri",
     "imkanlar",
 }
 
@@ -82,7 +80,6 @@ VISUAL_ENUMS = {
     "manzara": ["deniz", "bogaz", "orman_yesil", "park", "sehir_panorama", "dag", "ic_avlu", "komsu_duvari"],
     "mutfak_tipi": ["amerikan_acik", "kapali_ayri"],
     "banyo_ozellikleri": ["dusakabin", "kuvet", "jakuzi", "banyoda_pencere", "birden_fazla_banyo"],
-    "salon_ozellikleri": ["somine", "nis", "acik_plan_genis", "ayri_yemek_alani"],
     "imkanlar": ["havuz", "yesil_alan_peyzaj", "guvenlik_kabini", "kapali_otopark", "acik_otopark", "cocuk_parki", "spor_alani"],
 }
 

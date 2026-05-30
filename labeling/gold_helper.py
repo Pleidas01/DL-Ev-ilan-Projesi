@@ -55,8 +55,6 @@ def suggest_hybrid_facts(
 def suggest_visual_fields(property_features: list[Any]) -> dict[str, Any]:
     blob = _feature_blob(property_features)
     suggested: dict[str, Any] = {}
-    if "somine" in blob:
-        suggested["salon_ozellikleri"] = ["somine"]
     imkanlar = []
     for needle, value in (
         ("havuz", "havuz"),

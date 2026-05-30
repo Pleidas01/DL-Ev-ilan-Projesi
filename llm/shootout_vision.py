@@ -18,35 +18,34 @@ from llm.gold_benchmark import (
     load_gold_rows,
     score_against_gold,
 )
+from schema.emlakjet_filters import FilterSpec, specs_for_source
 
 VISION_MODEL_IDS = ("gemma_4_local", "kimi_k2_6")
 
 VISION_SYSTEM_PROMPT = """Sen emlak ilani fotograflarini JSON alanlarina etiketleyen bir asistansin.
 Sadece gecerli JSON dondur. Aciklama yazma."""
 
-VISION_USER_PROMPT = """Bu fotograflardan asagidaki 6 visual_gold alanini cikar. Fotografta gorunmeyen alanlar icin null kullan.
-
-ONEMLI: Degerlerde Turkce karakter KULLANMA. c/g/i/o/s/u yaz; ç/ğ/ı/ö/ş/ü DEGIL (orn. "bogaz", "acik_otopark"). Sadece asagidaki listede yer alan degerleri aynen kullan.
+def build_vision_user_prompt(specs: tuple[FilterSpec, ...] | None = None) -> str:
+    specs = specs if specs is not None else specs_for_source("image_vlm")
+    schema = {spec.slug: None for spec in specs}
+    enums = {spec.slug: spec.values for spec in specs if spec.values}
+    return f"""Bu fotograflardan yalnizca asagidaki canonical filtreleri cikar.
 
 JSON semasi:
-{
-  "balkon_ozellikleri": null,
-  "manzara": null,
-  "mutfak_tipi": null,
-  "banyo_ozellikleri": null,
-  "salon_ozellikleri": null,
-  "imkanlar": null
-}
+{{"filters": {json.dumps(schema, ensure_ascii=False, indent=2)}, "confidence": 0.0}}
 
-Enumlar (sadece bu degerleri kullan):
-- balkon_ozellikleri (liste): cam_balkon, acik_balkon, fransiz_balkon, cikma_balkon, teras
-- manzara (liste): deniz, bogaz, orman_yesil, park, sehir_panorama, dag, ic_avlu, komsu_duvari
-- mutfak_tipi (tek deger): amerikan_acik | kapali_ayri
-- banyo_ozellikleri (liste): dusakabin, kuvet, jakuzi, banyoda_pencere, birden_fazla_banyo
-- salon_ozellikleri (liste): somine, nis, acik_plan_genis, ayri_yemek_alani
-- imkanlar (liste): havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani
+Enumlar:
+{json.dumps(enums, ensure_ascii=False, indent=2)}
 
-Liste (multi-select) alanlar JSON array olmalidir: balkon_ozellikleri, manzara, banyo_ozellikleri, salon_ozellikleri, imkanlar."""
+Kurallar:
+- Yalnizca semadaki alanlari dondur.
+- Boolean alanlarda sadece acik gorsel kanit varsa true kullan.
+- Boolean alanlarda false kullanma; gorunmeyen veya belirsiz alan null kalir.
+- Enum alanlarda sadece verilen degerleri kullan; belirsiz alan null kalir.
+- confidence 0 ile 1 arasinda self-reported guven olsun."""
+
+
+VISION_USER_PROMPT = build_vision_user_prompt()
 
 
 def parse_vision_json(raw_response: str) -> dict[str, Any]:

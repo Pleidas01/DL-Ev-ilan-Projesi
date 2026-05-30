@@ -62,7 +62,7 @@ M4 (indexing+retr.)   ✅ DONE iskele (Codex) — composer/build_chroma/retrieve
 M5, M6, M8            ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
 ```
 
-**Acil sıradaki iş:** `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 4**. Task 3 tamamlandı: DeepSeek title + description only prompt ile yalnız `null` canonical alanları dolduruyor; registry dışı/enum dışı model çıktıları reddediliyor ve scraper değerleri overwrite edilmiyor. Şimdi Kimi prompt ve merge akışı yalnız görselden doğrulanabilir, halen `null` canonical alanları positive-only dolduracak; `salon_ozellikleri` kaldırılacak. İlk ücretli Kimi pre-flight kod bittikten sonra kullanıcı checkpoint onayı bekleyecek.
+**Acil sıradaki iş:** `docs/superpowers/plans/2026-05-30-emlakjet-filter-enrichment.md` planı **Task 5**. Task 4 tamamlandı: Kimi yalnız `null` ve `image_vlm` izinli canonical alanları görüyor; boolean görsel çıkarım true-only ve confidence eşiği altında merge yok. `salon_ozellikleri` aktif gold/helper sözleşmesinden kaldırıldı. Şimdi composer canonical `filter_values` metadata üretmeli; query slot schema canonical alanları çıkarmalı; retrieval açıkça istenen her alanı hard filter yapmalı. Historical JSON benchmark çıktıları ve mevcut gold dosyası silinmedi; gold Task 6'da API harcamasından önce registry'ye göre yeniden üretilecek.
 
 > **Karar verilebilir önce-işler (opsiyonel/paralel):** (1) `qwen3_vl_local` gold visual benchmark — yerel/ücretsiz vision alternatifi (Kimi ≥0.70 mu) — M3 kararını etkilemez. (2) NN gereksinimi (M6) — M7 dışarı çıktı, hocanın "kendi NN'iniz" şartı yeniden açık (STATUS Açık sorular #6). İkisi de kullanıcı kararı bekler.
 
@@ -89,7 +89,7 @@ python3 -m labeling.gold_helper --listing <ID>
 
 ### 2b. Visual gold doldurma rehberi
 
-Her listing'in `data/images/<listing_id>/` klasöründeki fotoğraflara bak. **7 alan** (single-select: mutfak_tipi, zemin_tipi; diğerleri multi-select):
+Her listing'in `data/images/<listing_id>/` klasöründeki fotoğraflara bak. **5 compatibility visual alan** (single-select: mutfak_tipi; diğerleri multi-select):
 
 | Alan | Tip | Değerler |
 |---|---|---|
@@ -97,8 +97,6 @@ Her listing'in `data/images/<listing_id>/` klasöründeki fotoğraflara bak. **7
 | manzara | multi | deniz, bogaz, orman_yesil, park, sehir_panorama, dag, ic_avlu, komsu_duvari |
 | mutfak_tipi | single | amerikan_acik \| kapali_ayri |
 | banyo_ozellikleri | multi | dusakabin, kuvet, jakuzi, banyoda_pencere, birden_fazla_banyo |
-| zemin_tipi | single | parke \| laminat \| seramik \| granit \| mermer \| hali \| karma |
-| salon_ozellikleri | multi | somine, nis, acik_plan_genis, ayri_yemek_alani |
 | imkanlar | multi | havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani |
 
 **Multi-select** alanlar JSON array, **single** alanlar string. `imkanlar` site dışı binalarda da geçerli (güvenlik/otopark site olmadan da olabilir).

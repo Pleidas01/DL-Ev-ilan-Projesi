@@ -17,7 +17,7 @@ def test_new_gold_schema_field_counts_are_stable():
     assert len(STRUCTURED_FACT_FIELDS) == 15
     # HYBRID_FACT_FIELDS = FACTS - STRUCTURED, yani 4 hybrid + 2 desc-only = 6
     assert len(HYBRID_FACT_FIELDS) == 6
-    assert len(VISUAL_GOLD_FIELDS) == 6
+    assert len(VISUAL_GOLD_FIELDS) == 5
     assert "near_metrobus" in FACTS_GOLD_FIELDS
     assert "has_aircon" in FACTS_GOLD_FIELDS
     assert "heating_type" in STRUCTURED_FACT_FIELDS
@@ -26,6 +26,7 @@ def test_new_gold_schema_field_counts_are_stable():
     assert "kitchen_type" not in FACTS_GOLD_FIELDS
     assert "balkon_ozellikleri" in VISUAL_GOLD_FIELDS
     assert "depolama_gomme" not in VISUAL_GOLD_FIELDS
+    assert "salon_ozellikleri" not in VISUAL_GOLD_FIELDS
 
 
 def test_suggest_hybrid_facts_detects_common_keywords():
@@ -83,7 +84,7 @@ def test_listing_image_paths_normalizes_windows_separators_for_current_platform(
 def test_suggest_visual_fields_cross_validates_property_features():
     suggested = suggest_visual_fields(["Somine", "Kapali Otopark", "Havuz"])
 
-    assert suggested["salon_ozellikleri"] == ["somine"]
+    assert "salon_ozellikleri" not in suggested
     assert suggested["imkanlar"] == ["havuz", "kapali_otopark"]
     assert "depolama_gomme" not in suggested
 

@@ -154,14 +154,16 @@ def empty_filter_values() -> dict[str, Any]: ...
 - Modify: `tests/test_run_labeling.py`
 - Modify: `llm/gold_benchmark.py`
 
-- [ ] Remove `salon_ozellikleri`.
-- [ ] Add tests proving the Kimi prompt includes only null fields permitted for `image_vlm`.
-- [ ] Add tests proving Kimi cannot overwrite scraper or DeepSeek values.
-- [ ] Start with visually defensible fields: elevator, air conditioner, balcony status/type, kitchen type, shower cabin, bathtub, jacuzzi, parking, pool, garden/landscaping, playground, sports area, and view types.
-- [ ] Keep image inference positive-only for booleans: clear evidence may produce `true`; absence produces `null`.
-- [ ] Preserve `VISION_MAX_IMAGE_EDGE`; use `512` for the first validation run and `--vision-chunk-size 0` unless timeout evidence requires chunking.
-- [ ] Run: `.venv/bin/python3 -m pytest -q tests/test_run_labeling.py tests/test_gold_helpers.py`
-- [ ] Commit: `feat: fill visually supported null filters with kimi`
+- [x] Remove `salon_ozellikleri`.
+- [x] Add tests proving the Kimi prompt includes only null fields permitted for `image_vlm`.
+- [x] Add tests proving Kimi cannot overwrite scraper or DeepSeek values.
+- [x] Start with visually defensible fields: elevator, air conditioner, balcony status/type, kitchen type, shower cabin, bathtub, jacuzzi, parking, pool, garden/landscaping, playground, sports area, and view types.
+- [x] Keep image inference positive-only for booleans: clear evidence may produce `true`; absence produces `null`.
+- [x] Preserve `VISION_MAX_IMAGE_EDGE`; use `512` for the first validation run and `--vision-chunk-size 0` unless timeout evidence requires chunking.
+- [x] Run: `.venv/bin/python3 -m pytest -q tests/test_run_labeling.py tests/test_gold_helpers.py`
+- [x] Commit: `feat: fill visually supported null filters with kimi`
+
+> Task 4 checkpoint (2026-05-30): no paid Kimi request was sent. The first validation run remains a Task 6 user-approved action with `VISION_MAX_IMAGE_EDGE=512`, `--batch-size 20`, `--confidence-mode self`, and `--vision-chunk-size 0`.
 
 ## Task 5: Dynamic Metadata and Hard Filters
 

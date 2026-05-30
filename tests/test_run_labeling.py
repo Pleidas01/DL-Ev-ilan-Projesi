@@ -151,7 +151,6 @@ def test_label_record_applies_visual_fallback_to_hybrid_facts(monkeypatch):
                 "manzara": None,
                 "mutfak_tipi": None,
                 "banyo_ozellikleri": None,
-                "salon_ozellikleri": None,
                 "imkanlar": ["kapali_otopark"],
             },
             "confidence_method": "self",
@@ -169,11 +168,79 @@ def test_label_record_applies_visual_fallback_to_hybrid_facts(monkeypatch):
     assert labeled["facts_gold"]["has_parking"] is True
 
 
-def test_build_vision_prompt_reuses_shootout_winner():
+def test_build_vision_prompt_contains_only_null_image_permitted_filters():
     from labeling.run_labeling import build_vision_prompt
-    from llm.shootout_vision import VISION_USER_PROMPT
 
-    assert build_vision_prompt(9) == VISION_USER_PROMPT
+    record = _sample_record()
+    prompt = build_vision_prompt(record)
+
+    assert "has_balcony" in prompt
+    assert "has_aircon" in prompt
+    assert "has_elevator" not in prompt
+    assert "near_metro" not in prompt
+    assert "salon_ozellikleri" not in prompt
+
+
+def test_kimi_filter_merge_is_null_only_and_boolean_true_only():
+    from labeling.run_labeling import merge_filter_values, normalize_visual_filter_prediction
+
+    record = _sample_record()
+    record["filter_values"] = {"has_elevator": True, "has_aircon": None, "has_balcony": None, "balcony_type": None}
+    record["filter_sources"] = {"has_elevator": "scraper_property_feature"}
+    prediction = normalize_visual_filter_prediction(
+        {
+            "filters": {
+                "has_elevator": False,
+                "has_aircon": False,
+                "has_balcony": True,
+                "balcony_type": ["Açık Balkon"],
+                "near_metro": True,
+            }
+        },
+        record,
+    )
+
+    values, sources = merge_filter_values(record, prediction, "kimi_image")
+
+    assert values["has_elevator"] is True
+    assert sources["has_elevator"] == "scraper_property_feature"
+    assert values["has_aircon"] is None
+    assert values["has_balcony"] is True
+    assert values["balcony_type"] == ["acik_balkon"]
+    assert sources["has_balcony"] == "kimi_image"
+    assert values["near_metro"] is None
+
+
+def test_first_kimi_validation_defaults_to_unchunked_calls():
+    from labeling.run_labeling import DEFAULT_VISION_CHUNK_SIZE
+
+    assert DEFAULT_VISION_CHUNK_SIZE == 0
+
+
+def test_extract_visual_labels_persists_kimi_canonical_filters(monkeypatch):
+    from llm.clients import candidate_by_id
+    from labeling import run_labeling
+
+    record = _sample_record()
+    record["filter_values"] = {"has_balcony": None, "has_aircon": None}
+    record["filter_sources"] = {}
+    monkeypatch.setattr(run_labeling, "_resolve_image_paths", lambda _record: ["image-a.jpg"])
+    monkeypatch.setattr(
+        run_labeling,
+        "complete_vision_json",
+        lambda *_args, **_kwargs: json.dumps({"filters": {"has_balcony": True, "has_aircon": False}, "confidence": 0.9}),
+    )
+
+    visual = run_labeling.extract_visual_labels(
+        record,
+        candidate_by_id("kimi_k2_6"),
+        run_labeling.CostTracker(max_cost_usd=1.0),
+        text_imkanlar=[],
+    )
+
+    assert visual["filter_values"]["has_balcony"] is True
+    assert visual["filter_sources"]["has_balcony"] == "kimi_image"
+    assert visual["filter_values"]["has_aircon"] is None
 
 
 def test_visual_aggregation_accepts_visual_gold_wrapper():
@@ -277,7 +344,6 @@ def test_score_preflight_reports_llm_facts_separately():
                     "manzara": ["deniz"],
                     "mutfak_tipi": "amerikan_acik",
                     "banyo_ozellikleri": [],
-                    "salon_ozellikleri": None,
                     "imkanlar": ["kapali_otopark"],
                 }
             },
@@ -299,7 +365,6 @@ def test_score_preflight_reports_llm_facts_separately():
                 "manzara": ["deniz", "bogaz"],
                 "mutfak_tipi": "amerikan_acik",
                 "banyo_ozellikleri": [],
-                "salon_ozellikleri": None,
                 "imkanlar": ["kapali_otopark"],
             },
         }
@@ -342,7 +407,6 @@ def test_passes_thresholds_uses_facts_all_not_facts_llm():
         "manzara": ["deniz"],
         "mutfak_tipi": "amerikan_acik",
         "banyo_ozellikleri": ["dusakabin"],
-        "salon_ozellikleri": ["somine"],
         "imkanlar": ["havuz"],
     }
     predictions = [
