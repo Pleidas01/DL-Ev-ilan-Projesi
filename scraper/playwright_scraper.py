@@ -29,6 +29,7 @@ from tqdm import tqdm
 from playwright.async_api import async_playwright, TimeoutError as PWTimeoutError, Response
 from schema.emlakjet_filters import (
     extract_scraper_filter_facts,
+    normalize_label,
     raw_attribute_key_for_info_label,
 )
 
@@ -198,19 +199,31 @@ def _strip_html_text(fragment: str) -> str:
 
 
 def parse_listing_info_table(html: str) -> dict[str, str]:
-    """İlan Bilgileri (#ilan-hakkinda) key/value çiftlerini çıkarır."""
+    """İlan Bilgileri (#ilan-hakkinda) key/value çiftlerini çıkarır.
+
+    Tüm satırlar normalize etiketle `infoTableAll` altında saklanır (hiçbir fact
+    sessizce düşmez); registry'de karşılığı olan etiketler ayrıca canonical
+    attribute anahtarına yazılır (cleaner geri uyumluluğu için).
+    """
     section = _html_section(html, 'İlan Bilgileri', ['İlan Özellikleri', ' Açıklaması'])
     if not section:
         section = _html_section(html, 'id="ilan-hakkinda"', ['İlan Özellikleri', ' Açıklaması'])
     if not section and INFO_ITEM_RE.search(html):
         section = html
     attrs: dict[str, str] = {}
+    all_rows: dict[str, str] = {}
     for match in INFO_ITEM_RE.finditer(section):
         key = match.group('key').strip()
         val = match.group('val').strip()
-        attr_key = raw_attribute_key_for_info_label(_info_label_key(key))
-        if attr_key and val:
+        if not val:
+            continue
+        label_key = _info_label_key(key)
+        all_rows[normalize_label(label_key)] = val
+        attr_key = raw_attribute_key_for_info_label(label_key)
+        if attr_key:
             attrs[attr_key] = val
+    if all_rows:
+        attrs['infoTableAll'] = all_rows
     return attrs
 
 

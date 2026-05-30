@@ -96,6 +96,32 @@ def test_ilan_bilgileri_table_maps_extended_fact_fields():
     assert info["priceStatus"] == "Genel Fiyat"
 
 
+def test_ilan_bilgileri_captures_every_row_including_unmapped_labels():
+    """Canvas dolduğunda hiçbir fact düşmemeli: eşlenmeyen satırlar da raw'da kalır.
+
+    Önceden parser yalnız _INFO_ATTRIBUTE_KEYS'teki etiketleri tutuyordu; registry'de
+    karşılığı olsa bile eşlenmemiş alanlar (örn. 'Görüntülü Gezilebilir mi?') ve hiç
+    bilinmeyen satırlar sessizce düşüyordu. infoTableAll bunu engellemeli.
+    """
+    html = """
+    <h2>İlan Bilgileri</h2>
+    <li><span>Banyo Sayısı</span><span>2</span></li>
+    <li><span>Görüntülü Gezilebilir mi?</span><span>Evet</span></li>
+    <li><span>Cephe</span><span>Doğu</span></li>
+    <h2>İlan Özellikleri</h2>
+    """
+
+    info = parse_listing_info_table(html)
+
+    # Eşlenen satır hâlâ canonical key altında (cleaner geri uyumluluğu).
+    assert info["bathroomCount"] == "2"
+    # Her satır normalize etiketiyle kayıpsız saklanır — eşlenmemiş/bilinmeyen dahil.
+    all_rows = info["infoTableAll"]
+    assert all_rows["banyo sayisi"] == "2"
+    assert all_rows["goruntulu gezilebilir mi?"] == "Evet"
+    assert all_rows["cephe"] == "Doğu"
+
+
 def test_ilan_ozellikleri_bullet_features_extracted():
     html = _load_fixture()
     features = parse_property_features(html)

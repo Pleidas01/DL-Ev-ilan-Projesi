@@ -2,6 +2,7 @@ from schema.emlakjet_filters import (
     EMLAKJET_FILTERS,
     PROPERTY_FEATURE_SPECS,
     empty_filter_values,
+    extract_scraper_filter_facts,
     normalize_label,
     spec_for_info_label,
     spec_for_property_feature,
@@ -63,3 +64,36 @@ def test_registry_lookup_normalizes_turkish_labels_and_empty_values_are_null():
 
 def test_removed_salon_ozellikleri_is_not_a_canonical_filter():
     assert "salon_ozellikleri" not in {spec.slug for spec in EMLAKJET_FILTERS}
+
+
+def test_info_table_fills_canvas_by_label_including_previously_unmapped_filters():
+    """İlan Bilgileri'nin tüm satırları etikete göre kanonik filtreleri doldurmalı.
+
+    has_virtual_tour ('Görüntülü Gezilebilir mi?') registry'de listing_info kaynaklı
+    ama _ATTRIBUTE_FILTER_SLUGS'ta yok; eski yol onu asla dolduramıyordu. infoTableAll
+    üzerinden etiket çözümü bu boşluğu kapatmalı. Eşlenen alanlar (bathroom_count) da
+    sadece tablodan, canonical key olmadan dolabilmeli.
+    """
+    attrs = {"infoTableAll": {
+        "goruntulu gezilebilir mi?": "Evet",
+        "banyo sayisi": "2",
+    }}
+
+    values, sources = extract_scraper_filter_facts(attrs)
+
+    assert values["has_virtual_tour"] is True
+    assert sources["has_virtual_tour"] == "scraper_info"
+    assert values["bathroom_count"] == 2
+    assert sources["bathroom_count"] == "scraper_info"
+
+
+def test_info_table_label_resolution_does_not_overwrite_existing_value():
+    """Monotonik provenance: etiket döngüsü daha önce set edilmiş değeri ezmemeli."""
+    attrs = {
+        "bathroomCount": "3",
+        "infoTableAll": {"banyo sayisi": "1"},
+    }
+
+    values, _ = extract_scraper_filter_facts(attrs)
+
+    assert values["bathroom_count"] == 3

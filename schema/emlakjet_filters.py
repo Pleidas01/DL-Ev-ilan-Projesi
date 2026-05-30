@@ -297,6 +297,17 @@ def extract_scraper_filter_facts(
         if parsed is not None:
             values[slug] = parsed
             sources[slug] = "scraper_info"
+    # İlan Bilgileri tablosundaki tüm satırları etikete göre çöz: önceden
+    # eşlenmemiş ama registry'de listing_info kaynaklı olan filtreleri de
+    # (örn. has_virtual_tour) doldurur. Mevcut değerler ezilmez.
+    for label, raw_value in (attributes.get("infoTableAll") or {}).items():
+        spec = spec_for_info_label(label)
+        if spec is None or values[spec.slug] is not None:
+            continue
+        parsed = parse_filter_value(spec, raw_value)
+        if parsed is not None:
+            values[spec.slug] = parsed
+            sources[spec.slug] = "scraper_info"
     for label in property_features or []:
         spec = spec_for_property_feature(label)
         if spec and values[spec.slug] is None:
