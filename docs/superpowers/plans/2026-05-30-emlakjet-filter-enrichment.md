@@ -174,14 +174,16 @@ def empty_filter_values() -> dict[str, Any]: ...
 - Modify: `tests/test_composer.py`
 - Modify: `tests/test_retriever.py`
 
-- [ ] Add tests for numeric, categorical, multi-enum, and boolean metadata.
-- [ ] Flatten canonical fields into Chroma metadata using stable registry slugs.
-- [ ] Update query-slot schema so DeepSeek extracts requested canonical fields.
-- [ ] Build Chroma `where` conditions for every requested supported field.
-- [ ] Require exact proven matches: queried `true` excludes `false` and `null`.
-- [ ] Keep BGE-M3 + reranker for ranking after hard filtering.
-- [ ] Run: `.venv/bin/python3 -m pytest -q tests/test_composer.py tests/test_retriever.py tests/test_llm_shootout.py`
-- [ ] Commit: `feat: query canonical filters as hard constraints`
+- [x] Add tests for numeric, categorical, multi-enum, and boolean metadata.
+- [x] Flatten canonical fields into Chroma metadata using stable registry slugs.
+- [x] Update query-slot schema so DeepSeek extracts requested canonical fields.
+- [x] Build Chroma `where` conditions for every requested supported field.
+- [x] Require exact proven matches: queried `true` excludes `false` and `null`.
+- [x] Keep BGE-M3 + reranker for ranking after hard filtering.
+- [x] Run: `.venv/bin/python3 -m pytest -q tests/test_composer.py tests/test_retriever.py tests/test_llm_shootout.py`
+- [x] Commit: `feat: query canonical filters as hard constraints`
+
+> Task 5 checkpoint (2026-05-30): canonical scalar metadata is stored under registry slugs. Multi-enum values additionally create exact option flags such as `balcony_type__acik_balkon = true`; query hard filters use those flags instead of substring matching. Metadata for `null` values is omitted, so unknown values cannot satisfy an explicit request. BGE-M3 and reranking remain after metadata filtering.
 
 ## Task 6: Re-scrape and Validation
 

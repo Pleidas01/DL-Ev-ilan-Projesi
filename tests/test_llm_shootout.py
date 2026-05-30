@@ -22,8 +22,8 @@ def test_build_slot_prompt_includes_few_shot_examples():
         assert example["query"] in prompt
     assert "test sorgusu" in prompt
     assert '"hard_filters"' in prompt
-    assert '"facts_gold"' in prompt
-    assert '"visual_gold"' in prompt
+    assert '"filters"' in prompt
+    assert '"price_currency"' in prompt
 
 
 def test_build_slot_prompt_can_disable_few_shot():
@@ -97,11 +97,10 @@ def test_image_data_url_downsizes_large_images(tmp_path):
 
 def test_score_expected_slots_accepts_scalar_actual_for_list_fields():
     parsed = {
-        "hard_filters": {"rooms": "1+1", "districts": "Kadikoy", "max_price_tl": 30000},
-        "soft_features": {"facts_gold": {}, "visual_gold": {}},
+        "hard_filters": {"filters": {"room_count": "1+1", "district": "Kadikoy"}, "max_price_amount": 30000},
         "free_form_tr": "test",
     }
-    expected = {"rooms": ["1+1"], "districts": ["Kadikoy"], "max_price_tl": 30000}
+    expected = {"room_count": ["1+1"], "district": ["Kadikoy"], "max_price_amount": 30000}
 
     score = score_expected_slots(parsed, expected)
 
@@ -110,12 +109,11 @@ def test_score_expected_slots_accepts_scalar_actual_for_list_fields():
 
 def test_score_expected_slots_does_not_crash_on_int_list_mismatch():
     parsed = {
-        "hard_filters": {"rooms": 1},
-        "soft_features": {"facts_gold": {}, "visual_gold": {}},
+        "hard_filters": {"filters": {"room_count": 1}},
         "free_form_tr": "test",
     }
 
-    score = score_expected_slots(parsed, {"rooms": ["1+1"]})
+    score = score_expected_slots(parsed, {"room_count": ["1+1"]})
 
     assert 0.0 <= score <= 1.0
 

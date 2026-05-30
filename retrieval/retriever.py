@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from llm.clients import candidate_by_id, complete_json
-from llm.gold_benchmark import FACTS_GOLD_FIELDS
 from llm.shootout import SLOT_SYSTEM_PROMPT, build_slot_prompt, flatten_slots
+from schema.emlakjet_filters import EMLAKJET_FILTERS, spec_for_slug
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -15,16 +15,6 @@ DEFAULT_PERSIST_DIR = PROJECT_ROOT / "data" / "processed" / "chroma"
 DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
 DEFAULT_RERANKER_MODEL = "BAAI/bge-reranker-v2-m3"
 DEFAULT_COLLECTION = "listings"
-BOOLEAN_FILTER_FIELDS = (
-    "in_gated_complex",
-    "is_furnished",
-    "has_balcony",
-    "has_elevator",
-    "has_parking",
-    "has_aircon",
-    "near_metro",
-    "near_metrobus",
-)
 
 
 def extract_query_slots(query: str, selected_path: Path = DEFAULT_SELECTED_PATH) -> dict[str, Any]:
@@ -45,23 +35,38 @@ def _list_value(value: Any) -> list[Any]:
 
 def slots_to_where(slots: dict[str, Any]) -> dict[str, Any] | None:
     hard = slots.get("hard_filters") or {}
-    flat = flatten_slots(slots)
     conditions: list[dict[str, Any]] = []
 
-    rooms = _list_value(hard.get("rooms"))
-    if rooms:
-        conditions.append({"room_count": {"$in": rooms}})
-    districts = _list_value(hard.get("districts"))
-    if districts:
-        conditions.append({"district": {"$in": districts}})
-    if hard.get("max_price_tl") is not None:
-        conditions.append({"price_tl": {"$lte": hard["max_price_tl"]}})
-    if hard.get("min_size_m2") is not None:
-        conditions.append({"gross_size_m2": {"$gte": hard["min_size_m2"]}})
-    for field_name in BOOLEAN_FILTER_FIELDS:
-        value = flat.get(field_name)
-        if isinstance(value, bool):
-            conditions.append({field_name: value})
+    def add_filter(target: list[dict[str, Any]], slug: str, value: Any) -> None:
+        spec = spec_for_slug(slug)
+        if spec is None or value is None:
+            return
+        if spec.value_type == "multi_enum":
+            for option in _list_value(value):
+                if option in spec.values.values():
+                    target.append({f"{slug}__{option}": True})
+            return
+        if isinstance(value, list):
+            target.append({slug: {"$in": value}})
+            return
+        target.append({slug: value})
+
+    for slug, value in (hard.get("filters") or {}).items():
+        add_filter(conditions, slug, value)
+    for any_of in hard.get("any_of") or []:
+        alternatives: list[dict[str, Any]] = []
+        for slug, value in any_of.items():
+            add_filter(alternatives, slug, value)
+        if alternatives:
+            conditions.append({"$or": alternatives})
+    if hard.get("max_price_amount") is not None:
+        conditions.append({"price_amount": {"$lte": hard["max_price_amount"]}})
+    if hard.get("min_price_amount") is not None:
+        conditions.append({"price_amount": {"$gte": hard["min_price_amount"]}})
+    if hard.get("max_gross_size_m2") is not None:
+        conditions.append({"gross_size_m2": {"$lte": hard["max_gross_size_m2"]}})
+    if hard.get("min_gross_size_m2") is not None:
+        conditions.append({"gross_size_m2": {"$gte": hard["min_gross_size_m2"]}})
 
     if not conditions:
         return None
@@ -141,8 +146,10 @@ class Retriever:
                 "id": listing_id,
                 "score": float(score),
                 "title": metadata.get("title"),
-                "price_tl": metadata.get("price_tl"),
-                "facts": {field: metadata[field] for field in FACTS_GOLD_FIELDS if field in metadata},
+                "price_amount": metadata.get("price_amount"),
+                "price_currency": metadata.get("price_currency"),
+                "price_tl": metadata.get("price_amount") if metadata.get("price_currency") == "TL" else None,
+                "filters": {spec.slug: metadata[spec.slug] for spec in EMLAKJET_FILTERS if spec.slug in metadata},
                 "enriched_doc": document,
             }
             for listing_id, document, metadata, score in ranked

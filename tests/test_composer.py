@@ -11,6 +11,17 @@ def _record():
     return {
         "id": "19387277",
         "title": "Moda'da balkonlu daire",
+        "filter_values": {
+            "district": "Kadikoy",
+            "price_amount": 30000,
+            "price_currency": "TL",
+            "room_count": "2+1",
+            "gross_size_m2": 90,
+            "in_gated_complex": False,
+            "near_metro": True,
+            "has_aircon": None,
+            "balcony_type": ["acik_teras", "acik_balkon"],
+        },
         "facts_gold": {
             "city": "Istanbul",
             "district": "Kadikoy",
@@ -40,7 +51,6 @@ def _record():
                 "manzara": ["sehir_panorama", "deniz"],
                 "mutfak_tipi": "kapali_ayri",
                 "banyo_ozellikleri": None,
-                "salon_ozellikleri": [],
                 "imkanlar": ["spor_alani", "kapali_otopark"],
             }
         },
@@ -63,7 +73,8 @@ def test_to_metadata_extracts_scalar_filter_fields_and_drops_none_values():
     metadata = to_metadata(_record())
 
     assert metadata["district"] == "Kadikoy"
-    assert metadata["price_tl"] == 30000
+    assert metadata["price_amount"] == 30000
+    assert metadata["price_currency"] == "TL"
     assert metadata["in_gated_complex"] is False
     assert metadata["near_metro"] is True
     assert "building_age" not in metadata
@@ -74,9 +85,9 @@ def test_to_metadata_extracts_scalar_filter_fields_and_drops_none_values():
 def test_to_metadata_joins_visual_lists_for_substring_post_filtering():
     metadata = to_metadata(_record())
 
-    assert metadata["manzara"] == "deniz|sehir_panorama"
-    assert metadata["imkanlar"] == "kapali_otopark|spor_alani"
-    assert metadata["mutfak_tipi"] == "kapali_ayri"
+    assert metadata["balcony_type"] == "acik_balkon|acik_teras"
+    assert metadata["balcony_type__acik_balkon"] is True
+    assert metadata["balcony_type__acik_teras"] is True
     assert "salon_ozellikleri" not in metadata
 
 

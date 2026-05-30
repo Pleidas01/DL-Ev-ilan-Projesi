@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from llm.gold_benchmark import FACTS_GOLD_FIELDS, VISUAL_GOLD_FIELDS
+from schema.emlakjet_filters import EMLAKJET_FILTERS
 
 
 Scalar = str | int | float | bool
@@ -29,22 +29,19 @@ def _metadata_value(field_name: str, value: Any) -> Scalar | None:
 
 def to_metadata(record: dict[str, Any]) -> dict[str, Scalar]:
     """Flatten an M3 labeled record into Chroma-compatible scalar metadata."""
-    facts = record.get("facts_gold") or {}
-    visual = (record.get("visual_qualities") or {}).get("aggregated") or {}
+    filters = record.get("filter_values") or {}
     metadata: dict[str, Scalar] = {}
 
     title = _metadata_value("title", record.get("title"))
     if title is not None:
         metadata["title"] = title
 
-    for field_name in FACTS_GOLD_FIELDS:
-        value = _metadata_value(field_name, facts.get(field_name))
+    for spec in EMLAKJET_FILTERS:
+        value = _metadata_value(spec.slug, filters.get(spec.slug))
         if value is not None:
-            metadata[field_name] = value
-
-    for field_name in VISUAL_GOLD_FIELDS:
-        value = _metadata_value(field_name, visual.get(field_name))
-        if value is not None:
-            metadata[field_name] = value
+            metadata[spec.slug] = value
+        if spec.value_type == "multi_enum":
+            for option in filters.get(spec.slug) or []:
+                metadata[f"{spec.slug}__{option}"] = True
 
     return metadata

@@ -6,90 +6,79 @@ from pathlib import Path
 from typing import Any
 
 from llm.clients import CANDIDATES, candidate_by_id, complete_json, estimate_cost_usd, missing_environment
-from llm.gold_benchmark import FACTS_GOLD_FIELDS, VISUAL_GOLD_FIELDS
+from schema.emlakjet_filters import EMLAKJET_FILTERS
 
 
 SLOT_SYSTEM_PROMPT = """Sen Turkce emlak arama sorgularini JSON slotlarina ayiran bir asistansin.
 Sadece gecerli JSON dondur. Aciklama yazma."""
 
 
-def _empty_soft_features() -> dict[str, Any]:
-    return {
-        "visual_gold": {field: None for field in VISUAL_GOLD_FIELDS},
-        "facts_gold": {field: None for field in FACTS_GOLD_FIELDS[10:]},
-    }
+def _empty_filter_values() -> dict[str, Any]:
+    return {spec.slug: None for spec in EMLAKJET_FILTERS}
 
 
 FEW_SHOT_SLOT_EXAMPLES: list[dict[str, Any]] = [
     {
         "query": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire",
         "output": {
-            "hard_filters": {"rooms": ["1+1"], "districts": ["Kadikoy"], "max_price_tl": 30000, "min_size_m2": None},
-            "soft_features": _empty_soft_features(),
+            "hard_filters": {
+                "filters": {"district": ["Kadikoy"], "room_count": ["1+1"], "price_currency": "TL"},
+                "max_price_amount": 30000,
+            },
             "free_form_tr": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire",
         },
     },
     {
         "query": "metroya yakin esyali 1+1 kiralik",
         "output": {
-            "hard_filters": {"rooms": ["1+1"], "districts": None, "max_price_tl": None, "min_size_m2": None},
-            "soft_features": {
-                **_empty_soft_features(),
-                "facts_gold": {**_empty_soft_features()["facts_gold"], "near_metro": True, "is_furnished": True},
-            },
+            "hard_filters": {"filters": {"room_count": ["1+1"], "near_metro": True, "is_furnished": True}},
             "free_form_tr": "metroya yakin esyali 1+1 kiralik",
         },
     },
     {
         "query": "genis salonlu denize yakin 2+1 asansorlu ev",
         "output": {
-            "hard_filters": {"rooms": ["2+1"], "districts": None, "max_price_tl": None, "min_size_m2": None},
-            "soft_features": {
-                **_empty_soft_features(),
-                "facts_gold": {**_empty_soft_features()["facts_gold"], "has_elevator": True},
-                "visual_gold": {**_empty_soft_features()["visual_gold"], "manzara": ["deniz"], "salon_ozellikleri": ["acik_plan_genis"]},
-            },
+            "hard_filters": {"filters": {"room_count": ["2+1"], "has_elevator": True, "has_sea_view": True}},
             "free_form_tr": "genis salonlu denize yakin 2+1 asansorlu ev",
         },
     },
 ]
 
 
-# NOT (M1 FROZEN, 2026-05-29): Aşağıdaki "expected" çıktıları schema refactor ÖNCESİ
-# alan adlarını kullanır (kitchen_type, site_imkanlari, zemin_tipi, teras_tipi,
-# balkon_tipi, mutfak_ozellikleri). M1 slot shootout DONE ve dondurulmuş (kazanan
-# kimi_k2_6). Yeniden koşulacaksa önce facts_gold/visual_gold şemasına migrate edilmeli.
+# Canonical registry alanlarıyla slot benchmark. Generic "otoparklı" gibi birden
+# fazla typed alana karşılık gelebilen ifadeler prompt'ta any_of OR grubu olarak
+# öğretilir; benchmark expected listesi yalnız tek anlamlı slotları puanlar.
 BENCHMARK_QUERIES: list[dict[str, Any]] = [
-    {"query": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire", "expected": {"rooms": ["1+1"], "districts": ["Kadikoy"], "max_price_tl": 30000}},
-    {"query": "genis salonlu denize yakin 2+1 asansorlu ev", "expected": {"rooms": ["2+1"], "has_elevator": True, "salon_ozellikleri": ["acik_plan_genis"], "manzara": ["deniz"]}},
-    {"query": "Besiktas 3+1 60 bin TL alti site icinde", "expected": {"rooms": ["3+1"], "districts": ["Besiktas"], "max_price_tl": 60000, "in_gated_complex": True}},
-    {"query": "metroya yakin esyali 1+1 kiralik", "expected": {"rooms": ["1+1"], "near_metro": True, "is_furnished": True}},
-    {"query": "amerikan mutfakli modern 2+1", "expected": {"rooms": ["2+1"], "kitchen_type": "amerikan_acik", "mutfak_tipi": "amerikan_acik"}},
-    {"query": "otoparkli guvenlikli aileye uygun 3+1", "expected": {"rooms": ["3+1"], "has_parking": True, "site_imkanlari": ["guvenlik_kabini"]}},
-    {"query": "Bostanci sahile yakin deniz manzarali daire", "expected": {"districts": ["Bostanci"], "manzara": ["deniz"]}},
-    {"query": "35 bin alti kombili 2+1", "expected": {"rooms": ["2+1"], "max_price_tl": 35000, "heating_type": "kombi"}},
-    {"query": "parke zeminli ev", "expected": {"zemin_tipi": "parke"}},
-    {"query": "cocuklu aile icin site icinde guvenlikli 4+1", "expected": {"rooms": ["4+1"], "in_gated_complex": True, "site_imkanlari": ["guvenlik_kabini", "cocuk_parki"]}},
-    {"query": "Pendik'te 25 bin TL alti 1+1", "expected": {"rooms": ["1+1"], "districts": ["Pendik"], "max_price_tl": 25000}},
-    {"query": "klimali esyali studyo ya da 1+1", "expected": {"rooms": ["1+1"], "heating_type": "klima", "is_furnished": True}},
-    {"query": "terasli 3+1 daire", "expected": {"rooms": ["3+1"], "teras_tipi": "normal_teras"}},
-    {"query": "kapali otoparkli luks rezidans", "expected": {"has_parking": True, "site_imkanlari": ["kapali_otopark"]}},
-    {"query": "cam balkonlu 2+1", "expected": {"rooms": ["2+1"], "balkon_tipi": "cam_balkon", "has_balcony": True}},
-    {"query": "bahce cikisli kiralik", "expected": {"teras_tipi": "bahce_cikisli"}},
-    {"query": "Suadiye'de deniz goren daire", "expected": {"districts": ["Suadiye"], "manzara": ["deniz"]}},
-    {"query": "Basaksehir site icinde 4+1 otoparkli", "expected": {"rooms": ["4+1"], "districts": ["Basaksehir"], "in_gated_complex": True, "has_parking": True}},
-    {"query": "asansorlu dogalgazli uygun fiyatli 2+1", "expected": {"rooms": ["2+1"], "has_elevator": True, "heating_type": "dogalgaz"}},
-    {"query": "amerikan mutfakli 1+1 daire", "expected": {"rooms": ["1+1"], "kitchen_type": "amerikan_acik", "mutfak_tipi": "amerikan_acik"}},
-    {"query": "manzarasi guzel yuksek kat 3+1", "expected": {"rooms": ["3+1"], "manzara": ["sehir_panorama"]}},
-    {"query": "merkezi isitma buyuk salonlu ev", "expected": {"heating_type": "merkezi", "salon_ozellikleri": ["acik_plan_genis"]}},
-    {"query": "ogrenci icin metro yakini ucuz 1+1", "expected": {"rooms": ["1+1"], "near_metro": True}},
-    {"query": "laminat zeminli 2+1", "expected": {"rooms": ["2+1"], "zemin_tipi": "laminat"}},
-    {"query": "bahce kati sakin guvenlikli site", "expected": {"in_gated_complex": True, "site_imkanlari": ["guvenlik_kabini"]}},
-    {"query": "Avcilar 3+1 50 bin alti", "expected": {"rooms": ["3+1"], "districts": ["Avcilar"], "max_price_tl": 50000}},
-    {"query": "deniz manzarali balkonlu ferah daire", "expected": {"manzara": ["deniz"], "has_balcony": True}},
-    {"query": "ankastreli parke zeminli yeni ev", "expected": {"mutfak_ozellikleri": ["ankastre"], "zemin_tipi": "parke"}},
-    {"query": "site icinde otoparkli guvenlikli 2+1", "expected": {"rooms": ["2+1"], "in_gated_complex": True, "has_parking": True, "site_imkanlari": ["guvenlik_kabini"]}},
-    {"query": "Kadikoy sahile yakin 2+1 maksimum 45 bin", "expected": {"rooms": ["2+1"], "districts": ["Kadikoy"], "max_price_tl": 45000}},
+    {"query": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire", "expected": {"room_count": ["1+1"], "district": ["Kadikoy"], "max_price_amount": 30000}},
+    {"query": "genis salonlu denize yakin 2+1 asansorlu ev", "expected": {"room_count": ["2+1"], "has_elevator": True, "has_sea_view": True}},
+    {"query": "Besiktas 3+1 60 bin TL alti site icinde", "expected": {"room_count": ["3+1"], "district": ["Besiktas"], "max_price_amount": 60000, "in_gated_complex": True}},
+    {"query": "metroya yakin esyali 1+1 kiralik", "expected": {"room_count": ["1+1"], "near_metro": True, "is_furnished": True}},
+    {"query": "amerikan mutfakli modern 2+1", "expected": {"room_count": ["2+1"], "has_american_kitchen": True}},
+    {"query": "otoparkli guvenlikli aileye uygun 3+1", "expected": {"room_count": ["3+1"], "has_security": True}},
+    {"query": "Bostanci sahile yakin deniz manzarali daire", "expected": {"district": ["Bostanci"], "has_sea_view": True}},
+    {"query": "35 bin alti kombili 2+1", "expected": {"room_count": ["2+1"], "max_price_amount": 35000}},
+    {"query": "parke zeminli ev", "expected": {"has_parquet_floor": True}},
+    {"query": "cocuklu aile icin site icinde guvenlikli 4+1", "expected": {"room_count": ["4+1"], "in_gated_complex": True, "has_security": True, "has_playground": True}},
+    {"query": "Pendik'te 25 bin TL alti 1+1", "expected": {"room_count": ["1+1"], "district": ["Pendik"], "max_price_amount": 25000}},
+    {"query": "klimali esyali studyo ya da 1+1", "expected": {"room_count": ["1+1"], "has_aircon": True, "is_furnished": True}},
+    {"query": "terasli 3+1 daire", "expected": {"room_count": ["3+1"], "balcony_type": ["acik_teras"]}},
+    {"query": "kapali otoparkli luks rezidans", "expected": {"has_closed_parking": True}},
+    {"query": "cam balkonlu 2+1", "expected": {"room_count": ["2+1"], "has_balcony": True}},
+    {"query": "bahce cikisli kiralik", "expected": {"has_garden": True}},
+    {"query": "Suadiye'de deniz goren daire", "expected": {"district": ["Suadiye"], "has_sea_view": True}},
+    {"query": "Basaksehir site icinde 4+1 otoparkli", "expected": {"room_count": ["4+1"], "district": ["Basaksehir"], "in_gated_complex": True}},
+    {"query": "asansorlu dogalgazli uygun fiyatli 2+1", "expected": {"room_count": ["2+1"], "has_elevator": True}},
+    {"query": "amerikan mutfakli 1+1 daire", "expected": {"room_count": ["1+1"], "has_american_kitchen": True}},
+    {"query": "manzarasi guzel yuksek kat 3+1", "expected": {"room_count": ["3+1"], "has_city_view": True}},
+    {"query": "merkezi isitma buyuk salonlu ev", "expected": {}},
+    {"query": "ogrenci icin metro yakini ucuz 1+1", "expected": {"room_count": ["1+1"], "near_metro": True}},
+    {"query": "laminat zeminli 2+1", "expected": {"room_count": ["2+1"], "has_laminate_floor": True}},
+    {"query": "bahce kati sakin guvenlikli site", "expected": {"in_gated_complex": True, "has_security": True}},
+    {"query": "Avcilar 3+1 50 bin alti", "expected": {"room_count": ["3+1"], "district": ["Avcilar"], "max_price_amount": 50000}},
+    {"query": "deniz manzarali balkonlu ferah daire", "expected": {"has_sea_view": True, "has_balcony": True}},
+    {"query": "ankastreli parke zeminli yeni ev", "expected": {"has_builtin_kitchen": True, "has_parquet_floor": True}},
+    {"query": "site icinde otoparkli guvenlikli 2+1", "expected": {"room_count": ["2+1"], "in_gated_complex": True, "has_security": True}},
+    {"query": "Kadikoy sahile yakin 2+1 maksimum 45 bin", "expected": {"room_count": ["2+1"], "district": ["Kadikoy"], "max_price_amount": 45000}},
 ]
 
 
@@ -104,20 +93,33 @@ def build_slot_prompt(query: str, *, include_few_shot: bool = True) -> str:
             )
         sections.append("---")
     schema = {
-        "hard_filters": {"rooms": None, "districts": None, "max_price_tl": None, "min_size_m2": None},
-        "soft_features": _empty_soft_features(),
+        "hard_filters": {
+            "filters": _empty_filter_values(),
+            "any_of": [],
+            "min_price_amount": None,
+            "max_price_amount": None,
+            "min_gross_size_m2": None,
+            "max_gross_size_m2": None,
+        },
         "free_form_tr": query,
     }
-    sections.append(f"Sorgu: {query}\n\nBeklenen JSON semasi:\n{json.dumps(schema, ensure_ascii=False, indent=2)}")
+    sections.append(
+        f"Sorgu: {query}\n\nBeklenen JSON semasi:\n{json.dumps(schema, ensure_ascii=False, indent=2)}\n\n"
+        "Kurallar:\n"
+        "- Kullanicinin acikca istedigi her filtreyi hard_filters icine koy.\n"
+        "- Tek canonical alana indirgenemeyen acik talepleri any_of OR grubu yap. Ornek: otoparkli -> has_open_parking veya has_closed_parking.\n"
+        "- Istek olmayan filtreleri null birak."
+    )
     return "\n\n".join(sections)
 
 
 def flatten_slots(parsed: dict[str, Any]) -> dict[str, Any]:
     hard = parsed.get("hard_filters") or {}
+    filters = hard.get("filters") or {}
     soft = parsed.get("soft_features") or {}
     image = soft.get("visual_gold") or soft.get("image") or {}
     facts = soft.get("facts_gold") or soft.get("text_extracted") or {}
-    return {**hard, **image, **facts}
+    return {**hard, **filters, **image, **facts}
 
 
 def score_json_adherence(raw_response: str) -> tuple[float, dict[str, Any] | None]:
@@ -125,7 +127,7 @@ def score_json_adherence(raw_response: str) -> tuple[float, dict[str, Any] | Non
         parsed = json.loads(raw_response)
     except json.JSONDecodeError:
         return 0.0, None
-    required = ["hard_filters", "soft_features", "free_form_tr"]
+    required = ["hard_filters", "free_form_tr"]
     return sum(key in parsed for key in required) / len(required), parsed
 
 

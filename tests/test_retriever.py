@@ -33,6 +33,8 @@ def _matches(metadata, where):
         return True
     if "$and" in where:
         return all(_matches(metadata, condition) for condition in where["$and"])
+    if "$or" in where:
+        return any(_matches(metadata, condition) for condition in where["$or"])
     field, expected = next(iter(where.items()))
     actual = metadata.get(field)
     if not isinstance(expected, dict):
@@ -47,16 +49,22 @@ def _matches(metadata, where):
     raise AssertionError(f"Unexpected operator: {operator}")
 
 
-def test_slots_to_where_maps_structured_and_boolean_filters():
+def test_slots_to_where_maps_canonical_numeric_enum_multi_enum_boolean_and_any_of_filters():
     where = slots_to_where(
         {
             "hard_filters": {
-                "rooms": ["2+1", "3+1"],
-                "districts": ["Kadikoy"],
-                "max_price_tl": 30000,
-                "min_size_m2": 80,
+                "filters": {
+                    "room_count": ["2+1", "3+1"],
+                    "district": ["Kadikoy"],
+                    "price_currency": "TL",
+                    "has_elevator": True,
+                    "near_metro": True,
+                    "balcony_type": ["acik_balkon"],
+                },
+                "any_of": [{"has_open_parking": True, "has_closed_parking": True}],
+                "max_price_amount": 30000,
+                "min_gross_size_m2": 80,
             },
-            "soft_features": {"facts_gold": {"near_metro": True, "has_elevator": True}},
         }
     )
 
@@ -64,10 +72,13 @@ def test_slots_to_where_maps_structured_and_boolean_filters():
         "$and": [
             {"room_count": {"$in": ["2+1", "3+1"]}},
             {"district": {"$in": ["Kadikoy"]}},
-            {"price_tl": {"$lte": 30000}},
-            {"gross_size_m2": {"$gte": 80}},
+            {"price_currency": "TL"},
             {"has_elevator": True},
             {"near_metro": True},
+            {"balcony_type__acik_balkon": True},
+            {"$or": [{"has_open_parking": True}, {"has_closed_parking": True}]},
+            {"price_amount": {"$lte": 30000}},
+            {"gross_size_m2": {"$gte": 80}},
         ]
     }
 
@@ -78,17 +89,22 @@ def test_retrieve_filters_out_over_budget_and_wrong_district_before_reranking():
             {
                 "id": "ok",
                 "document": "uygun ilan",
-                "metadata": {"title": "Uygun", "district": "Kadikoy", "price_tl": 30000, "room_count": "2+1"},
+                "metadata": {"title": "Uygun", "district": "Kadikoy", "price_amount": 30000, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
             },
             {
                 "id": "expensive",
                 "document": "butce ustu ilan",
-                "metadata": {"title": "Pahali", "district": "Kadikoy", "price_tl": 30001, "room_count": "2+1"},
+                "metadata": {"title": "Pahali", "district": "Kadikoy", "price_amount": 30001, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
             },
             {
                 "id": "wrong-district",
                 "document": "yanlis ilce ilan",
-                "metadata": {"title": "Yanlis", "district": "Besiktas", "price_tl": 20000, "room_count": "2+1"},
+                "metadata": {"title": "Yanlis", "district": "Besiktas", "price_amount": 20000, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
+            },
+            {
+                "id": "unknown-elevator",
+                "document": "asansor bilinmiyor",
+                "metadata": {"title": "Eksik", "district": "Kadikoy", "price_amount": 20000, "price_currency": "TL", "room_count": "2+1"},
             },
         ]
     )
@@ -97,8 +113,10 @@ def test_retrieve_filters_out_over_budget_and_wrong_district_before_reranking():
         embedder=FakeEmbedder(),
         reranker=FakeReranker(),
         slot_extractor=lambda _query: {
-            "hard_filters": {"rooms": ["2+1"], "districts": ["Kadikoy"], "max_price_tl": 30000, "min_size_m2": None},
-            "soft_features": {},
+            "hard_filters": {
+                "filters": {"room_count": ["2+1"], "district": ["Kadikoy"], "price_currency": "TL", "has_elevator": True},
+                "max_price_amount": 30000,
+            },
         },
     )
 
@@ -106,7 +124,7 @@ def test_retrieve_filters_out_over_budget_and_wrong_district_before_reranking():
 
     assert [result["id"] for result in results] == ["ok"]
     assert results[0]["title"] == "Uygun"
-    assert results[0]["price_tl"] == 30000
+    assert results[0]["price_amount"] == 30000
 
 
 def test_extract_query_slots_reads_selected_text_model_without_live_api(tmp_path, monkeypatch):

@@ -1,6 +1,6 @@
 # STATUS.md — Mevcut Durum (snapshot)
 
-> Son güncelleme: 2026-05-30, **canonical Emlakjet filter enrichment Task 4 DONE**: Kimi yalnız halen `null` kalan `image_vlm` izinli canonical alanları görüyor. Boolean image inference true-only; `false` görsel çıktısı reddediliyor. Confidence eşiğinin altı merge edilmiyor. `salon_ozellikleri` aktif gold/helper sözleşmesinden kaldırıldı. `VISION_MAX_IMAGE_EDGE` env ayarı korunuyor; ilk ücretli validation kullanıcı onayıyla `512px`, batch `20`, self confidence, chunk `0` olacak. Task 4 ilgili testleri: `24 passed`.
+> Son güncelleme: 2026-05-30, **canonical Emlakjet filter enrichment Task 5 DONE**: Chroma metadata canonical `filter_values` alanlarından dinamik üretiliyor. Multi-enum seçenekler exact option flag olarak saklanıyor; explicit kullanıcı filtreleri hard constraint oluyor ve metadata'sı olmayan `null` değerler eşleşmiyor. BGE-M3 + reranker yalnız hard filtering sonrasında sıralama yapıyor. Task 5 ilgili testleri: `18 passed`.
 > Önceki (2026-05-29): vision multi-image refactor (tek çağrı/ilan), Kimi multi-image gold testi geçti (bkz. M1.5).
 > Bu dosyayı sıradaki agent her milestone bitince güncellemeli.
 
@@ -16,7 +16,7 @@
 - **M3 (labeling pipeline)** — **DONE** (iskele + pre-flight): `labeling/run_labeling.py` mevcut (multi-image VLM + text LLM, eşzamanlı çağrı, resume, cost cap, pre-flight gold gate). Pre-flight kapısı **`facts_all`** (eşik facts ≥0.75, visual ≥0.70). **Full 1239-ilan build henüz çalıştırılmadı** (`data/processed/labeled.jsonl` yok; sadece pre-flight smoke çıktıları var).
 - **M4 (indexing + retrieval)** — **DONE (iskele, Codex 2026-05-30)**: `indexing/composer.py`, `indexing/build_chroma.py`, `retrieval/retriever.py` + testler. Gerçek index build M3 `labeled.jsonl`'e bağlı (henüz koşulmadı).
 - **M5–M8** — PENDING. **M7 kapsam dışı** (arkadaş yaptı). Sıradaki: M3 full labeling build → M4 gerçek index → M5 RAG/Streamlit.
-- **Canonical filter enrichment** — **AKTİF**: Task 4/6 DONE. Sıradaki Task 5: canonical `filter_values` metadata ve her kullanıcı isteğini hard constraint yapan retrieval.
+- **Canonical filter enrichment** — **AKTİF**: Task 5/6 DONE. Sıradaki Task 6: full suite, doküman senkronizasyonu ve kullanıcı onayı bekleyen re-scrape öncesi checkpoint.
 
 Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). Not: `archive/hw6` + `pre_scraper_fix` + `data/_*` temizlikte silindi (bkz. checkpoint 6b019f7).
 
@@ -171,10 +171,10 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 
 ### M4 — Indexing + retrieval (DONE iskele, Codex 2026-05-30; gerçek build PENDING)
 
-- `indexing/composer.py`: `embedding_text(record)` enriched_doc'u aynen döner (eksikse hata verir); `to_metadata(record)` facts_gold + visual.aggregated + title'ı **skalar** Chroma metadata'ya düzleştirir (list alanlar deterministik sıralı `|` ile birleşir).
+- `indexing/composer.py`: `embedding_text(record)` enriched_doc'u aynen döner (eksikse hata verir); `to_metadata(record)` canonical `filter_values` + title'ı **skalar** Chroma metadata'ya düzleştirir. List alanlar deterministik sıralı `|` ile birleşir; multi-enum alanlar ayrıca seçenek başına exact-match flag üretir.
 - `indexing/build_chroma.py`: ChromaDB persistent collection builder (CLI).
-- `retrieval/retriever.py`: query → slot extract (`selected.json` text_model, read-only) → metadata filter (`slots_to_where`: rooms→room_count `$in`, districts→district `$in`, max_price_tl→price_tl `$lte`, min_size_m2→gross_size_m2 `$gte`, bool alanlar eşitlik) + vektör arama (BGE-M3) + CrossEncoder reranker (bge-reranker-v2-m3). DI ile test edilebilir (collection/embedder/reranker/slot_extractor enjekte).
-- Testler: `tests/test_composer.py`, `tests/test_retriever.py` (embedder/reranker/API mocklu). **Gerçek full index build M3 labeled.jsonl hazır olunca koşulacak.**
+- `retrieval/retriever.py`: query → slot extract (`selected.json` text_model, read-only) → registry-backed metadata hard filter (`filters`, `any_of`, fiyat/m² range) → vektör arama (BGE-M3) → CrossEncoder reranker (bge-reranker-v2-m3). `null` metadata yazılmadığı için explicit filtreyi karşılamaz. DI ile test edilebilir (collection/embedder/reranker/slot_extractor enjekte).
+- Testler: `tests/test_composer.py`, `tests/test_retriever.py`, `tests/test_llm_shootout.py` (embedder/reranker/API mocklu). Task 5 ilgili testleri: **18 passed**. **Gerçek full index build M3 labeled.jsonl hazır olunca koşulacak.**
 
 ### M5 — RAG chat + Streamlit (PENDING)
 
