@@ -22,6 +22,7 @@ from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
+from schema.emlakjet_filters import extract_scraper_filter_facts
 
 
 # ─── Sabitler ─────────────────────────────────────────────────────────────────
@@ -153,7 +154,7 @@ def _feature_blob(attrs: dict, raw: dict) -> str:
     features = attrs.get("propertyFeatures") or []
     if not isinstance(features, list):
         features = [features]
-    return _normalize_blob(" ".join(str(item) for item in features) + " " + str(raw.get("title", "")))
+    return _normalize_blob(" ".join(str(item) for item in features))
 
 
 def _normalize_heating(value: object) -> str | None:
@@ -226,12 +227,18 @@ def clean_record(raw: dict, *, image_path: str, all_image_paths: list[str]) -> d
     city, district, neighborhood = _split_location(raw.get("district", ""))
     features = attrs.get("propertyFeatures") or []
     feature_blob = _feature_blob(attrs, raw)
-    furnished_attr = _parse_furnished(attrs.get("furnishedStatus"))
-    is_furnished_value = (
-        furnished_attr
-        if furnished_attr is not None
-        else _contains_any(feature_blob, ("esyali", "mobilyali", "full esyali", "ful esyali"))
-    )
+    filter_values, filter_sources = extract_scraper_filter_facts(attrs, features)
+    filter_values.update({
+        "city": city or None,
+        "district": district or None,
+        "neighborhood": neighborhood or None,
+        "price_tl": _parse_tl(raw.get("price", "")),
+    })
+    for field in ("city", "district", "neighborhood", "price_tl"):
+        if filter_values[field] is not None:
+            filter_sources[field] = "scraper_info"
+    is_furnished_value = filter_values["is_furnished"]
+    has_parking = True if filter_values["has_open_parking"] or filter_values["has_closed_parking"] else None
     return {
         "id": raw.get("id", ""),
         "url": raw.get("url", ""),
@@ -251,19 +258,21 @@ def clean_record(raw: dict, *, image_path: str, all_image_paths: list[str]) -> d
         "floor": attrs.get("floor", "") or "",
         "total_floors": _parse_int(attrs.get("totalFloors")),
         "heating_type": _normalize_heating(attrs.get("heating")),
-        "has_balcony": _contains_any(feature_blob, ("balkon", "teras")),
-        "has_elevator": _contains_any(feature_blob, ("asansor",)),
+        "has_balcony": filter_values["has_balcony"],
+        "has_elevator": filter_values["has_elevator"],
         "has_aircon": _detect_aircon(attrs, feature_blob),
         "is_furnished": is_furnished_value,
         "deposit_tl": _parse_tl(attrs.get("deposit")),
-        "has_parking": _contains_any(feature_blob, ("otopark", "garaj", "park yeri")),
-        "in_gated_complex": _parse_yes_no(attrs.get("inGatedComplex")),
+        "has_parking": has_parking,
+        "in_gated_complex": filter_values["in_gated_complex"],
         "near_metro": None,
         "near_metrobus": None,
         "title_deed_status": attrs.get("titleDeedStatus") or None,
         "description": normalize_text(raw.get("description", ""))[:MAX_DESCRIPTION_LEN],
         "heating": attrs.get("heating", "") or "",
         "property_features": features,
+        "filter_values": filter_values,
+        "filter_sources": filter_sources,
         "visual_qualities": {},
         "attributes": attrs,
         "scraped_at": raw.get("scraped_at", ""),

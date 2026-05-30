@@ -27,6 +27,10 @@ import aiofiles
 from tqdm import tqdm
 
 from playwright.async_api import async_playwright, TimeoutError as PWTimeoutError, Response
+from schema.emlakjet_filters import (
+    extract_scraper_filter_facts,
+    raw_attribute_key_for_info_label,
+)
 
 try:
     from playwright_stealth import stealth_async
@@ -132,26 +136,6 @@ INFO_ITEM_RE = re.compile(
     re.IGNORECASE,
 )
 
-INFO_FIELD_MAP = {
-    'net metrekare': 'netSize',
-    'brut metrekare': 'grossSize',
-    'isitma tipi': 'heating',
-    'bulundugu kat': 'floor',
-    'binanin yasi': 'buildingAge',
-    'oda sayisi': 'roomCount',
-    'binanin kat sayisi': 'totalFloors',
-    'site icerisinde': 'inGatedComplex',
-    'kullanim durumu': 'occupancy',
-    'aidat': 'maintenanceFee',
-    'depozito': 'deposit',
-    'tapu durumu': 'titleDeedStatus',
-    'takas': 'tradeAccepted',
-    'banyo sayisi': 'bathroomCount',
-    'fiyat durumu': 'priceStatus',
-    'esya durumu': 'furnishedStatus',
-}
-
-
 def _info_label_key(label: str) -> str:
     """Türkçe etiketleri ASCII-benzeri anahtara çevir (Windows locale güvenli)."""
     text = label.strip()
@@ -224,7 +208,7 @@ def parse_listing_info_table(html: str) -> dict[str, str]:
     for match in INFO_ITEM_RE.finditer(section):
         key = match.group('key').strip()
         val = match.group('val').strip()
-        attr_key = INFO_FIELD_MAP.get(_info_label_key(key))
+        attr_key = raw_attribute_key_for_info_label(_info_label_key(key))
         if attr_key and val:
             attrs[attr_key] = val
     return attrs
@@ -399,6 +383,7 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
                                    'buildingAge', 'propertyType', 'tradeType']
              if k in obj}
 
+    filter_values, filter_sources = extract_scraper_filter_facts(attrs)
     return {
         'id': lid,
         'url': listing_url,
@@ -409,6 +394,8 @@ def build_listing_record(obj: dict, source_url: str = "") -> dict | None:
         'image_urls': image_urls,
         'image_count': len(image_urls),
         'attributes': attrs,
+        'filter_values': filter_values,
+        'filter_sources': filter_sources,
         'scraped_at': time.strftime('%Y-%m-%dT%H:%M:%S'),
     }
 
@@ -679,6 +666,7 @@ class EmlakjetScraper:
                         attrs[key] = val
                     if dom_features:
                         attrs['propertyFeatures'] = dom_features
+                    filter_values, filter_sources = extract_scraper_filter_facts(attrs, dom_features)
 
                     if not title:
                         return None
@@ -698,6 +686,8 @@ class EmlakjetScraper:
                         'image_urls': final_images[:20],
                         'image_count': len(final_images),
                         'attributes': attrs,
+                        'filter_values': filter_values,
+                        'filter_sources': filter_sources,
                         'scraped_at': time.strftime('%Y-%m-%dT%H:%M:%S'),
                     }
                 except Exception as e:

@@ -22,8 +22,12 @@ def normalize_label(label: str) -> str:
     return re.sub(r"\s+", " ", str(label).strip().translate(_TR_ASCII).lower())
 
 
+def _enum_slug(value: str) -> str:
+    return re.sub(r"[^a-z0-9+]+", "_", normalize_label(value)).strip("_")
+
+
 def _enum(slug: str, label: str, values: tuple[str, ...], *, sources: tuple[str, ...] = ("listing_info",)) -> FilterSpec:
-    return FilterSpec(slug, "structured", "enum", (label,), sources, {value: normalize_label(value).replace(" ", "_") for value in values})
+    return FilterSpec(slug, "structured", "enum", (label,), sources, {value: _enum_slug(value) for value in values})
 
 
 def _bool(slug: str, label: str, group: str, *, image: bool = False) -> FilterSpec:
@@ -41,9 +45,9 @@ STRUCTURED_FILTERS = (
     _enum("room_count", "Oda Sayısı", ("Stüdyo", "1", "1+1", "1.5+1", "2+0", "2+1", "2.5+1", "2+2", "3+0", "3+1", "3.5+1", "3+2", "4+0", "4+1", "4.5+1", "4+2", "4+3", "4+4", "5+0", "5+1", "5+2", "5+3", "5+4", "6+1", "6+2", "6+3", "6+4", "7+1", "7+2", "7+3", "8+1", "8+2", "8+3", "8+4", "9+")),
     _enum("building_age", "Binanın Yaşı", ("0 (Yeni)", "1", "2", "3", "4", "5-10", "11-15", "16-20", "21 ve üzeri")),
     _enum("floor", "Bulunduğu Kat", ("Giriş ve Alt Katlar", "Bahçe dublex", "Bahçe katı", "Düz Giriş (Zemin)", "Yüksek giriş", "Kot 1 (-1)", "Kot 2 (-2)", "Kot 3 (-3)", "Kot 4 (-4)", "Müstakil", "Bodrum Kat", "Villa tipi", "Üst Katlar", "Çatı Katı", "Çatı Dubleks", *(str(value) for value in range(1, 41)), "40+")),
-    _enum("total_floors", "Binanın Kat Sayısı", (*(str(value) for value in range(1, 30)), "30 ve üzeri")),
+    FilterSpec("total_floors", "structured", "int", ("Binanın Kat Sayısı",), ("listing_info",), {**{str(value): str(value) for value in range(1, 30)}, "30 ve üzeri": "30_plus"}),
     _enum("heating_type", "Isıtma Tipi", ("Isıtma yok", "Doğalgaz sobalı", "Güneş Enerjisi", "Jeotermal", "Merkezi Doğalgaz", "Merkezi Fueloil", "Merkezi Kömür", "Merkezi (Pay Ölçer)", "Kat Kaloriferi", "Klimalı", "Kombi Doğalgaz", "Kombi Fueloil", "Kombi Katı Yakıt", "Kombi Kömür", "Sobalı", "Yerden ısıtma", "Isı Pompası", "Şömine", "Fancoil Ünitesi", "VRV", "Elektrikli Radyatör")),
-    _enum("bathroom_count", "Banyo Sayısı", ("Yok", "1", "2", "3", "4", "5", "6+")),
+    FilterSpec("bathroom_count", "structured", "int", ("Banyo Sayısı",), ("listing_info",), {"Yok": "0", "1": "1", "2": "2", "3": "3", "4": "4", "5": "5", "6+": "6_plus"}),
     _enum("building_condition", "Yapı Durumu", ("Sıfır", "İkinci El", "Yapım Aşamasında")),
     _enum("occupancy", "Kullanım Durumu", ("Boş", "Kiracı Oturuyor", "Mülk Sahibi Oturuyor")),
     _enum("title_deed_status", "Tapu Durumu", ("Arsa Tapulu", "Hisseli Tapu", "Kat Mülkiyeti", "Kat İrtifakı", "Müstakil Tapulu", "Yabancıdan", "Tapu Kaydı Yok", "Kıbrıs Tapulu", "Kooperatiften Tapu", "Bilinmiyor")),
@@ -143,6 +147,47 @@ _PROPERTY_FEATURE_BY_LABEL = {
     for label in spec.labels
 }
 
+_INFO_ATTRIBUTE_KEYS = {
+    "net metrekare": "netSize",
+    "brut metrekare": "grossSize",
+    "isitma tipi": "heating",
+    "bulundugu kat": "floor",
+    "binanin yasi": "buildingAge",
+    "oda sayisi": "roomCount",
+    "binanin kat sayisi": "totalFloors",
+    "site icerisinde": "inGatedComplex",
+    "kullanim durumu": "occupancy",
+    "aidat": "maintenanceFee",
+    "depozito": "deposit",
+    "tapu durumu": "titleDeedStatus",
+    "takas": "tradeAccepted",
+    "banyo sayisi": "bathroomCount",
+    "fiyat durumu": "priceStatus",
+    "esya durumu": "furnishedStatus",
+    "balkon durumu": "balconyStatus",
+    "balkon tipi": "balconyType",
+    "yapi durumu": "buildingCondition",
+    "kimden": "sellerType",
+}
+_ATTRIBUTE_FILTER_SLUGS = {
+    "grossSize": "gross_size_m2",
+    "roomCount": "room_count",
+    "buildingAge": "building_age",
+    "floor": "floor",
+    "totalFloors": "total_floors",
+    "heating": "heating_type",
+    "bathroomCount": "bathroom_count",
+    "buildingCondition": "building_condition",
+    "occupancy": "occupancy",
+    "titleDeedStatus": "title_deed_status",
+    "furnishedStatus": "is_furnished",
+    "balconyStatus": "has_balcony",
+    "balconyType": "balcony_type",
+    "inGatedComplex": "in_gated_complex",
+    "sellerType": "seller_type",
+}
+_SPEC_BY_SLUG = {spec.slug: spec for spec in EMLAKJET_FILTERS}
+
 
 def spec_for_info_label(label: str) -> FilterSpec | None:
     return _INFO_BY_LABEL.get(normalize_label(label))
@@ -154,3 +199,68 @@ def spec_for_property_feature(label: str) -> FilterSpec | None:
 
 def empty_filter_values() -> dict[str, Any]:
     return {spec.slug: None for spec in EMLAKJET_FILTERS}
+
+
+def raw_attribute_key_for_info_label(label: str) -> str | None:
+    return _INFO_ATTRIBUTE_KEYS.get(normalize_label(label))
+
+
+def _parse_bool(spec: FilterSpec, value: Any) -> bool | None:
+    folded = normalize_label(value)
+    if spec.slug == "is_furnished":
+        if folded == "bos":
+            return False
+        if folded == "esyali":
+            return True
+    if folded in {"evet", "var", "true", "1"}:
+        return True
+    if folded in {"hayir", "yok", "false", "0"}:
+        return False
+    return None
+
+
+def _parse_int(value: Any) -> int | None:
+    match = re.search(r"\d+", str(value).replace(".", ""))
+    return int(match.group()) if match else None
+
+
+def _parse_enum(spec: FilterSpec, value: Any) -> str | None:
+    folded = normalize_label(value)
+    for label, enum_value in spec.values.items():
+        if normalize_label(label) == folded:
+            return enum_value
+    return _enum_slug(str(value)) or None
+
+
+def parse_filter_value(spec: FilterSpec, value: Any) -> Any:
+    if value is None:
+        return None
+    if spec.value_type == "bool":
+        return _parse_bool(spec, value)
+    if spec.value_type == "int":
+        return _parse_int(value)
+    if spec.value_type == "multi_enum":
+        raw_values = value if isinstance(value, list) else [value]
+        values = [_parse_enum(spec, item) for item in raw_values]
+        return [item for item in values if item] or None
+    if spec.value_type == "enum":
+        return _parse_enum(spec, value)
+    return str(value).strip() or None
+
+
+def extract_scraper_filter_facts(attributes: dict[str, Any], property_features: list[str] | None = None) -> tuple[dict[str, Any], dict[str, str]]:
+    values = empty_filter_values()
+    sources: dict[str, str] = {}
+    for attribute_key, slug in _ATTRIBUTE_FILTER_SLUGS.items():
+        if attribute_key not in attributes:
+            continue
+        parsed = parse_filter_value(_SPEC_BY_SLUG[slug], attributes[attribute_key])
+        if parsed is not None:
+            values[slug] = parsed
+            sources[slug] = "scraper_info"
+    for label in property_features or []:
+        spec = spec_for_property_feature(label)
+        if spec and values[spec.slug] is None:
+            values[spec.slug] = True
+            sources[spec.slug] = "scraper_property_feature"
+    return values, sources

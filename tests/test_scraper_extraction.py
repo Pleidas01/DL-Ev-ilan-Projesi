@@ -75,6 +75,8 @@ def test_ilan_bilgileri_table_maps_extended_fact_fields():
     <li><span>Tapu Durumu</span><span>Kat MÃ¼lkiyeti</span></li>
     <li><span>Takas</span><span>HayÄ±r</span></li>
     <li><span>Banyo SayÄ±sÄ±</span><span>2</span></li>
+    <li><span>Balkon Durumu</span><span>Yok</span></li>
+    <li><span>Balkon Tipi</span><span>KapalÄ± Teras</span></li>
     <li><span>Fiyat Durumu</span><span>Genel Fiyat</span></li>
     <h2>Ä°lan Ã–zellikleri</h2>
     """
@@ -88,6 +90,8 @@ def test_ilan_bilgileri_table_maps_extended_fact_fields():
     assert info["titleDeedStatus"] == "Kat MÃ¼lkiyeti"
     assert info["tradeAccepted"] == "HayÄ±r"
     assert info["bathroomCount"] == "2"
+    assert info["balconyStatus"] == "Yok"
+    assert info["balconyType"] == "KapalÄ± Teras"
     assert info["priceStatus"] == "Genel Fiyat"
 
 

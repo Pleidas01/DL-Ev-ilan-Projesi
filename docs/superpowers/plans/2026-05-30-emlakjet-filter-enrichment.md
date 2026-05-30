@@ -117,15 +117,15 @@ def empty_filter_values() -> dict[str, Any]: ...
 - Modify: `tests/test_scraper_extraction.py`
 - Modify: `tests/test_cleaner_preserves_fields.py`
 
-- [ ] Extend saved fixture tests with `Balkon Durumu`, `Balkon Tipi`, `Banyo Sayısı`, `Kullanım Durumu`, and selected `İlan Özellikleri`.
-- [ ] Replace the hand-maintained `INFO_FIELD_MAP` with registry-backed lookup.
-- [ ] Parse listing-info values into typed `filter_values`.
-- [ ] Convert every selected `propertyFeatures` item into positive boolean or enum evidence using the registry.
-- [ ] Add `filter_sources[field] = "scraper_info"` or `"scraper_property_feature"`.
-- [ ] Preserve raw `attributes` and `property_features` for auditability.
-- [ ] Verify omitted property features remain `null`; do not set them to `false`.
-- [ ] Run: `.venv/bin/python3 -m pytest -q tests/test_scraper_extraction.py tests/test_cleaner_preserves_fields.py`
-- [ ] Commit: `feat: populate canonical filters from scraper facts`
+- [x] Extend saved fixture tests with `Balkon Durumu`, `Balkon Tipi`, `Banyo Sayısı`, `Kullanım Durumu`, and selected `İlan Özellikleri`.
+- [x] Replace the hand-maintained `INFO_FIELD_MAP` with registry-backed lookup.
+- [x] Parse listing-info values into typed `filter_values`.
+- [x] Convert every selected `propertyFeatures` item into positive boolean or enum evidence using the registry.
+- [x] Add `filter_sources[field] = "scraper_info"` or `"scraper_property_feature"`.
+- [x] Preserve raw `attributes` and `property_features` for auditability.
+- [x] Verify omitted property features remain `null`; do not set them to `false`.
+- [x] Run: `.venv/bin/python3 -m pytest -q tests/test_scraper_extraction.py tests/test_cleaner_preserves_fields.py`
+- [x] Commit: `feat: populate canonical filters from scraper facts`
 
 ## Task 3: DeepSeek Null-Only Text Enrichment
 

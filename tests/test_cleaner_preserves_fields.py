@@ -47,8 +47,12 @@ def test_clean_record_keeps_m3_source_fields_separate_from_short_text():
             "roomCount": "3+1",
             "deposit": "60.000 TL",
             "inGatedComplex": "Evet",
+            "bathroomCount": "2",
+            "occupancy": "Bos",
+            "balconyStatus": "Yok",
+            "balconyType": "Kapali Teras",
             "titleDeedStatus": "Kat Mulkiyeti",
-            "propertyFeatures": ["Kuvet", "Sauna", "Amerikan Mutfak", "Balkon", "Asansor", "Otopark"],
+            "propertyFeatures": ["Kuvet", "Sauna", "Amerikan Mutfak", "Asansor", "Kapali Otopark"],
         },
         "scraped_at": "2026-05-24T00:00:00",
     }
@@ -75,13 +79,24 @@ def test_clean_record_keeps_m3_source_fields_separate_from_short_text():
     assert record["in_gated_complex"] is True
     assert record["title_deed_status"] == "Kat Mulkiyeti"
     assert record["heating_type"] == "merkezi"
-    assert record["has_balcony"] is True
+    assert record["has_balcony"] is False
     assert record["has_elevator"] is True
     assert record["has_parking"] is True
     assert record["has_aircon"] is None  # fixture'da klima feature yok
     assert record["near_metro"] is None
     assert record["near_metrobus"] is None
-    assert record["property_features"] == ["Kuvet", "Sauna", "Amerikan Mutfak", "Balkon", "Asansor", "Otopark"]
+    assert record["property_features"] == ["Kuvet", "Sauna", "Amerikan Mutfak", "Asansor", "Kapali Otopark"]
+    assert record["attributes"] == raw["attributes"]
+    assert record["filter_values"]["has_balcony"] is False
+    assert record["filter_values"]["balcony_type"] == ["kapali_teras"]
+    assert record["filter_values"]["bathroom_count"] == 2
+    assert record["filter_values"]["occupancy"] == "bos"
+    assert record["filter_values"]["has_elevator"] is True
+    assert record["filter_values"]["has_closed_parking"] is True
+    assert record["filter_values"]["has_fiber"] is None
+    assert record["filter_sources"]["has_balcony"] == "scraper_info"
+    assert record["filter_sources"]["has_elevator"] == "scraper_property_feature"
+    assert "has_fiber" not in record["filter_sources"]
     assert record["visual_qualities"] == {}
     assert len(record["text"]) <= 256
     assert record["text"] != record["description"]
