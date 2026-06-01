@@ -1,0 +1,2299 @@
+{
+  "metrics": {
+    "queries": 143,
+    "recall_at_1": 0.7202797202797203,
+    "recall_at_5": 0.958041958041958,
+    "recall_at_10": 0.993006993006993,
+    "mrr": 0.8315934065934065
+  },
+  "cases": [
+    {
+      "source_listing_id": "17253201",
+      "query": "Korfez Mahallesi Atakum 1+1 2850000 TL alti Asansor Esyali Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424491",
+        "19421585",
+        "19414686",
+        "19424865",
+        "19424867",
+        "17253201",
+        "19420515",
+        "19424626",
+        "19420072",
+        "19424713"
+      ]
+    },
+    {
+      "source_listing_id": "19031172",
+      "query": "Ahi Mesut Mahallesi Etimesgut 4+1 5650000 TL alti Asansor Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19031172",
+        "19422523",
+        "19226468",
+        "19423762",
+        "19424347",
+        "19422168",
+        "19424426",
+        "19424877",
+        "19424304",
+        "19424514"
+      ]
+    },
+    {
+      "source_listing_id": "19139750",
+      "query": "Dicle Mahallesi Ergani 1_oda 675000 TL alti Site Icinde kiralik daire",
+      "ranked_listing_ids": [
+        "19139750",
+        "19421894",
+        "19422155",
+        "19417580",
+        "19277848",
+        "19420526",
+        "19419753",
+        "19417529",
+        "19265073",
+        "19423908"
+      ]
+    },
+    {
+      "source_listing_id": "19161536",
+      "query": "Gulluk Mahallesi Milas 2+1 11950000 TL alti Esyali Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424621",
+        "19161536",
+        "19419398",
+        "19421651",
+        "19420699",
+        "19415524",
+        "19424877",
+        "19424393",
+        "19417580",
+        "19420013"
+      ]
+    },
+    {
+      "source_listing_id": "19246672",
+      "query": "Golkasi Mahallesi Beysehir 4+1 2600000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19246672",
+        "19423085",
+        "19423168",
+        "19424870",
+        "19424877",
+        "19424626",
+        "19422946",
+        "19424526",
+        "19424713",
+        "19424682"
+      ]
+    },
+    {
+      "source_listing_id": "19250154",
+      "query": "Murat Cesme Mahallesi Buyukcekmece 2+1 4600000 TL alti Site Icinde Balkonlu Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19419329",
+        "19250154",
+        "19420072",
+        "19418803",
+        "19417580",
+        "19419398",
+        "19424536",
+        "19386813",
+        "19416858",
+        "19419741"
+      ]
+    },
+    {
+      "source_listing_id": "19253603",
+      "query": "Haracci Mahallesi Arnavutkoy 4+1 7750000 TL alti Asansor Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19253603",
+        "19421708",
+        "19414686",
+        "19424225",
+        "19418917",
+        "19419706",
+        "19423440",
+        "19424280",
+        "19424716",
+        "19422624"
+      ]
+    },
+    {
+      "source_listing_id": "19265073",
+      "query": "Karacaibrahim Mahallesi Merkez 2+1 16500 TL alti Balkonlu Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19265073",
+        "19415672",
+        "19420131",
+        "19417540",
+        "19419038",
+        "19422624",
+        "19301614",
+        "19424710",
+        "19414964",
+        "19424590"
+      ]
+    },
+    {
+      "source_listing_id": "19338936",
+      "query": "Adnan Kahveci Mahallesi Beylikduzu 2+1 6200000 TL alti Asansor Balkonlu Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19338936",
+        "19421948",
+        "19420074",
+        "19424378",
+        "19421949",
+        "19419946",
+        "19419640",
+        "19423808",
+        "19414880",
+        "19414994"
+      ]
+    },
+    {
+      "source_listing_id": "19357926",
+      "query": "Mecidiye Mahallesi Sultanbeyli 3+1 26000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19420826",
+        "19357926",
+        "19345651",
+        "19422624",
+        "19422946",
+        "19415765",
+        "19419440",
+        "19423183",
+        "19414964",
+        "19414950"
+      ]
+    },
+    {
+      "source_listing_id": "19383590",
+      "query": "Guller Pinari Mahallesi Alanya 2+1 25000 TL alti Esyali Balkonlu Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19383590",
+        "19424657",
+        "19424300",
+        "19424621",
+        "19398498",
+        "19424711",
+        "19424644",
+        "19415277",
+        "19265073",
+        "19420515"
+      ]
+    },
+    {
+      "source_listing_id": "19392882",
+      "query": "Kadikoy Mahallesi Edremit 2+1 4150000 TL alti Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19392882",
+        "19418555",
+        "19417540",
+        "19421525",
+        "19424626",
+        "19420094",
+        "19419741",
+        "19414686",
+        "19421010",
+        "19418357"
+      ]
+    },
+    {
+      "source_listing_id": "19398498",
+      "query": "Liman Mahallesi Konyaalti 2+1 7500000 TL alti Asansor Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19398498",
+        "19420515",
+        "19421728",
+        "19424711",
+        "19417580",
+        "19415845",
+        "19424626",
+        "19424657",
+        "19424640",
+        "19424604"
+      ]
+    },
+    {
+      "source_listing_id": "19400996",
+      "query": "15 Mayis Mahallesi Pamukkale 1+1 9000 TL alti Asansor Esyali Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19400996",
+        "19424300",
+        "19265073",
+        "19423154",
+        "19415672",
+        "19424678",
+        "19424633",
+        "19422624",
+        "19424621",
+        "19415723"
+      ]
+    },
+    {
+      "source_listing_id": "19404741",
+      "query": "Kirazlidere Mahallesi Cekmekoy 2+1 70000 TL alti Site Icinde Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19404741",
+        "19419741",
+        "19421560",
+        "19415567",
+        "19416858",
+        "19414964",
+        "19417580",
+        "19424802",
+        "19414879",
+        "19419481"
+      ]
+    },
+    {
+      "source_listing_id": "19414949",
+      "query": "Sogukpinar Mahallesi Cekmekoy 2+1 32000 TL alti Asansor Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19414949",
+        "19419741",
+        "19419484",
+        "19415567",
+        "19421560",
+        "19414964",
+        "19416858",
+        "19424713",
+        "19422733",
+        "19418555"
+      ]
+    },
+    {
+      "source_listing_id": "19414964",
+      "query": "Kustepe Mahallesi Sisli 2+1 33000 TL alti Asansor Esyali Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19414964",
+        "19422946",
+        "19423154",
+        "19424711",
+        "19424713",
+        "19418917",
+        "19416468",
+        "19424626",
+        "19415765",
+        "19421651"
+      ]
+    },
+    {
+      "source_listing_id": "19415038",
+      "query": "Iskenderpasa Mahallesi Fatih 1+1 18000 TL alti Balkonlu Metroya Yakin Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19415038",
+        "19424682",
+        "19421949",
+        "19422859",
+        "19421948",
+        "19345651",
+        "19422624",
+        "19424536",
+        "19422498",
+        "19423428"
+      ]
+    },
+    {
+      "source_listing_id": "19415048",
+      "query": "Atakent Mahallesi Umraniye 2+1 26500 TL alti Site Icinde Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19415048",
+        "19417580",
+        "19415408",
+        "19418803",
+        "19422155",
+        "19424536",
+        "19415367",
+        "19414686",
+        "19419445",
+        "19423060"
+      ]
+    },
+    {
+      "source_listing_id": "19415524",
+      "query": "Salacak Mahallesi Uskudar 2+1 51000 TL alti Balkonlu Deniz Manzarali Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19415524",
+        "19420427",
+        "19420515",
+        "19421728",
+        "19424711",
+        "19423120",
+        "19415894",
+        "19415436",
+        "19423490",
+        "19414964"
+      ]
+    },
+    {
+      "source_listing_id": "19415581",
+      "query": "Acarlar Mahallesi Beykoz 3+1 180000 TL alti Asansor Esyali Site Icinde kiralik daire",
+      "ranked_listing_ids": [
+        "19415581",
+        "19419509",
+        "19419505",
+        "19419508",
+        "19424713",
+        "19422946",
+        "19421585",
+        "19418738",
+        "19415240",
+        "19424477"
+      ]
+    },
+    {
+      "source_listing_id": "19415767",
+      "query": "Fatih Mahallesi Sultanbeyli 2+1 20000 TL alti Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19415767",
+        "19419440",
+        "19345651",
+        "19423183",
+        "19420241",
+        "19421515",
+        "19357926",
+        "19420826",
+        "19418542",
+        "19419445"
+      ]
+    },
+    {
+      "source_listing_id": "19415924",
+      "query": "Merkez Mahallesi Kagithane 2+1 39000 TL alti Asansor Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19415924",
+        "19417758",
+        "19419685",
+        "19424854",
+        "19421894",
+        "19417885",
+        "19423310",
+        "19416671",
+        "19417540",
+        "19422710"
+      ]
+    },
+    {
+      "source_listing_id": "19416097",
+      "query": "Karadeniz Mahallesi Gaziosmanpasa 1+1 40000 TL alti Asansor Metroya Yakin Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19417540",
+        "19415956",
+        "19416258",
+        "19414733",
+        "19416097",
+        "19414797",
+        "19415038",
+        "19416083",
+        "19416137",
+        "19421949"
+      ]
+    },
+    {
+      "source_listing_id": "19416178",
+      "query": "Orhan Gazi Mahallesi Esenyurt 1+1 26000 TL alti Asansor Site Icinde Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19422452",
+        "19416178",
+        "19417339",
+        "19414686",
+        "19424626",
+        "19420069",
+        "19419315",
+        "19424536",
+        "19421961",
+        "19416344"
+      ]
+    },
+    {
+      "source_listing_id": "19416204",
+      "query": "Yenisehir Mahallesi Pendik 2+1 35000 TL alti Site Icinde Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19416961",
+        "19417657",
+        "19416204",
+        "19424713",
+        "19416208",
+        "19417580",
+        "19419656",
+        "19423302",
+        "19420227",
+        "19417540"
+      ]
+    },
+    {
+      "source_listing_id": "19416299",
+      "query": "Fenerbahce Mahallesi Kadikoy 1+1 48000 TL alti Asansor Balkonlu Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19416299",
+        "19418555",
+        "19418554",
+        "19419038",
+        "19422624",
+        "19414686",
+        "19417757",
+        "19415672",
+        "19422498",
+        "19421708"
+      ]
+    },
+    {
+      "source_listing_id": "19416614",
+      "query": "Cumhuriyet Mahallesi Beylikduzu 1+1 40000 TL alti Asansor Balkonlu Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19421948",
+        "19418388",
+        "19421949",
+        "19420072",
+        "19414994",
+        "19416614",
+        "19422859",
+        "19424378",
+        "19420074",
+        "19423200"
+      ]
+    },
+    {
+      "source_listing_id": "19416858",
+      "query": "Mehmet Akif Ersoy Mahallesi Esenyurt 2+1 23000 TL alti Asansor Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19416858",
+        "19414624",
+        "19420515",
+        "19422452",
+        "19414686",
+        "19424536",
+        "19421961",
+        "19419315",
+        "19424883",
+        "19416344"
+      ]
+    },
+    {
+      "source_listing_id": "19417536",
+      "query": "Altunizade Mahallesi Uskudar 3+1 70000 TL alti Balkonlu Metroya Yakin Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19417536",
+        "19421909",
+        "19419946",
+        "19417759",
+        "19424378",
+        "19420826",
+        "19420515",
+        "19416858",
+        "19424713",
+        "19421949"
+      ]
+    },
+    {
+      "source_listing_id": "19417617",
+      "query": "Turkali Mahallesi Besiktas 1+1 52000 TL alti Asansor Balkonlu Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19417617",
+        "19422168",
+        "19420515",
+        "19422624",
+        "19421728",
+        "19415436",
+        "19416587",
+        "19423168",
+        "19414686",
+        "19414964"
+      ]
+    },
+    {
+      "source_listing_id": "19417757",
+      "query": "Fenerbahce Mahallesi Kadikoy 2+1 70000 TL alti Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19419038",
+        "19416299",
+        "19415672",
+        "19417757",
+        "19420131",
+        "19416961",
+        "19414964",
+        "19417540",
+        "19421383",
+        "19424883"
+      ]
+    },
+    {
+      "source_listing_id": "19417890",
+      "query": "Talatpasa Mahallesi Kagithane 2+1 43000 TL alti Asansor Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19417890",
+        "19417885",
+        "19417887",
+        "19415924",
+        "19416671",
+        "19417758",
+        "19421894",
+        "19417538",
+        "19419696",
+        "19419685"
+      ]
+    },
+    {
+      "source_listing_id": "19417938",
+      "query": "15 Temmuz Mahallesi Bagcilar studyo 22500 TL alti Site Icinde Metroya Yakin Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19420628",
+        "19417938",
+        "19414964",
+        "19419038",
+        "19415672",
+        "19420241",
+        "19414879",
+        "19422623",
+        "19420276",
+        "19415567"
+      ]
+    },
+    {
+      "source_listing_id": "19418306",
+      "query": "Camlik Mahallesi Umraniye 1+1 23000 TL alti Esyali kiralik daire",
+      "ranked_listing_ids": [
+        "19423060",
+        "19418306",
+        "19423107",
+        "19422170",
+        "19422155",
+        "19424626",
+        "19417580",
+        "19419753",
+        "19417258",
+        "19424621"
+      ]
+    },
+    {
+      "source_listing_id": "19418398",
+      "query": "Atakent Mahallesi Kucukcekmece 2+1 55000 TL alti Site Icinde Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19418803",
+        "19418398",
+        "19417309",
+        "19421585",
+        "19424321",
+        "19415672",
+        "19423915",
+        "19419004",
+        "19422168",
+        "19414686"
+      ]
+    },
+    {
+      "source_listing_id": "19418428",
+      "query": "Kozyatagi Mahallesi Kadikoy 3+1 115000 TL alti Asansor Balkonlu Kapali Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19418429",
+        "19418428",
+        "19424798",
+        "19424713",
+        "19416468",
+        "19422946",
+        "19418555",
+        "19418245",
+        "19415765",
+        "19414848"
+      ]
+    },
+    {
+      "source_listing_id": "19418430",
+      "query": "Feyzullah Mahallesi Maltepe 3+1 230000 TL alti Balkonlu Metroya Yakin Deniz Manzarali kiralik daire",
+      "ranked_listing_ids": [
+        "19421389",
+        "19418430",
+        "19418426",
+        "19414879",
+        "19423043",
+        "19419214",
+        "19419481",
+        "19415240",
+        "19424798",
+        "19424811"
+      ]
+    },
+    {
+      "source_listing_id": "19418441",
+      "query": "Kustepe Mahallesi Sisli 1+1 28000 TL alti Esyali Metroya Yakin Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19418441",
+        "19421125",
+        "19417139",
+        "19421949",
+        "19414964",
+        "19424621",
+        "19421421",
+        "19422859",
+        "19414880",
+        "19416858"
+      ]
+    },
+    {
+      "source_listing_id": "19418738",
+      "query": "Soguksu Mahallesi Beykoz 3+1 85000 TL alti Site Icinde Balkonlu Kapali Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19418738",
+        "19414757",
+        "19422946",
+        "19418245",
+        "19417940",
+        "19423808",
+        "19421758",
+        "19421585",
+        "19424306",
+        "19417529"
+      ]
+    },
+    {
+      "source_listing_id": "19418838",
+      "query": "Ayazaga Mahallesi Sariyer 1+1 85000 TL alti Site Icinde Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19418379",
+        "19415038",
+        "19417580",
+        "19416468",
+        "19421678",
+        "19418838",
+        "19416299",
+        "19422624",
+        "19416477",
+        "19420072"
+      ]
+    },
+    {
+      "source_listing_id": "19418942",
+      "query": "Kocasinan Merkez Mahallesi Bahcelievler 5+2 75000 TL alti Balkonlu Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19418249",
+        "19415723",
+        "19418917",
+        "19423025",
+        "19424579",
+        "19424691",
+        "19420406",
+        "19418942",
+        "19424526",
+        "19423085"
+      ]
+    },
+    {
+      "source_listing_id": "19418959",
+      "query": "Kayabasi Mahallesi Basaksehir 2+1 56000 TL alti Site Icinde Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19418959",
+        "19424633",
+        "19414848",
+        "19422043",
+        "19416671",
+        "19424713",
+        "19422710",
+        "19418308",
+        "19418001",
+        "19423808"
+      ]
+    },
+    {
+      "source_listing_id": "19418996",
+      "query": "Yenisehir Mahallesi Pendik 1+1 50000 TL alti Asansor Esyali Site Icinde kiralik daire",
+      "ranked_listing_ids": [
+        "19416961",
+        "19418996",
+        "19417657",
+        "19421943",
+        "19424713",
+        "19423154",
+        "19414686",
+        "19424626",
+        "19421961",
+        "19414624"
+      ]
+    },
+    {
+      "source_listing_id": "19419031",
+      "query": "Cengelkoy Mahallesi Uskudar 3+1 85000 TL alti Balkonlu Metrobuse Yakin Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19419031",
+        "19421966",
+        "19419946",
+        "19421949",
+        "19419484",
+        "19414964",
+        "19421948",
+        "19424378",
+        "19421909",
+        "19418555"
+      ]
+    },
+    {
+      "source_listing_id": "19419038",
+      "query": "Kartaltepe Mahallesi Kucukcekmece 2+1 30000 TL alti Balkonlu Metrobuse Yakin Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19419038",
+        "19415672",
+        "19419036",
+        "19419329",
+        "19414964",
+        "19419008",
+        "19422710",
+        "19415367",
+        "19419006",
+        "19424617"
+      ]
+    },
+    {
+      "source_listing_id": "19419315",
+      "query": "Cinar Mahallesi Esenyurt 2+1 12500 TL alti kiralik daire",
+      "ranked_listing_ids": [
+        "19419315",
+        "19422632",
+        "19421961",
+        "19414686",
+        "19416344",
+        "19400996",
+        "19417942",
+        "19424536",
+        "19424626",
+        "19418373"
+      ]
+    },
+    {
+      "source_listing_id": "19419327",
+      "query": "Tevfikbey Mahallesi Kucukcekmece 3+1 37000 TL alti Asansor Esyali Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19419327",
+        "19421585",
+        "19418245",
+        "19419008",
+        "19422946",
+        "19420826",
+        "19420072",
+        "19424650",
+        "19415765",
+        "19415672"
+      ]
+    },
+    {
+      "source_listing_id": "19419398",
+      "query": "Mimar Sinan Mahallesi Eyupsultan 2+1 65000 TL alti Site Icinde Metroya Yakin Kapali Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19419398",
+        "19417580",
+        "19422733",
+        "19423301",
+        "19416858",
+        "19421126",
+        "19422938",
+        "19424725",
+        "19422859",
+        "19424621"
+      ]
+    },
+    {
+      "source_listing_id": "19419484",
+      "query": "Guzeltepe Mahallesi Uskudar 2+1 30000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19419484",
+        "19415524",
+        "19421484",
+        "19424711",
+        "19420515",
+        "19417759",
+        "19420427",
+        "19422149",
+        "19420516",
+        "19416468"
+      ]
+    },
+    {
+      "source_listing_id": "19419656",
+      "query": "Fevzi Cakmak Mahallesi Pendik 1+1 33000 TL alti Asansor Site Icinde Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19420225",
+        "19419656",
+        "19419112",
+        "19424704",
+        "19420227",
+        "19418245",
+        "19424713",
+        "19408843",
+        "19417657",
+        "19415038"
+      ]
+    },
+    {
+      "source_listing_id": "19419918",
+      "query": "Barbaros Hayrettin Pasa Mahallesi Esenyurt 2+1 32000 TL alti Site Icinde Balkonlu Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19421949",
+        "19419918",
+        "19422859",
+        "19416858",
+        "19414797",
+        "19424621",
+        "19424536",
+        "19414624",
+        "19414733",
+        "19419946"
+      ]
+    },
+    {
+      "source_listing_id": "19420072",
+      "query": "Cumhuriyet Mahallesi Buyukcekmece 1+1 38000 TL alti Esyali Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19420072",
+        "19419006",
+        "19419008",
+        "19419460",
+        "19418803",
+        "19419003",
+        "19418245",
+        "19422155",
+        "19421948",
+        "19417580"
+      ]
+    },
+    {
+      "source_listing_id": "19420227",
+      "query": "Fevzi Cakmak Mahallesi Pendik 2+1 50000 TL alti Asansor Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19420227",
+        "19408843",
+        "19417657",
+        "19419112",
+        "19424704",
+        "19420225",
+        "19422168",
+        "19423302",
+        "19419656",
+        "19419476"
+      ]
+    },
+    {
+      "source_listing_id": "19420333",
+      "query": "Cumhuriyet Mahallesi Kartal 2+1 44500 TL alti Asansor Metroya Yakin Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19420333",
+        "19415845",
+        "19422555",
+        "19418388",
+        "19421714",
+        "19416858",
+        "19414795",
+        "19414797",
+        "19414686",
+        "19419445"
+      ]
+    },
+    {
+      "source_listing_id": "19420406",
+      "query": "Bahcelievler Mahallesi Bahcelievler 2+1 80000 TL alti Asansor Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19420406",
+        "19424526",
+        "19414880",
+        "19421424",
+        "19418917",
+        "19414686",
+        "19421415",
+        "19421115",
+        "19421421",
+        "19416858"
+      ]
+    },
+    {
+      "source_listing_id": "19420427",
+      "query": "Salacak Mahallesi Uskudar 2+1 34000 TL alti Metroya Yakin Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19420427",
+        "19415524",
+        "19424378",
+        "19420909",
+        "19419946",
+        "19421909",
+        "19416858",
+        "19424536",
+        "19419265",
+        "19423120"
+      ]
+    },
+    {
+      "source_listing_id": "19420526",
+      "query": "Sehremini Mahallesi Fatih 2+1 60000 TL alti Esyali Site Icinde kiralik daire",
+      "ranked_listing_ids": [
+        "19420526",
+        "19420241",
+        "19415767",
+        "19417580",
+        "19422499",
+        "19416477",
+        "19345651",
+        "19424536",
+        "19423104",
+        "19419440"
+      ]
+    },
+    {
+      "source_listing_id": "19420558",
+      "query": "Mahmutbey Mahallesi Bagcilar 2+1 18000 TL alti Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19420558",
+        "19423003",
+        "19417529",
+        "19415370",
+        "19420241",
+        "19420202",
+        "19423183",
+        "19416858",
+        "19419445",
+        "19414989"
+      ]
+    },
+    {
+      "source_listing_id": "19420628",
+      "query": "15 Temmuz Mahallesi Bagcilar 2+1 50000 TL alti Asansor Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19420628",
+        "19420241",
+        "19420276",
+        "19417529",
+        "19422623",
+        "19415370",
+        "19420202",
+        "19422452",
+        "19423003",
+        "19422624"
+      ]
+    },
+    {
+      "source_listing_id": "19420630",
+      "query": "Maltepe Mahallesi Zeytinburnu 2+1 58500 TL alti Esyali Site Icinde Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19420630",
+        "19414879",
+        "19424536",
+        "19415589",
+        "19419692",
+        "19419445",
+        "19417580",
+        "19423380",
+        "19416697",
+        "19421714"
+      ]
+    },
+    {
+      "source_listing_id": "19420937",
+      "query": "Mimar Sinan Mahallesi Uskudar 2+1 47000 TL alti Asansor Amerikan Mutfakli Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19265073",
+        "19414964",
+        "19420937",
+        "19424711",
+        "19420940",
+        "19420515",
+        "19416961",
+        "19417580",
+        "19419265",
+        "19415672"
+      ]
+    },
+    {
+      "source_listing_id": "19421126",
+      "query": "Selahaddin Eyyubi Mahallesi Esenyurt 2+1 17000 TL alti kiralik daire",
+      "ranked_listing_ids": [
+        "19421126",
+        "19421961",
+        "19414624",
+        "19424536",
+        "19417942",
+        "19418373",
+        "19419315",
+        "19416344",
+        "19416858",
+        "19424676"
+      ]
+    },
+    {
+      "source_listing_id": "19421560",
+      "query": "Sultanciftligi Mahallesi Cekmekoy 2+1 35000 TL alti Asansor kiralik daire",
+      "ranked_listing_ids": [
+        "19415567",
+        "19419484",
+        "19424724",
+        "19420826",
+        "19421560",
+        "19419741",
+        "19423168",
+        "19420131",
+        "19419445",
+        "19419481"
+      ]
+    },
+    {
+      "source_listing_id": "19421943",
+      "query": "Yenisehir Mahallesi Pendik 1+1 42500 TL alti Esyali Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19416961",
+        "19421943",
+        "19418996",
+        "19417657",
+        "19424626",
+        "19417580",
+        "19416208",
+        "19422170",
+        "19424713",
+        "19418342"
+      ]
+    },
+    {
+      "source_listing_id": "19421948",
+      "query": "Cumhuriyet Mahallesi Beylikduzu 1+1 35000 TL alti Esyali Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19421948",
+        "19420072",
+        "19414994",
+        "19421949",
+        "19423808",
+        "19421651",
+        "19418555",
+        "19420074",
+        "19415240",
+        "19419008"
+      ]
+    },
+    {
+      "source_listing_id": "19421949",
+      "query": "Barbaros Hayrettin Pasa Mahallesi Esenyurt 1+1 35000 TL alti Esyali Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19421949",
+        "19419918",
+        "19422859",
+        "19420069",
+        "19424621",
+        "19417538",
+        "19414733",
+        "19419315",
+        "19414624",
+        "19414797"
+      ]
+    },
+    {
+      "source_listing_id": "19421966",
+      "query": "Cengelkoy Mahallesi Uskudar 2+1 40000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19421966",
+        "19419484",
+        "19415524",
+        "19420515",
+        "19419031",
+        "19424711",
+        "19420427",
+        "19417537",
+        "19419265",
+        "19416961"
+      ]
+    },
+    {
+      "source_listing_id": "19422050",
+      "query": "Nisantepe Mahallesi Cekmekoy 2+1 42000 TL alti Asansor Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19414686",
+        "19422050",
+        "19422168",
+        "19419484",
+        "19420131",
+        "19277848",
+        "19421966",
+        "19415370",
+        "19416961",
+        "19415567"
+      ]
+    },
+    {
+      "source_listing_id": "19422141",
+      "query": "Aydintepe Mahallesi Tuzla 1+1 27000 TL alti Site Icinde Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19420226",
+        "19423530",
+        "19422141",
+        "19420013",
+        "19418525",
+        "19419860",
+        "19419845",
+        "19424631",
+        "19418361",
+        "19415556"
+      ]
+    },
+    {
+      "source_listing_id": "19422143",
+      "query": "Merkez Mahallesi Avcilar 2+1 36000 TL alti Esyali Metrobuse Yakin Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19422143",
+        "19424725",
+        "19423428",
+        "19424621",
+        "19419946",
+        "19424378",
+        "19421421",
+        "19421949",
+        "19414964",
+        "19416858"
+      ]
+    },
+    {
+      "source_listing_id": "19422168",
+      "query": "Mimar Sinan Mahallesi Cekmekoy 2+1 49000 TL alti Site Icinde Balkonlu Kapali Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19422168",
+        "19419741",
+        "19417580",
+        "19421560",
+        "19414949",
+        "19422050",
+        "19415567",
+        "19420131",
+        "19419398",
+        "19423775"
+      ]
+    },
+    {
+      "source_listing_id": "19422170",
+      "query": "Camlik Mahallesi Pendik 1+1 25500 TL alti Site Icinde Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19422170",
+        "19419656",
+        "19417657",
+        "19422624",
+        "19417580",
+        "19423060",
+        "19420072",
+        "19418306",
+        "19419444",
+        "19416299"
+      ]
+    },
+    {
+      "source_listing_id": "19422499",
+      "query": "Sehremini Mahallesi Fatih 3+1 45000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19422499",
+        "19420526",
+        "19345651",
+        "19423200",
+        "19420241",
+        "19422155",
+        "19422624",
+        "19424798",
+        "19422946",
+        "19420516"
+      ]
+    },
+    {
+      "source_listing_id": "19422796",
+      "query": "Zafer Mahallesi Bahcelievler 3+1 40000 TL alti Balkonlu Metroya Yakin Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19422796",
+        "19421421",
+        "19423200",
+        "19421115",
+        "19414880",
+        "19422946",
+        "19419946",
+        "19421424",
+        "19424642",
+        "19423025"
+      ]
+    },
+    {
+      "source_listing_id": "19422946",
+      "query": "Soganli Mahallesi Bahcelievler 3+1 35000 TL alti Asansor Balkonlu Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19422946",
+        "19418249",
+        "19424798",
+        "19423200",
+        "19424713",
+        "19424526",
+        "19415765",
+        "19423085",
+        "19422796",
+        "19415723"
+      ]
+    },
+    {
+      "source_listing_id": "19423085",
+      "query": "Cobancesme Mahallesi Bahcelievler 3+1 34000 TL alti Asansor Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19423085",
+        "19422946",
+        "19424713",
+        "19423200",
+        "19421421",
+        "19424691",
+        "19418249",
+        "19415723",
+        "19422796",
+        "19423025"
+      ]
+    },
+    {
+      "source_listing_id": "19423168",
+      "query": "Cebeci Mahallesi Sultangazi 2+1 29000 TL alti Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19423168",
+        "19416487",
+        "19420826",
+        "19419440",
+        "19357926",
+        "19415767",
+        "19423183",
+        "19415567",
+        "19420747",
+        "19422624"
+      ]
+    },
+    {
+      "source_listing_id": "19423259",
+      "query": "Davutlar Mahallesi Kusadasi 3+1 6250000 TL alti Balkonlu Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19423259",
+        "19424693",
+        "19423868",
+        "19424711",
+        "19414950",
+        "19422946",
+        "19421728",
+        "19415240",
+        "19419696",
+        "19423965"
+      ]
+    },
+    {
+      "source_listing_id": "19423274",
+      "query": "Bayir Mahallesi Armutlu 2+1 2885000 TL alti Asansor Balkonlu Deniz Manzarali kiralik daire",
+      "ranked_listing_ids": [
+        "19424390",
+        "19423274",
+        "19415240",
+        "19420515",
+        "19424644",
+        "19416858",
+        "19414686",
+        "19422452",
+        "19424711",
+        "19418199"
+      ]
+    },
+    {
+      "source_listing_id": "19423280",
+      "query": "Incek Mahallesi Golbasi 2+1 4890000 TL alti Asansor Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19423280",
+        "19424626",
+        "19414686",
+        "19424199",
+        "19424713",
+        "19424514",
+        "19424438",
+        "19424614",
+        "19424652",
+        "19423085"
+      ]
+    },
+    {
+      "source_listing_id": "19423297",
+      "query": "Iskele Mahallesi Edremit 1+1 3000000 TL alti Amerikan Mutfakli Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19414964",
+        "19424621",
+        "19422155",
+        "19414686",
+        "19417139",
+        "19424554",
+        "19419038",
+        "19415672",
+        "19277848",
+        "19417348"
+      ]
+    },
+    {
+      "source_listing_id": "19423302",
+      "query": "Esenler Mahallesi Pendik 2+1 5950000 TL alti Site Icinde Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19417657",
+        "19423302",
+        "19422168",
+        "19414624",
+        "19424536",
+        "19421961",
+        "19419444",
+        "19420227",
+        "19414879",
+        "19417580"
+      ]
+    },
+    {
+      "source_listing_id": "19423303",
+      "query": "Altinova Mahallesi Ayvalik 2+1 8700000 TL alti Deniz Manzarali Acik Otoparkli Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19423303",
+        "19420515",
+        "19424390",
+        "19265073",
+        "19424711",
+        "19423306",
+        "19423120",
+        "19423060",
+        "19423892",
+        "19417540"
+      ]
+    },
+    {
+      "source_listing_id": "19423306",
+      "query": "Kucukkoy Mahallesi Ayvalik 1+1 5150000 TL alti Esyali Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19423306",
+        "19418555",
+        "19422624",
+        "19423808",
+        "19418362",
+        "19415923",
+        "19423107",
+        "19420072",
+        "19422168",
+        "19424626"
+      ]
+    },
+    {
+      "source_listing_id": "19423344",
+      "query": "Yali Mahallesi Kocaali 3+1 5750000 TL alti Balkonlu Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19423344",
+        "19424231",
+        "19421728",
+        "19424432",
+        "19424167",
+        "19424434",
+        "19418664",
+        "19424798",
+        "19424642",
+        "19424506"
+      ]
+    },
+    {
+      "source_listing_id": "19423391",
+      "query": "Pirireis Mahallesi Yenisehir 3+1 2925000 TL alti Balkonlu Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19423391",
+        "19424713",
+        "19424731",
+        "19423200",
+        "19424798",
+        "19424737",
+        "19424626",
+        "19416586",
+        "19424015",
+        "19421728"
+      ]
+    },
+    {
+      "source_listing_id": "19423394",
+      "query": "Uckuyu Mahallesi Yenisehir 3+1 4210000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19423394",
+        "19424713",
+        "19416586",
+        "19423200",
+        "19424737",
+        "19424015",
+        "19424626",
+        "19416961",
+        "19420516",
+        "19424506"
+      ]
+    },
+    {
+      "source_listing_id": "19423396",
+      "query": "Kumbag Mahallesi Suleymanpasa 1+1 2100000 TL alti Esyali Balkonlu Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19423396",
+        "19424291",
+        "19423183",
+        "19421894",
+        "19424621",
+        "19422155",
+        "19424536",
+        "19424651",
+        "19422624",
+        "19265073"
+      ]
+    },
+    {
+      "source_listing_id": "19423402",
+      "query": "Turkeli Mahallesi Kozan 2+1 2600000 TL alti Balkonlu Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19423402",
+        "19424199",
+        "19421525",
+        "19420094",
+        "19414964",
+        "19418249",
+        "19424300",
+        "19424291",
+        "19414686",
+        "19415672"
+      ]
+    },
+    {
+      "source_listing_id": "19423414",
+      "query": "Halkali Merkez Mahallesi Kucukcekmece 1+1 4750000 TL alti Esyali Site Icinde Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19422194",
+        "19418803",
+        "19423414",
+        "19424321",
+        "19415567",
+        "19417309",
+        "19419329",
+        "19420072",
+        "19419036",
+        "19415672"
+      ]
+    },
+    {
+      "source_listing_id": "19423424",
+      "query": "Gundogan Mahallesi Bodrum 2+1 26000000 TL alti Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19265073",
+        "19424652",
+        "19415672",
+        "19419038",
+        "19423893",
+        "19424438",
+        "19423424",
+        "19424711",
+        "19421484",
+        "19420131"
+      ]
+    },
+    {
+      "source_listing_id": "19423428",
+      "query": "Mustafa Kemalpasa Mahallesi Avcilar 2+1 5300000 TL alti Balkonlu Metrobuse Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19423428",
+        "19424725",
+        "19424378",
+        "19419946",
+        "19419706",
+        "19424651",
+        "19422143",
+        "19423427",
+        "19423445",
+        "19421949"
+      ]
+    },
+    {
+      "source_listing_id": "19423453",
+      "query": "Ertugrul Gazi Mahallesi Haliliye 4_5+1 3500000 TL alti Balkonlu Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19423453",
+        "19422624",
+        "19424798",
+        "19277869",
+        "19415277",
+        "19422946",
+        "19424593",
+        "19421651",
+        "19420074",
+        "19420517"
+      ]
+    },
+    {
+      "source_listing_id": "19423496",
+      "query": "Asagikoyunlu Koyu Savsat 1_oda 1375000 TL alti Esyali Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19423496",
+        "19424633",
+        "19414848",
+        "19421728",
+        "19418398",
+        "19418917",
+        "19424874",
+        "19424691",
+        "19419753",
+        "19421678"
+      ]
+    },
+    {
+      "source_listing_id": "19423540",
+      "query": "Ayas Mahallesi Erdemli 1+1 4400000 TL alti Asansor Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19423540",
+        "19424131",
+        "19419398",
+        "19424646",
+        "19424657",
+        "19424557",
+        "19424711",
+        "19422624",
+        "19424626",
+        "19417580"
+      ]
+    },
+    {
+      "source_listing_id": "19423621",
+      "query": "Pazarcik Mahallesi Saray 3+1 5100000 TL alti Asansor Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424713",
+        "19423621",
+        "19424798",
+        "19424477",
+        "19417712",
+        "19424642",
+        "19424426",
+        "19424415",
+        "19421728",
+        "19420137"
+      ]
+    },
+    {
+      "source_listing_id": "19423683",
+      "query": "Baglarbasi Mahallesi Darica 3+1 6950000 TL alti Balkonlu Metroya Yakin Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19423683",
+        "19424798",
+        "19421728",
+        "19423200",
+        "19424015",
+        "19423043",
+        "19419946",
+        "19421421",
+        "19422946",
+        "19423003"
+      ]
+    },
+    {
+      "source_listing_id": "19423834",
+      "query": "Bmustafa Pasa Mahallesi Battalgazi 2+1 2650000 TL alti Asansor Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19423834",
+        "19418917",
+        "19422452",
+        "19417890",
+        "19419706",
+        "19424877",
+        "19414797",
+        "19420241",
+        "19424626",
+        "19415370"
+      ]
+    },
+    {
+      "source_listing_id": "19423847",
+      "query": "Kayas Mahallesi Mamak 2+1 2650000 TL alti Balkonlu Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19423847",
+        "19400996",
+        "19423345",
+        "19416401",
+        "19424621",
+        "19424626",
+        "19416671",
+        "19424716",
+        "19415277",
+        "19424494"
+      ]
+    },
+    {
+      "source_listing_id": "19423868",
+      "query": "Davutlar Mahallesi Kusadasi 3+1 13000000 TL alti Site Icinde Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19423259",
+        "19423868",
+        "19424693",
+        "19422946",
+        "19424798",
+        "19424713",
+        "19421728",
+        "19424557",
+        "19415240",
+        "19419696"
+      ]
+    },
+    {
+      "source_listing_id": "19423936",
+      "query": "Seyhsinan Mahallesi Corlu 2+1 2950000 TL alti Asansor Balkonlu Kapali Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19423936",
+        "19424720",
+        "19424184",
+        "19424427",
+        "19422938",
+        "19418917",
+        "19415767",
+        "19414624",
+        "19421651",
+        "19424877"
+      ]
+    },
+    {
+      "source_listing_id": "19423965",
+      "query": "Sogucak Mahallesi Kusadasi 4+1 7600000 TL alti Esyali Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19423965",
+        "19424870",
+        "19424711",
+        "19424657",
+        "19424438",
+        "19424414",
+        "19424557",
+        "19415524",
+        "19423762",
+        "19424874"
+      ]
+    },
+    {
+      "source_listing_id": "19423983",
+      "query": "Canakca Mahallesi Catalca 2+1 5200000 TL alti Acik Otoparkli Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19423927",
+        "19423983",
+        "19265073",
+        "19415672",
+        "19419038",
+        "19415845",
+        "19424651",
+        "19424352",
+        "19424621",
+        "19424300"
+      ]
+    },
+    {
+      "source_listing_id": "19424178",
+      "query": "Camlibel Mahallesi Edremit 4+1 10950000 TL alti Asansor Balkonlu Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19424178",
+        "19414964",
+        "19422155",
+        "19424626",
+        "19422624",
+        "19423060",
+        "19423154",
+        "19424661",
+        "19424225",
+        "19423107"
+      ]
+    },
+    {
+      "source_listing_id": "19424193",
+      "query": "Halitpasa Mahallesi Mudanya 5+1 18950000 TL alti Balkonlu Deniz Manzarali Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424193",
+        "19423834",
+        "19424651",
+        "19422624",
+        "19421728",
+        "19423490",
+        "19424798",
+        "19424644",
+        "19136758",
+        "19423432"
+      ]
+    },
+    {
+      "source_listing_id": "19424200",
+      "query": "Dereagzi Mahallesi Marmaraereglisi 4+1 8950000 TL alti Balkonlu Deniz Manzarali Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19424200",
+        "19424255",
+        "19423959",
+        "19420515",
+        "19423857",
+        "19414964",
+        "19423911",
+        "19415240",
+        "19422747",
+        "19418342"
+      ]
+    },
+    {
+      "source_listing_id": "19424236",
+      "query": "Ataturk Mahallesi Buyukcekmece 2+1 11000000 TL alti Site Icinde Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19418803",
+        "19424236",
+        "19414686",
+        "19421585",
+        "19420072",
+        "19418398",
+        "19424514",
+        "19419460",
+        "19417488",
+        "19419445"
+      ]
+    },
+    {
+      "source_listing_id": "19424246",
+      "query": "Talaytepe Mahallesi Kayapinar 2+0 3050000 TL alti Asansor Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424246",
+        "19423921",
+        "19416401",
+        "19416671",
+        "19424713",
+        "19416468",
+        "19424633",
+        "19422043",
+        "19424494",
+        "19420669"
+      ]
+    },
+    {
+      "source_listing_id": "19424278",
+      "query": "Akbuk Mahallesi Didim 3+1 7850000 TL alti Deniz Manzarali Acik Otoparkli Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19424278",
+        "19415240",
+        "19424699",
+        "19424084",
+        "19418542",
+        "19405962",
+        "19424295",
+        "19420515",
+        "19415672",
+        "19414950"
+      ]
+    },
+    {
+      "source_listing_id": "19424304",
+      "query": "Piyade Mahallesi Etimesgut 2+1 2465000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424304",
+        "19424074",
+        "19226468",
+        "19424347",
+        "19416858",
+        "19424536",
+        "19419315",
+        "19424626",
+        "19421961",
+        "19420515"
+      ]
+    },
+    {
+      "source_listing_id": "19424320",
+      "query": "Karakaya Mahallesi Kecioren 3+1 4500000 TL alti Asansor Balkonlu Kapali Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424320",
+        "19424319",
+        "19424716",
+        "19424477",
+        "19424274",
+        "19423949",
+        "19424280",
+        "19423929",
+        "19424889",
+        "19424639"
+      ]
+    },
+    {
+      "source_listing_id": "19424321",
+      "query": "Mehmet Akif Mahallesi Kucukcekmece 1+1 2640000 TL alti Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19424321",
+        "19415672",
+        "19418803",
+        "19424650",
+        "19417309",
+        "19424617",
+        "19418251",
+        "19418542",
+        "19424699",
+        "19416858"
+      ]
+    },
+    {
+      "source_listing_id": "19424341",
+      "query": "Kavakli Mahallesi Tarsus 4+1 6275000 TL alti Esyali Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424341",
+        "19415028",
+        "19423808",
+        "19424202",
+        "19421651",
+        "19418308",
+        "19424877",
+        "19419753",
+        "19424870",
+        "19417890"
+      ]
+    },
+    {
+      "source_listing_id": "19424415",
+      "query": "Pasa Mahallesi Akhisar 3+1 3100000 TL alti Balkonlu Acik Otoparkli Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19424415",
+        "19424295",
+        "19424798",
+        "19421728",
+        "19419696",
+        "19424710",
+        "19424713",
+        "19418245",
+        "19423721",
+        "19424640"
+      ]
+    },
+    {
+      "source_listing_id": "19424426",
+      "query": "Kazim Karabekir Mahallesi Etimesgut 3+1 3800000 TL alti Esyali Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19424426",
+        "19423721",
+        "19419696",
+        "19422155",
+        "19423519",
+        "19357926",
+        "19424554",
+        "19416858",
+        "19424710",
+        "19424536"
+      ]
+    },
+    {
+      "source_listing_id": "19424434",
+      "query": "Yayla Mahallesi Kocaali 4+1 4750000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424434",
+        "19424432",
+        "19423440",
+        "19423344",
+        "19424231",
+        "19424870",
+        "19424433",
+        "19424593",
+        "19419860",
+        "19424716"
+      ]
+    },
+    {
+      "source_listing_id": "19424442",
+      "query": "Ovacik Mahallesi Kecioren 4+1 6599000 TL alti Asansor Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424716",
+        "19424442",
+        "19424212",
+        "19424280",
+        "19424477",
+        "19424319",
+        "19424225",
+        "19424889",
+        "19418917",
+        "19422946"
+      ]
+    },
+    {
+      "source_listing_id": "19424457",
+      "query": "Mehmet Akif Ersoy Mahallesi Yenimahalle 3+1 7650000 TL alti Asansor Site Icinde Kapali Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424457",
+        "19424883",
+        "19424699",
+        "19424731",
+        "19424713",
+        "19416858",
+        "19424084",
+        "19424477",
+        "19418664",
+        "19424415"
+      ]
+    },
+    {
+      "source_listing_id": "19424472",
+      "query": "30 Agustos Zafer Mahallesi Nilufer 2+1 5800000 TL alti Esyali Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424712",
+        "19424640",
+        "19424472",
+        "19421115",
+        "19417580",
+        "19424549",
+        "19424299",
+        "19422796",
+        "19424621",
+        "19277848"
+      ]
+    },
+    {
+      "source_listing_id": "19424494",
+      "query": "Peyas Mahallesi Kayapinar 5+2 6750000 TL alti Asansor Balkonlu Klimali kiralik daire",
+      "ranked_listing_ids": [
+        "19424494",
+        "19418664",
+        "19416671",
+        "19423415",
+        "19424415",
+        "19424633",
+        "19424325",
+        "19416468",
+        "19422043",
+        "19423540"
+      ]
+    },
+    {
+      "source_listing_id": "19424496",
+      "query": "Karacaoren Mahallesi Sehitkamil 3+1 2350000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424496",
+        "19422946",
+        "19424710",
+        "19424798",
+        "19424824",
+        "19424477",
+        "19424867",
+        "19152684",
+        "19418738",
+        "19424048"
+      ]
+    },
+    {
+      "source_listing_id": "19424506",
+      "query": "Mustafa Kemal Mahallesi Sincan 3+1 5299000 TL alti Asansor kiralik daire",
+      "ranked_listing_ids": [
+        "19424506",
+        "19424503",
+        "19422946",
+        "19424713",
+        "19424477",
+        "19424048",
+        "19420516",
+        "19415765",
+        "19424710",
+        "19418917"
+      ]
+    },
+    {
+      "source_listing_id": "19424526",
+      "query": "Bahcelievler Mahallesi Tepebasi 1+1 1890000 TL alti Balkonlu Kapali Otoparkli Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424526",
+        "19417529",
+        "19424691",
+        "19415277",
+        "19420072",
+        "19420406",
+        "19419509",
+        "19418917",
+        "19415723",
+        "19424646"
+      ]
+    },
+    {
+      "source_listing_id": "19424552",
+      "query": "Sambayadi Mahallesi Cukurova 5+1 25000000 TL alti Site Icinde Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424552",
+        "19422168",
+        "19423374",
+        "19423808",
+        "19422624",
+        "19423943",
+        "19424626",
+        "19422498",
+        "19417694",
+        "19417580"
+      ]
+    },
+    {
+      "source_listing_id": "19424554",
+      "query": "Esenyali Mahallesi Karabaglar 3+1 7000000 TL alti Balkonlu Metroya Yakin Amerikan Mutfakli kiralik daire",
+      "ranked_listing_ids": [
+        "19424554",
+        "19424426",
+        "19419696",
+        "19422946",
+        "19421909",
+        "19420669",
+        "19421421",
+        "19424710",
+        "19414964",
+        "19414879"
+      ]
+    },
+    {
+      "source_listing_id": "19424558",
+      "query": "Mevlana Mahallesi Sancaktepe 2+1 5850000 TL alti Asansor Balkonlu Metroya Yakin kiralik daire",
+      "ranked_listing_ids": [
+        "19424558",
+        "19424308",
+        "19419445",
+        "19414879",
+        "19420450",
+        "19423428",
+        "19424637",
+        "19424536",
+        "19419685",
+        "19414964"
+      ]
+    },
+    {
+      "source_listing_id": "19424575",
+      "query": "Ferhatpasa Mahallesi Catalca 2+1 4625000 TL alti Site Icinde Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424575",
+        "19417890",
+        "19424651",
+        "19424291",
+        "19423927",
+        "19424621",
+        "19424626",
+        "19423983",
+        "19424880",
+        "19417538"
+      ]
+    },
+    {
+      "source_listing_id": "19424593",
+      "query": "4 Temmuz Mahallesi Karamursel 2+1 3150000 TL alti Balkonlu Deniz Manzarali kiralik daire",
+      "ranked_listing_ids": [
+        "19424593",
+        "19424640",
+        "19424390",
+        "19417540",
+        "19422555",
+        "19418199",
+        "19420515",
+        "19420333",
+        "19400996",
+        "19420013"
+      ]
+    },
+    {
+      "source_listing_id": "19424602",
+      "query": "Demirtas Sakarya Mahallesi Osmangazi 2+1 4750000 TL alti Asansor Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424602",
+        "19417529",
+        "19424877",
+        "19422452",
+        "19415765",
+        "19421728",
+        "19415370",
+        "19419445",
+        "19416468",
+        "19420515"
+      ]
+    },
+    {
+      "source_listing_id": "19424654",
+      "query": "Guzelyali Mahallesi Konak 3+1 5600000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424654",
+        "19424713",
+        "19422946",
+        "19424866",
+        "19424798",
+        "19421728",
+        "19424652",
+        "19419326",
+        "19423374",
+        "19423214"
+      ]
+    },
+    {
+      "source_listing_id": "19424670",
+      "query": "Kemaloz Mahallesi Merkez 4+1 53000 TL alti Site Icinde Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424670",
+        "19424716",
+        "19415277",
+        "19424593",
+        "19416401",
+        "19424280",
+        "19414797",
+        "19424857",
+        "19424514",
+        "19417694"
+      ]
+    },
+    {
+      "source_listing_id": "19424676",
+      "query": "Yesilkent Mahallesi Esenyurt 1+1 2620000 TL alti Asansor Esyali Site Icinde kiralik daire",
+      "ranked_listing_ids": [
+        "19414624",
+        "19424676",
+        "19364703",
+        "19423716",
+        "19418373",
+        "19422155",
+        "19424536",
+        "19420069",
+        "19419315",
+        "19421961"
+      ]
+    },
+    {
+      "source_listing_id": "19424710",
+      "query": "Selahiye Mahallesi Ilkadim 3+1 20000 TL alti Asansor Esyali Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424710",
+        "19422946",
+        "19422155",
+        "19424713",
+        "19420826",
+        "19424867",
+        "19345651",
+        "19415765",
+        "19357926",
+        "19424798"
+      ]
+    },
+    {
+      "source_listing_id": "19424720",
+      "query": "Uludag Mahallesi Korgun 2+1 3350000 TL alti Site Icinde Balkonlu Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424720",
+        "19424868",
+        "19424646",
+        "19423936",
+        "19424713",
+        "19424184",
+        "19424199",
+        "19423443",
+        "19417580",
+        "19424333"
+      ]
+    },
+    {
+      "source_listing_id": "19424729",
+      "query": "Bayindir Mahallesi Merkez 2+0 1500000 TL alti Asansor Acik Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424626",
+        "19424729",
+        "19423154",
+        "19424713",
+        "19400996",
+        "19420131",
+        "19277848",
+        "19418917",
+        "19417657",
+        "19424438"
+      ]
+    },
+    {
+      "source_listing_id": "19424734",
+      "query": "Buyukesat Mahallesi Cankaya 4+1 17750000 TL alti Asansor Site Icinde Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424734",
+        "19424274",
+        "19423440",
+        "19423762",
+        "19424713",
+        "19424870",
+        "19424415",
+        "19424716",
+        "19424291",
+        "19424457"
+      ]
+    },
+    {
+      "source_listing_id": "19424739",
+      "query": "Seyyid Omer Mahallesi Fatih 1+1 3850000 TL alti kiralik daire",
+      "ranked_listing_ids": [
+        "19422498",
+        "19420241",
+        "19424739",
+        "19417580",
+        "19345651",
+        "19420526",
+        "19424869",
+        "19422624",
+        "19415767",
+        "19424381"
+      ]
+    },
+    {
+      "source_listing_id": "19424779",
+      "query": "Liseler Mahallesi Unye 3+1 5350000 TL alti Asansor Balkonlu Deniz Manzarali kiralik daire",
+      "ranked_listing_ids": [
+        "19424780",
+        "19424779",
+        "19422946",
+        "19421728",
+        "19424798",
+        "19414950",
+        "19420515",
+        "19424477",
+        "19424084",
+        "19423721"
+      ]
+    },
+    {
+      "source_listing_id": "19424793",
+      "query": "Istasyon Mahallesi Cerkezkoy 3+1 4250000 TL alti Asansor Balkonlu Kapali Otoparkli kiralik daire",
+      "ranked_listing_ids": [
+        "19424197",
+        "19424793",
+        "19418245",
+        "19417121",
+        "19414686",
+        "19424710",
+        "19424713",
+        "19424202",
+        "19422946",
+        "19423617"
+      ]
+    },
+    {
+      "source_listing_id": "19424831",
+      "query": "Fatih Mahallesi Bor 3+1 5500000 TL alti Asansor Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424831",
+        "19345651",
+        "19424682",
+        "19424713",
+        "19422946",
+        "19419326",
+        "19420241",
+        "19422624",
+        "19423376",
+        "19424084"
+      ]
+    },
+    {
+      "source_listing_id": "19424840",
+      "query": "Altinkum Mahallesi Edremit 3+1 4775000 TL alti Balkonlu kiralik daire",
+      "ranked_listing_ids": [
+        "19424840",
+        "19423334",
+        "19422155",
+        "19424713",
+        "19396824",
+        "19424867",
+        "19424710",
+        "19424506",
+        "19423909",
+        "19277848"
+      ]
+    },
+    {
+      "source_listing_id": "19424865",
+      "query": "Esenevler Mahallesi Atakum 2+1 2550000 TL alti Asansor kiralik daire",
+      "ranked_listing_ids": [
+        "19424865",
+        "19414686",
+        "19424626",
+        "19414624",
+        "19424713",
+        "19422452",
+        "19415845",
+        "19424867",
+        "19424877",
+        "19419696"
+      ]
+    }
+  ]
+}

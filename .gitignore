@@ -11,8 +11,10 @@ data/images/
 data/timeseries/
 data/_*
 data/chroma/
+data/processed_big/
 model/checkpoints/
 model/checkpoints_smoke/
+finetune/text_embed/*.log
 archive/
 notebooks/figures/
 *.ipynb_checkpoints/
