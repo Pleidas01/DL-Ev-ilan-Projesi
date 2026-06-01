@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Türkçe Emlak RAG — Sunum</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f6fafc; --ink:#1d2a33; --muted:#5d6c79; --line:#e2e9ef;
+    --teal:#0e7490; --turq:#06b6d4; --turq-soft:#ecfeff;
+    --orange:#ea580c; --orange-2:#f97316; --orange-soft:#fff7ed;
+    --good:#0e9f6e; --bad:#e11d48;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{font-family:"Segoe UI",-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg); color:var(--ink); overflow:hidden; -webkit-font-smoothing:antialiased}
+  .deck{height:100vh; width:100vw; position:relative}
+  .slide{position:absolute; inset:0; padding:3.4vh 5.5vw 7vh; display:none;
+    flex-direction:column; justify-content:flex-start; animation:fade .3s ease; overflow-y:auto}
+  .slide.active{display:flex}
+  .slide.center{justify-content:center}
+  @keyframes fade{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+  .kicker{font-size:.82rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--teal); margin-bottom:.5rem; display:flex; align-items:center; gap:.55rem}
+  .kicker .num{background:linear-gradient(135deg,var(--teal),var(--turq)); color:#fff;
+    width:1.7rem; height:1.7rem; border-radius:.5rem; display:grid; place-items:center; font-size:.9rem; letter-spacing:0}
+  h1{font-size:2.9rem; line-height:1.08; font-weight:800; letter-spacing:-.02em}
+  h2{font-size:1.95rem; line-height:1.12; font-weight:800; letter-spacing:-.01em; margin-bottom:.9rem}
+  h2 .hl{color:var(--orange)}
+  .lead{font-size:1.12rem; color:var(--muted); max-width:75ch; line-height:1.45}
+  ul{list-style:none; display:flex; flex-direction:column; gap:.5rem; font-size:1.04rem}
+  li{position:relative; padding-left:1.4rem; line-height:1.38}
+  li::before{content:""; position:absolute; left:0; top:.5em; width:.55rem; height:.55rem;
+    border-radius:.16rem; background:var(--orange-2); transform:rotate(45deg)}
+  li b{color:var(--teal)}
+  li .sub{display:block; color:var(--muted); font-size:.92rem; padding-left:0; margin-top:.1rem}
+  .em{color:var(--orange); font-weight:700}
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:1rem 2.4rem; align-items:start}
+  .cols.w{grid-template-columns:1.1fr .9fr}
+  .box{background:var(--panel); border:1px solid var(--line); border-radius:.8rem; padding:1rem 1.2rem}
+  .box .h{font-weight:800; color:var(--teal); margin-bottom:.5rem; font-size:1.05rem}
+  .box.o .h{color:var(--orange)}
+  /* metric cards */
+  .cards{display:flex; gap:1rem; flex-wrap:wrap; margin:.3rem 0}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:.9rem; padding:1.1rem 1.3rem; flex:1; min-width:8rem}
+  .card .big{font-size:2.3rem; font-weight:800; color:var(--orange); line-height:1}
+  .card .big .arrow{color:var(--muted); font-size:1.3rem; margin:0 .15rem}
+  .card .lbl{margin-top:.4rem; color:var(--muted); font-weight:600; font-size:.92rem}
+  .card.teal .big{color:var(--teal)}
+  /* table */
+  table{border-collapse:collapse; width:100%; font-size:1.0rem; margin:.3rem 0}
+  th,td{padding:.5rem .85rem; text-align:left; border-bottom:1px solid var(--line)}
+  thead th{background:linear-gradient(135deg,var(--teal),var(--turq)); color:#fff; font-weight:700}
+  thead th:first-child{border-radius:.5rem 0 0 0}
+  thead th:last-child{border-radius:0 .5rem 0 0}
+  tbody tr:nth-child(even){background:var(--turq-soft)}
+  td .win{color:var(--orange); font-weight:800}
+  td .y{color:var(--good); font-weight:700} td .n{color:var(--bad); font-weight:700}
+  /* pipeline */
+  .pipe{display:flex; align-items:stretch; gap:.4rem; flex-wrap:wrap; margin:.4rem 0}
+  .step{background:var(--turq-soft); border:1px solid var(--turq); color:var(--teal);
+    border-radius:.6rem; padding:.5rem .8rem; font-weight:700; font-size:.95rem; display:grid; place-items:center; text-align:center}
+  .step.o{background:var(--orange-soft); border-color:var(--orange-2); color:var(--orange)}
+  .step span{font-weight:500; font-size:.76rem}
+  .arr{display:grid; place-items:center; color:var(--muted); font-size:1.2rem; font-weight:800}
+  /* diff/sol grid */
+  .grid2{display:grid; grid-template-columns:1fr 1.1fr; gap:.45rem 1.2rem; font-size:1.0rem; margin:.2rem 0}
+  .prob{color:var(--bad); font-weight:700} .sol{color:var(--good)}
+  /* chips */
+  .chip{display:inline-block; background:var(--turq-soft); color:var(--teal); border:1px solid var(--turq);
+    border-radius:1rem; padding:.12rem .6rem; font-size:.82rem; font-weight:700; margin:.12rem}
+  .chip.o{background:var(--orange-soft); color:var(--orange); border-color:var(--orange-2)}
+  .tech{margin-top:.9rem; padding-top:.7rem; border-top:1px dashed var(--line)}
+  .tech .t{font-size:.72rem; letter-spacing:.1em; color:var(--muted); font-weight:800; text-transform:uppercase; margin-right:.4rem}
+  .big-q{background:var(--orange-soft); border-left:4px solid var(--orange-2); padding:.8rem 1.1rem;
+    border-radius:.5rem; font-size:1.2rem; font-style:italic; color:#7c2d12; max-width:72ch; margin-bottom:.8rem}
+  .small{font-size:.92rem; color:var(--muted)}
+  .mono{font-family:Consolas,"SF Mono",monospace; font-size:.92rem; background:#f1f5f9; padding:.1rem .4rem; border-radius:.3rem}
+  /* notes */
+  .speaker-notes{display:none}
+  body.notes-on .slide.active .speaker-notes{display:block; position:fixed; left:0; right:0; bottom:0;
+    max-height:36vh; overflow:auto; background:#0f2730; color:#e6f6fb; padding:1rem 5.5vw; font-size:1.0rem;
+    line-height:1.45; border-top:4px solid var(--orange-2); box-shadow:0 -10px 30px rgba(0,0,0,.18); z-index:50}
+  body.notes-on .slide.active .speaker-notes b{color:var(--turq)}
+  body.notes-on .slide.active .speaker-notes::before{content:"KONUŞMACI NOTU"; display:block;
+    font-size:.72rem; letter-spacing:.15em; color:var(--orange-2); font-weight:800; margin-bottom:.35rem}
+  .counter{position:fixed; bottom:.5rem; right:1.1rem; font-size:.88rem; color:var(--muted); font-weight:700}
+  .note-hint{position:fixed; bottom:.5rem; left:1rem; font-size:.74rem; color:#bcc6cf}
+  .bar{position:fixed; top:0; left:0; height:4px; background:linear-gradient(90deg,var(--teal),var(--turq),var(--orange-2)); transition:width .3s; z-index:60}
+  .brand{position:fixed; top:.8rem; right:1.4rem; font-size:.8rem; color:#aab4be; font-weight:700; letter-spacing:.03em}
+  .team{margin-top:1.4rem; font-size:1.1rem; color:var(--muted)} .team b{color:var(--ink)}
+  .timeline{display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; margin:.45rem 0}
+  .phase{background:var(--panel); border:1px solid var(--line); border-top:4px solid var(--teal);
+    border-radius:.7rem; padding:.8rem .9rem; font-size:.9rem; line-height:1.35}
+  .phase.o{border-top-color:var(--orange)} .phase .n{font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:800}
+  .phase .h{font-size:1rem; font-weight:800; color:var(--teal); margin:.25rem 0}.phase.o .h{color:var(--orange)}
+  .formula{font-family:Consolas,"SF Mono",monospace; background:#0f2730; color:#e6f6fb;
+    border-radius:.65rem; padding:.7rem .9rem; font-size:1rem; line-height:1.45}
+  .formula b{color:#67e8f9}.formula .o{color:#fdba74}
+  .callout{background:var(--orange-soft); border:1px solid #fed7aa; border-left:4px solid var(--orange);
+    border-radius:.55rem; padding:.65rem .85rem; font-size:.95rem; line-height:1.4}
+  .stack-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:.55rem; margin:.35rem 0}
+  .stack-item{background:var(--turq-soft); border:1px solid #a5f3fc; border-radius:.55rem; padding:.55rem .7rem}
+  .stack-item b{display:block; color:var(--teal); font-size:.92rem}.stack-item span{font-size:.78rem; color:var(--muted)}
+  .micro{font-size:.82rem; color:var(--muted); line-height:1.35}
+  .invite{background:linear-gradient(135deg,var(--teal),#0891b2); color:white; border-radius:1rem;
+    padding:1.2rem 1.4rem; box-shadow:0 12px 25px rgba(14,116,144,.18)}
+  .invite h3{font-size:1.55rem; margin-bottom:.35rem}.invite p{font-size:1rem; line-height:1.45}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="brand">END439E · Türkçe Emlak RAG</div>
+<div class="deck" id="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide center active">
+    <div style="max-width:75ch">
+      <div class="kicker"><span class="num">●</span> END439E — Neural Networks for Industrial Systems · Prof. Dr. M. Altan Çakır</div>
+      <h1>Türkçe Serbest-Metin <span style="color:var(--teal)">Emlak Arama</span><br><span style="color:var(--orange)">+ Kendi Eğittiğimiz NN</span></h1>
+      <p class="lead" style="margin-top:1.1rem; font-size:1.2rem">Multimodal arama: image-text retrieval problemini <b style="color:var(--orange)">text-text</b>'e çevirdik. LLM/VLM ile etiketleme → BGE-M3 embedding + LoRA fine-tune → hibrit retrieval + grounded RAG.</p>
+      <div class="team">Takım: <b>Damla Hatice Selçuk</b> · <b>Elif Kamalak</b> · <b>Mertcan El</b></div>
+      <div class="tech"><span class="t">Stack</span>
+        <span class="chip">Playwright</span><span class="chip">DeepSeek V4</span><span class="chip">Kimi K2.6</span><span class="chip">BGE-M3</span><span class="chip o">LoRA</span><span class="chip">ChromaDB</span><span class="chip">cross-encoder</span><span class="chip">Streamlit</span>
+      </div>
+    </div>
+    <div class="speaker-notes">İki şey göstereceğiz: <b>(1)</b> baştan sona çalışan, ölçülmüş bir sistem; <b>(2)</b> kendi eğittiğimiz + ölçtüğümüz NN. AI'yı bol kullandık ama her kararı biz verdik, her parçayı tasarlayıp ölçtük.</div>
+  </section>
+
+  <!-- 2 PROBLEM -->
+  <section class="slide">
+    <div class="kicker"><span class="num">1</span> Problem & yaklaşım</div>
+    <h2>Kullanıcı serbest Türkçe yazar → sistem iki katmana ayırır</h2>
+    <div class="big-q">"Kadıköy'de 30 bin altı, geniş salonlu, asansörlü, denize yakın 2+1 öğrenciye uygun daire"</div>
+    <div class="cols">
+      <div class="box o"><div class="h">Net istekler → HARD FILTER</div>
+        <ul style="font-size:.98rem"><li>Panelde karşılığı olan, kesin: ilçe, oda, max fiyat, asansör, denize yakınlık</li><li>Metadata üzerinde <b>deterministik eleme</b></li></ul></div>
+      <div class="box"><div class="h">Serbest niteleme → ANLAMSAL</div>
+        <ul style="font-size:.98rem"><li>Registry dışı: "geniş salonlu", "öğrenciye uygun"</li><li>Embedding + reranker <b>sıralaması</b></li></ul></div>
+    </div>
+    <ul style="margin-top:.9rem"><li>Çıktı: ilgili ilanlar <span class="em">+ neden eşleştiği</span> (kapak foto + başlık + fiyat + match çipleri)</li><li>Bu ikiliyi baştan ayırdık ve <b>ayrı ayrı ölçtük</b> — kanıtlanmamış (null) değer explicit filtreyle eşleşmez</li></ul>
+    <div class="speaker-notes">Sistemin tamamı bu ayrım üstüne kurulu: panelde karşılığı olan = hard filter; geri kalan = anlamsal benzerlik. Hocaya: "arama = filtre + benzerlik" diye baştan tasarladık.</div>
+  </section>
+
+  <!-- 3 PIVOT -->
+  <section class="slide">
+    <div class="kicker"><span class="num">2</span> İlk başarısızlık → mimari pivot</div>
+    <h2>CLIP'i <span class="hl">anlayıp</span> bıraktık, mimariyi değiştirdik</h2>
+    <table style="margin-bottom:.7rem">
+      <thead><tr><th>Nesil</th><th>Yaklaşım</th><th>Karar</th></tr></thead>
+      <tbody>
+        <tr><td>Gen 1</td><td>M-CLIP görsel-metin fine-tune (HW6)</td><td><span class="n">terk</span> — modality gap, R@10=0.037</td></tr>
+        <tr><td>Gen 2</td><td>El-yapımı sınırlı JSON şema</td><td><span class="n">terk</span> — genişletmesi pahalı</td></tr>
+        <tr><td>Gen 3</td><td>Emlakjet canonical registry + hibrit retrieval</td><td><span class="win">aktif mimari</span></td></tr>
+      </tbody>
+    </table>
+    <div class="cols w">
+      <ul><li><b>Çoklu-foto problemi</b>: 1 ilan = 5-15 foto (salon/mutfak/balkon); CLIP tek görsel vektöre sığdıramaz</li>
+        <li><b>Modality gap</b>: Türkçe metin ↔ ev fotoğrafı semantik mesafesi büyük</li></ul>
+      <div class="box o"><div class="h">Pivot içgörüsü</div><div style="font-size:.98rem">VLM/LLM ile fotoğrafları <b>yapılandırılmış JSON özelliklere</b> çevir → image-text retrieval'ı <span class="em">text-text</span>'e indirge → olgun çok-dilli embedding kullan.</div></div>
+    </div>
+    <div class="speaker-notes">Projenin kalbi. Ders asistanının önerisi de buydu. R@10=0.037 ile çöktü; nedenini çözüp mimariyi değiştirdik — bu "anladık mı" sorusunun en güçlü kanıtı.</div>
+  </section>
+
+  <!-- 4 DATA SOURCE JOURNEY -->
+  <section class="slide">
+    <div class="kicker"><span class="num">3</span> Veri kaynağı seçimi — ilk denemeden çalışan akışa</div>
+    <h2>Scraping de bir <span class="hl">mühendislik problemi</span></h2>
+    <div class="timeline">
+      <div class="phase o"><div class="n">Deneme 01</div><div class="h">Sahibinden</div><div>Playwright tabanlı veri akışı güvenilir biçimde çalışmadı. Kaynağı değiştirdik.</div></div>
+      <div class="phase"><div class="n">Deneme 02</div><div class="h">Emlakjet + Playwright</div><div>Gerçek Chromium ile sayfa açıp ilan detaylarını toplamaya başladık.</div></div>
+      <div class="phase o"><div class="n">Sorun</div><div class="h">Eksik özellikler</div><div>Lazy-render sekmeler ve seçili alan yaklaşımı bazı fact'leri sessizce düşürüyordu.</div></div>
+      <div class="phase"><div class="n">Çözüm</div><div class="h">Capture-all</div><div>Tüm tablo satırları + İç/Dış/Konum sekmeleri kayıpsız toplandı.</div></div>
+    </div>
+    <div class="callout" style="margin-top:.7rem"><b>Ders:</b> Veri toplama “bir scraper yazdık” işi değil. Kaynak seçimi, bot koruması, dinamik DOM, görsel doğrulama, tekrar başlatma ve veri sözleşmesi birlikte çözülmeli.</div>
+    <div class="speaker-notes">Sahibinden tarafında Playwright ile sürdürülebilir veri akışı kuramadık; ayrıntısını kesinleştirmeden daha fazlasını iddia etmiyoruz. Emlakjet'e geçince de ilk sürüm yetmedi: özelliklerin bazıları lazy render olduğu için görünmüyordu. Scraper'ı iteratif geliştirdik.</div>
+  </section>
+
+  <!-- 5 DATA COLLECTION -->
+  <section class="slide">
+    <div class="kicker"><span class="num">3</span> Veri toplama — nasıl çalışıyor</div>
+    <h2>Scraper + görsel indirici + temizleyici</h2>
+    <div class="cols">
+      <div class="box"><div class="h">Playwright scraper</div>
+        <ul style="font-size:.96rem">
+          <li><b>Stealth</b>: navigator.webdriver silinir, UA rotasyonu, tr-TR locale; <b>Cloudflare</b> challenge tespit + bekleme</li>
+          <li>DOM çıkarımı: "İlan Bilgileri" tablosu, "İlan Özellikleri" <b>3 sekme</b> (İç/Dış/Konum, lazy render → tıkla), "Açıklaması" + "Daha Fazla Gör"</li>
+          <li><b>Capture-all</b>: tüm satırlar kayıpsız (whitelist yok)</li>
+          <li><b>Resume + dedup</b>: mevcut ID'ler atlanır (kesintiye dayanıklı)</li>
+        </ul></div>
+      <div class="box o"><div class="h">Görsel indirici + cleaner</div>
+        <ul style="font-size:.96rem">
+          <li><b>Async</b> indirme (aiohttp), retry + üstel backoff, idempotent</li>
+          <li>"Benzer ilanlar" thumbnail'leri (farklı ID) <b>elenir</b></li>
+          <li><b>Duplicate eleme</b>: URL hash + görsel MD5</li>
+          <li>Görsel doğrulama (boyut/format), Türkçe→ASCII normalize, fiyat/int parse, ısıtma enum</li>
+        </ul></div>
+    </div>
+    <div class="tech"><span class="t">Tech</span><span class="chip">Playwright + Chromium</span><span class="chip">playwright-stealth</span><span class="chip">aiohttp / aiofiles</span><span class="chip">Pillow</span><span class="chip">hashlib MD5</span></div>
+    <div class="speaker-notes">Emlakjet bot koruması var → gerçek tarayıcı + stealth. "İ".lower() Türkçe bug'ına dikkat ederek normalize. Capture-all: eski "seçili alanlar" balkon gibi satırları düşürüyordu.</div>
+  </section>
+
+  <!-- 6 SCRAPER UNDER THE HOOD -->
+  <section class="slide">
+    <div class="kicker"><span class="num">3</span> Scraper içeride nasıl çalışıyor?</div>
+    <h2>Tarayıcı otomasyonu → iki çıkarım yolu → denetlenebilir JSONL</h2>
+    <div class="pipe">
+      <div class="step o">Chromium aç<span>Playwright + stealth</span></div><div class="arr">→</div>
+      <div class="step">Liste sayfası<span>XHR varsa hızlı yol</span></div><div class="arr">→</div>
+      <div class="step">DOM fallback<span>ilan linklerini gez</span></div><div class="arr">→</div>
+      <div class="step">Detay sayfası<span>dataLayer + JSON-LD + DOM</span></div><div class="arr">→</div>
+      <div class="step o">JSONL<span>flush + resume</span></div>
+    </div>
+    <div class="cols" style="margin-top:.75rem">
+      <div class="box"><div class="h">Neden birden fazla kaynak?</div>
+        <ul style="font-size:.94rem"><li><b>XHR</b> hızlıdır ama her sayfada bulunmayabilir</li><li><b>dataLayer / JSON-LD</b> fiyat, başlık ve konumda zengindir</li><li><b>DOM</b> açıklama ve ilan özelliklerinde gereklidir</li></ul></div>
+      <div class="box o"><div class="h">Neden dayanıklı?</div>
+        <ul style="font-size:.94rem"><li><span class="mono">seen_ids</span> ile kaldığı yerden devam</li><li>Her kayıtta JSONL <b>flush</b>: kesinti olsa da emek kaybolmaz</li><li>Cloudflare sayfası tespit edilirse bekle; geçmezse ilanı açıkça atla</li></ul></div>
+    </div>
+    <div class="speaker-notes">Sınıfa scraper'ın mekanik işleyişini anlat: liste sayfası için XHR hızlı yol; yoksa DOM linkleri fallback. Detay sayfasında tek kaynağa güvenmiyoruz: dataLayer, JSON-LD ve DOM birbirini tamamlıyor. Sonuçları JSONL'ye anında flush ediyoruz.</div>
+  </section>
+
+  <!-- 7 DATA NUMBERS -->
+  <section class="slide">
+    <div class="kicker"><span class="num">3</span> Veri toplama — ölçek & sayılar</div>
+    <h2>305 ilk + gece otomatik <span class="hl">+500</span> scrape</h2>
+    <div class="pipe">
+      <div class="step">805<span>ham ilan</span></div><div class="arr">→</div>
+      <div class="step">743<span>temiz (%92.3 retention)</span></div><div class="arr">→</div>
+      <div class="step o">716<span>etiketli</span></div>
+    </div>
+    <div class="cards" style="margin-top:.8rem">
+      <div class="card teal"><div class="big">~13.4k</div><div class="lbl">indirilen fotoğraf · 0 hata</div></div>
+      <div class="card"><div class="big">150</div><div class="lbl">canonical slot / ilan</div></div>
+      <div class="card teal"><div class="big">~4s</div><div class="lbl">ilan başı toplama hızı</div></div>
+    </div>
+    <ul style="margin-top:.9rem">
+      <li>Gece, <b>gözetimsiz pipeline</b> (scrape→indir→temizle→etiketle→birleştir), cost-cap'li + resume'lu</li>
+      <li>Ders/optimizasyon: gece scrape filtresi (kiralık) unutulunca satılık karıştı → query-zamanı <span class="em">rental scope</span> ile çözüldü (demo 356 kiralık)</li>
+    </ul>
+    <div class="speaker-notes">~4s/ilan toplama → ölçeklenebilirlik kanıtı. Gece tek script ile büyüttük; satılık kirliliğini scope ile temizledik (slayt 15).</div>
+  </section>
+
+  <!-- 8 STACK -->
+  <section class="slide">
+    <div class="kicker"><span class="num">3</span> Veri katmanı — tech stack</div>
+    <h2>Her araç belirli bir problemi çözüyor</h2>
+    <div class="stack-grid">
+      <div class="stack-item"><b>Playwright</b><span>Gerçek Chromium otomasyonu, dinamik DOM</span></div>
+      <div class="stack-item"><b>playwright-stealth</b><span>webdriver izi ve bot koruması baskısını azaltma</span></div>
+      <div class="stack-item"><b>aiohttp</b><span>Görselleri paralel indirme, retry/backoff</span></div>
+      <div class="stack-item"><b>Pillow</b><span>Boyut, format ve görsel doğrulama</span></div>
+      <div class="stack-item"><b>JSONL</b><span>Append, flush, resume; büyük akışta basit dayanıklılık</span></div>
+      <div class="stack-item"><b>hashlib MD5</b><span>Benzer kapak görsellerinden duplicate kontrolü</span></div>
+      <div class="stack-item"><b>pytest</b><span>Fixture tabanlı extraction regresyon testleri</span></div>
+      <div class="stack-item"><b>Canonical registry</b><span>150 alan için tek merkezi veri sözleşmesi</span></div>
+    </div>
+    <div class="callout" style="margin-top:.8rem">Örnek hata: Emlakjet detay sayfasındaki “benzer ilanlar” görselleri galeriye karışıyordu. Çözüm: yalnız URL veya dosya adında <b>kendi ilan ID'sini</b> taşıyan görseli kabul et.</div>
+    <div class="speaker-notes">Tech stack'i isim listesi olarak değil problem-çözüm eşleşmesiyle anlat. Bu yaklaşım sınıftaki başka projelere de taşınabilir.</div>
+  </section>
+
+  <!-- 9 LABELING -->
+  <section class="slide">
+    <div class="kicker"><span class="num">4</span> Etiketleme = AI'yı anlayarak kullanma</div>
+    <h2>Kanıt zinciri · modalite ayrımı · monotonik dolum</h2>
+    <div class="pipe">
+      <div class="step">Scraper fact<span>deterministik</span></div><div class="arr">→</div>
+      <div class="step">DeepSeek V4 Pro<span>yalnız METİN · null-only · true/false</span></div><div class="arr">→</div>
+      <div class="step o">Kimi K2.6<span>yalnız GÖRSEL · positive-only · true</span></div>
+    </div>
+    <div class="cols" style="margin-top:.7rem">
+      <ul><li><b>Canonical registry</b>: Emlakjet kiralık panelinin birebir şeması — <span class="em">150 slug</span> (26 yapılandırılmış + 124 checkbox)</li>
+        <li><b>Monotonik dolum</b>: önceki kaynak ezilmez → her değerin kaynağı belli</li></ul>
+      <ul><li>DeepSeek yalnız başlık+açıklamadan açık metin kanıtıyla doldurur</li>
+        <li>Kimi yalnız fotoğraftan, görünür kanıt varsa <b>true</b> ekler (görünmeyen false olmaz)</li></ul>
+    </div>
+    <div class="small" style="margin-top:.7rem">Çıktı/ilan: <span class="mono">filter_values</span> + <span class="mono">filter_sources</span> + <span class="mono">enriched_doc</span> (embedding metni).</div>
+    <div class="speaker-notes">Modaliteleri bilinçle ayırdık → izlenebilir, güvenilir etiketler. Şemayı uydurmadık, gerçek panelden aldık. Kaynak damgaları (scraper/deepseek/kimi) ile her değerin nereden geldiği belli.</div>
+  </section>
+
+  <!-- 10 NULL FALSE -->
+  <section class="slide">
+    <div class="kicker"><span class="num">4</span> Etiketleme mantığı — neden null, false değildir?</div>
+    <h2>Kanıt yoksa <span class="hl">iddia yok</span></h2>
+    <div class="cols w">
+      <div>
+        <div class="formula">has_elevator = <b>true</b>  → asansör kanıtlandı<br>has_elevator = <span class="o">false</span> → açıkça “yok” denildi<br>has_elevator = null  → bilmiyoruz</div>
+        <ul style="margin-top:.75rem;font-size:.96rem"><li>Checkbox seçili değilse otomatik <b>false</b> yazmıyoruz</li><li>Fotoğrafta görünmeyen özellik “yok” sayılmaz</li><li>Kullanıcı “asansörlü” derse yalnız kanıtlanmış <b>true</b> ilanlar geçer</li></ul>
+      </div>
+      <div class="box o"><div class="h">Monotonik merge</div>
+        <div class="micro">1. Scraper explicit fact'i yazar.<br>2. DeepSeek yalnız halen null metin alanlarını doldurur.<br>3. Kimi yalnız halen null görsel alanlarını doldurur.<br><br><b>Sonraki kaynak önceki kanıtı ezemez.</b></div>
+        <div class="mono" style="display:block;margin-top:.65rem">filter_sources["has_elevator"] = "scraper_property_feature"</div>
+      </div>
+    </div>
+    <div class="speaker-notes">Bu slayt sistemin güven mantığı. False ile null ayrımı yapılmazsa sistem sessizce yanlış eleme yapar. Ayrıca provenance sayesinde her fact'in nereden geldiğini gösterebiliriz.</div>
+  </section>
+
+  <!-- 11 OFFLINE ONLINE -->
+  <section class="slide">
+    <div class="kicker"><span class="num">4</span> Mimari karar — ağır AI nerede çalışıyor?</div>
+    <h2>Vision offline, arama online</h2>
+    <div class="cols">
+      <div class="box o"><div class="h">Bir kez: offline enrichment</div>
+        <div class="pipe"><div class="step">Scrape</div><div class="arr">→</div><div class="step">DeepSeek</div><div class="arr">→</div><div class="step">Kimi VLM</div><div class="arr">→</div><div class="step">Index</div></div>
+        <p class="micro" style="margin-top:.45rem">Fotoğraflar toplu işlenir. Sonuçlar `filter_values`, `filter_sources`, `enriched_doc` olarak saklanır.</p></div>
+      <div class="box"><div class="h">Her sorguda: online retrieval</div>
+        <div class="pipe"><div class="step o">Slot</div><div class="arr">→</div><div class="step">Filter</div><div class="arr">→</div><div class="step">Dense</div><div class="arr">→</div><div class="step">Rerank</div></div>
+        <p class="micro" style="margin-top:.45rem">Kimi sorgu anında çağrılmaz. Kullanıcı görsel modelinin maliyetini ve gecikmesini beklemez.</p></div>
+    </div>
+    <ul style="margin-top:.8rem"><li><b>Scale argümanı:</b> ağır görsel analiz ilan başına bir kez; sorgu zamanı yalnız metin embedding + metadata filtre + top-N rerank</li></ul>
+    <div class="speaker-notes">Neden production-feasible? Çünkü VLM'yi query hot-path'ten çıkardık. Yeni ilan geldiğinde bir kez enrich ediyoruz; her kullanıcı sorgusunda tekrar fotoğraf okutmak gerekmiyor.</div>
+  </section>
+
+  <!-- 12 API -->
+  <section class="slide">
+    <div class="kicker"><span class="num">4</span> AI / API mühendisliği</div>
+    <h2>Tek soyutlama, çok sağlayıcı — <span class="hl">efektif kullanım</span></h2>
+    <div class="cols w">
+      <ul>
+        <li><b>Tek OpenAI SDK · 3 provider</b>: DeepSeek, Kimi(Moonshot), OpenRouter hepsi OpenAI-uyumlu → sadece <span class="mono">base_url</span>+key değişir<span class="sub">Gemini → google-genai · yerel Gemma/Qwen → ollama</span></li>
+        <li><b>Yapılandırılmış çıktı</b>: <span class="mono">response_format=json_object</span> → her zaman geçerli JSON (parse garantisi)</li>
+        <li><b>Maliyet & dayanıklılık</b>: token-bazlı cost tahmini + <span class="em">cost-cap</span>, timeout retry, ID-bazlı resume</li>
+      </ul>
+      <ul>
+        <li><b>Vision pipeline</b>: PIL ile EXIF-düzelt → <span class="em">512px</span> küçült → JPEG q85 → base64<span class="sub">multi-image TEK çağrı → ~3x ucuz (per-image yerine)</span></li>
+        <li><b>Çözdüğümüz quirk'ler</b>: Moonshot <span class="mono">temp=0</span>'ı reddediyor → 1.0; Ollama <b>saf base64</b> ister (data-URL prefix'i değil)</li>
+      </ul>
+    </div>
+    <div class="tech"><span class="t">Tech</span><span class="chip">openai SDK</span><span class="chip">google-genai</span><span class="chip">ollama</span><span class="chip">JSON mode</span><span class="chip o">multi-image 1-call</span><span class="chip">Pillow</span></div>
+    <div class="speaker-notes">"API çağırdık" değil: provider'ları tek dataclass'la soyutladık, JSON-mode ile parse garantisi, gerçek quirk'leri (temp, base64) çözdük, görselleri ön-işleyip multi-image tek çağrıyla maliyeti düşürdük, cost-cap ile gözetimsiz koşuda bütçe korundu.</div>
+  </section>
+
+  <!-- 13 MODEL SELECTION -->
+  <section class="slide">
+    <div class="kicker"><span class="num">4</span> Model seçimi — tahmin değil, ÖLÇÜM</div>
+    <h2>Shootout ile seçtik (kalite/maliyet)</h2>
+    <table>
+      <thead><tr><th>Karar</th><th>Nasıl ölçtük</th><th>Sonuç</th></tr></thead>
+      <tbody>
+        <tr><td>Text modeli</td><td>aynı-koşul gold A/B (16 ilan + 30 sorgu)</td><td><span class="win">DeepSeek V4 Pro</span> slot 0.815 > Kimi 0.792 · <b>~3.5x ucuz · ~5x hızlı</b></td></tr>
+        <tr><td>Vision modeli</td><td>10 ilan gold accuracy</td><td><span class="win">Kimi multi-image</span> ortak ilanlarda 0.931 ≥ per-image 0.917 · ~3x ucuz</td></tr>
+        <tr><td>Yerel ücretsiz</td><td>Gemma4 / Qwen3-VL denendi</td><td>Gemma zayıf (0.135), enum-dışı uyduruyor → <span class="n">elendi</span></td></tr>
+      </tbody>
+    </table>
+    <ul style="margin-top:.7rem">
+      <li>"En pahalıyı" değil: text'i <b>ucuz+hızlı</b> DeepSeek'e, vision'ı <b>en doğru</b> Kimi'ye verdik</li>
+      <li>quality_score = JSON-geçerlilik + slot-doğruluk; few-shot örneklerle prompt</li>
+    </ul>
+    <div class="speaker-notes">Eski Kimi skoru farklı koşulda (temp=1, eski dataset) yüksekti; aynı-koşul A/B'de DeepSeek slot'ta önde + çok ucuz/hızlı. AI'yı ölçerek seçtik, varsayımla değil.</div>
+  </section>
+
+  <!-- 14 INDEX & QUERY -->
+  <section class="slide">
+    <div class="kicker"><span class="num">5</span> Indexing & sorgu akışı</div>
+    <h2>6 adımlı hibrit retrieval</h2>
+    <div class="pipe">
+      <div class="step o">Slot extraction<span>DeepSeek → JSON</span></div><div class="arr">→</div>
+      <div class="step">Hard filter<span>metadata</span></div><div class="arr">→</div>
+      <div class="step">BGE-M3 dense<span>cosine · HNSW</span></div><div class="arr">→</div>
+      <div class="step">Rerank<span>cross-encoder</span></div><div class="arr">→</div>
+      <div class="step o">Çip + RAG<span>grounded</span></div>
+    </div>
+    <div class="cols" style="margin-top:.7rem">
+      <ul>
+        <li><b>Index</b>: <span class="mono">enriched_doc</span> → BGE-M3 (1024-dim) → <b>ChromaDB</b> persistent (HNSW, cosine)</li>
+        <li><b>Metadata</b>: canonical skalar + multi-enum için seçenek-başı exact-flag <span class="mono">balcony_type__acik_balkon</span></li>
+      </ul>
+      <ul>
+        <li><b>Bi-encoder</b> (BGE-M3): sorgu/ilan ayrı kodlanır → hızlı, aday daraltır</li>
+        <li><b>Cross-encoder</b> (bge-reranker-v2-m3): birlikte kodlar → doğru ama yavaş → sadece top-N</li>
+      </ul>
+    </div>
+    <ul style="margin-top:.5rem"><li>Match çipleri <span class="em">deterministik</span> (kod cevaplıyor; karşılanmamış filtreyi iddia etmez) · RAG yalnız retrieved ilanlardan</li></ul>
+    <div class="tech"><span class="t">Tech</span><span class="chip">BGE-M3</span><span class="chip">ChromaDB</span><span class="chip">HNSW</span><span class="chip">cross-encoder</span><span class="chip o">iki-aşamalı</span></div>
+    <div class="speaker-notes">Klasik iki-aşamalı retrieval: ucuz bi-encoder ile daralt, pahalı cross-encoder ile sırala. null metadata yazılmaz → explicit istekle eşleşmez. Çip deterministik, RAG grounded → halüsinasyon yok.</div>
+  </section>
+
+  <!-- 15 RETRIEVAL MATH -->
+  <section class="slide">
+    <div class="kicker"><span class="num">5</span> Retrieval nasıl çalışıyor? — matematik sezgisi</div>
+    <h2>Önce hızlı aday bul, sonra pahalı biçimde sırala</h2>
+    <div class="cols">
+      <div>
+        <div class="formula"><b>cosine(q, d)</b> = (q · d) / (‖q‖ ‖d‖)<br><span class="o">yüksek skor</span> → sorgu ve ilan vektörleri benzer yönde</div>
+        <ul style="margin-top:.65rem;font-size:.95rem"><li><b>BGE-M3 bi-encoder</b>: sorgu ve ilan ayrı kodlanır</li><li>İlan vektörleri önceden hesaplanır; sorguda tekrar modelden geçmez</li></ul>
+      </div>
+      <div>
+        <div class="formula"><b>rerank score</b> = CE([query ; listing])<br><span class="o">birlikte okur</span> → daha doğru, daha pahalı</div>
+        <ul style="margin-top:.65rem;font-size:.95rem"><li><b>Cross-encoder</b> yalnız daraltılmış top-N adayda çalışır</li><li><b>HNSW</b> tüm vektörleri tek tek taramak yerine yakın komşu grafında arar</li></ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:.65rem"><b>Sıra önemlidir:</b> metadata hard filter → HNSW dense retrieval → cross-encoder rerank. Kesin şartları benzerlik skoruna bırakmıyoruz.</div>
+    <div class="speaker-notes">Cosine sezgisini tahtada anlatabilecek kadar açık tut. Bi-encoder hız sağlar çünkü doküman vektörleri cache'lenir. Cross-encoder daha doğru ama her query-document çiftini birlikte okuduğu için sadece top-N'de çalıştırılır.</div>
+  </section>
+
+  <!-- 16 LoRA -->
+  <section class="slide">
+    <div class="kicker"><span class="num">6</span> Kendi eğittiğimiz NN — BGE-M3 + LoRA</div>
+    <h2>Domain adaptation: genel model → <span class="hl">Türkçe emlak</span></h2>
+    <div class="cols w">
+      <ul>
+        <li><b>LoRA sezgisi</b>: base'i DONDUR, yanına küçük adapter (B·A) ekle, sadece onu eğit<span class="sub">ΔW = (α/r)·B·A · r=8, α=16 · hedef: attention q/k/v × 24 katman</span></li>
+        <li><b>Param</b>: ~1.18M eğitilebilir / ~560M toplam = <span class="em">%0.21</span> · adapter 4.7MB</li>
+        <li><b>Backprop</b>: gradyan tüm ağdan akar, ama <b>yalnız adapter güncellenir</b> (optimizer sadece requires_grad)</li>
+      </ul>
+      <div class="box o"><div class="h">Öğretme — triplet loss</div>
+        <div class="small" style="color:var(--ink)">Üçlüler: (sorgu, doğru ilan = pozitif, farklı ilan = negatif). Sorguyu pozitife yaklaştır, negatiften margin kadar uzaklaştır.</div>
+        <div class="mono" style="display:block; margin-top:.5rem">L = max(0, ‖q−p‖ − ‖q−n‖ + margin)</div>
+        <div class="small" style="margin-top:.5rem">AdamW lr 2e-5 · 2 epoch · AMP mixed-precision · grad-accum 4 · mean-pool + L2-norm</div></div>
+    </div>
+    <div class="tech"><span class="t">Tech</span><span class="chip">PyTorch (CUDA)</span><span class="chip">PEFT / LoRA</span><span class="chip">transformers</span><span class="chip o">RTX 5070 Ti</span></div>
+    <div class="speaker-notes">Full fine-tune yerine LoRA: param-verimli, küçük veride overfit düşük, base unutmaz. Backprop: kayıp gradyanı zincir kuralıyla geçer, donuk base üzerinden aktivasyon gradyanı akar ama ağırlık güncellemesi sadece adapter'da. Triplet: hizalama öğretir. [Detaylar çalışma kağıdında.]</div>
+  </section>
+
+  <!-- 17 BACKPROP -->
+  <section class="slide">
+    <div class="kicker"><span class="num">6</span> LoRA backpropagation — ağırlıklar nasıl öğreniyor?</div>
+    <h2>Base model sabit, gradyan adapter'a akar</h2>
+    <div class="cols w">
+      <div>
+        <div class="formula">W' = W + <span class="o">(α/r) · B · A</span><br><br><b>W</b>: donuk base ağırlığı<br><b>A, B</b>: eğitilen düşük-rank matrisler</div>
+        <p class="micro" style="margin-top:.5rem">Bizde `r=8`, `α=16`; attention katmanlarının query/key/value projeksiyonlarına adapter ekledik.</p>
+      </div>
+      <ul style="font-size:.96rem">
+        <li>Forward pass: sorgu, pozitif ve negatif ilan embedding'leri hesaplanır</li>
+        <li>Triplet loss hangi çiftlerin fazla yakın / uzak olduğunu ölçer</li>
+        <li>Chain rule ile <b>∂L/∂A</b> ve <b>∂L/∂B</b> hesaplanır</li>
+        <li>AdamW yalnız adapter parametrelerini günceller; base ağırlığı <b>W değişmez</b></li>
+      </ul>
+    </div>
+    <div class="callout" style="margin-top:.65rem">Gradyanın ağdan geçmesi ile tüm ağırlıkların güncellenmesi aynı şey değildir. Base model üzerinden türev akar; optimizer yalnız `requires_grad=True` adapter parametrelerini değiştirir.</div>
+    <div class="speaker-notes">Quiz seviyesinde savunulacak slayt. Chain rule, frozen weights ve optimizer ayrımını vurgula. LoRA'nın amacı sadece hız değil: küçük veriyle tüm modeli bozma riskini azaltmak.</div>
+  </section>
+
+  <!-- 18 LoRA result -->
+  <section class="slide">
+    <div class="kicker"><span class="num">6</span> NN sonucu — held-out, sızıntısız</div>
+    <h2>LoRA <span class="hl">işe yaradı</span></h2>
+    <div class="cards">
+      <div class="card"><div class="big">0.72<span class="arrow">→</span>0.97</div><div class="lbl">R@1 (+0.245)</div></div>
+      <div class="card"><div class="big">0.83<span class="arrow">→</span>0.98</div><div class="lbl">MRR (+0.149)</div></div>
+      <div class="card teal"><div class="big">573/143</div><div class="lbl">train/val · overlap 0</div></div>
+    </div>
+    <div class="cols" style="margin-top:.8rem">
+      <ul><li><b>Setup</b>: 143 held-out sorgu, dense-only (metadata filtre/reranker yok → saf embedding katkısı)</li>
+        <li><b>Pair'ler</b>: <span class="mono">prepare_pairs</span> seed=42, listing-ID split → <b>sızıntı yok</b></li></ul>
+      <ul><li><b>Neden iyileşti</b>: adapter Türkçe emlak sorgu↔ilan hizalamasını öğrendi</li>
+        <li>R@5/R@10 zaten ~tavandaydı; LoRA asıl <span class="em">R@1 + MRR</span>'yi (+24.5 / +14.9 puan) iyileştirdi</li></ul>
+    </div>
+    <div class="speaker-notes">Gerçekten eğittik, ölçtük, sızıntısız (listing-ID disjoint). "API çağırmadık, kendi modelimizi eğittik ve held-out'ta ölçtük." Benzer ilanları ayırt etme bariz arttı.</div>
+  </section>
+
+  <!-- 19 METRICS -->
+  <section class="slide">
+    <div class="kicker"><span class="num">7</span> Performans metrikleri</div>
+    <h2>Her aşama ölçüldü</h2>
+    <table>
+      <thead><tr><th>Aşama</th><th>Metrik</th><th>Sonuç</th></tr></thead>
+      <tbody>
+        <tr><td>Veri</td><td>toplanan / temiz / etiketli</td><td>805 / 743 / <span class="win">716</span> ilan · ~13.4k foto</td></tr>
+        <tr><td>Slot extraction (text)</td><td>gold A/B kalite</td><td>DeepSeek 0.815</td></tr>
+        <tr><td>Vision etiketleme</td><td>gold accuracy</td><td>Kimi 0.931</td></tr>
+        <tr><td>Retrieval (kendi NN)</td><td>held-out R@1 / MRR</td><td><span class="win">0.72→0.97 / 0.83→0.98</span></td></tr>
+        <tr><td>Yazılım kalitesi</td><td>test paketi</td><td>118 passed · skip yok</td></tr>
+        <tr><td>Maliyet / hız</td><td>toplam API · ilan başı</td><td>~$5-6 · ~$0.005 etiketleme · ~4s scrape</td></tr>
+      </tbody>
+    </table>
+    <ul style="margin-top:.6rem"><li><b>Feasibility</b>: ilan başı sabit maliyet + paralelleştirme + iki-aşamalı retrieval (HNSW sublinear) → <span class="em">yüz binlerce ilana lineer ölçeklenir</span></li></ul>
+    <div class="speaker-notes">Hocanın "scale eder mi" sorusunun cevabı bu sayılarda. $100 bütçenin çok altında kaldık. 118 test skip yok → yazılım da ölçülü.</div>
+  </section>
+
+  <!-- 20 qwen vs kimi -->
+  <section class="slide">
+    <div class="kicker"><span class="num">7</span> Ücretsiz yerel vs ücretli bulut</div>
+    <h2>qwen3-vl <span style="color:var(--muted)">vs</span> Kimi — <span class="hl">biz ölçtük</span></h2>
+    <table>
+      <thead><tr><th></th><th>qwen3-vl:8b (yerel, Ollama)</th><th>Kimi K2.6 (bulut)</th></tr></thead>
+      <tbody>
+        <tr><td>Hız</td><td><span class="win">~6-9s / ilan (~11x hızlı)</span></td><td>~70s / ilan</td></tr>
+        <tr><td>Maliyet</td><td><span class="win">$0 (yerel GPU)</span></td><td>~$0.04 / ilan</td></tr>
+        <tr><td>Çıktı kalitesi</td><td><span class="n">✗ dejenere/geçersiz JSON (q4 + q8)</span></td><td><span class="y">✓ güvenilir structured + gerçek özellik</span></td></tr>
+      </tbody>
+    </table>
+    <ul style="margin-top:.7rem">
+      <li><b>İki quant denedik</b> (q4 + q8); ikisi de Türkçe vision'da "repetition collapse" → geçersiz JSON</li>
+      <li><b>Kök neden</b>: Ollama'nın bu çok-yeni modele entegrasyonu olgun değil (modelin kesin yargısı değil)</li>
+      <li class="em">Sonuç: ~11x hızlı + bedava ama yerel kurulumda kararlı çıktı yok → kalite/güvenilirlik için Kimi gerekti</li>
+    </ul>
+    <div class="speaker-notes">qwen3-vl, açık VLM'ler içinde en güçlü Türkçe-dostu yerel aday (Gemma elenmişti). Free'yi titizlikle ölçtük, gerekçeyle reddettik. Future work: vLLM/transformers ile düzgün inference.</div>
+  </section>
+
+  <!-- 21 demo -->
+  <section class="slide">
+    <div class="kicker"><span class="num">8</span> Canlı demo — Streamlit UI</div>
+    <h2>Çalışan gerçek sorgular</h2>
+    <div style="margin:.3rem 0 .8rem">
+      <span class="chip o">Üsküdar'da 100 m² üstü doğalgazlı 2+1</span>
+      <span class="chip o">balkonlu eşyalı 1+1 daire</span>
+      <span class="chip o">geniş salonlu denize yakın 2+1 asansörlü</span>
+      <span class="chip o">Kadıköy'de 20 yaş altı 2 banyolu</span>
+    </div>
+    <div class="cols">
+      <ul><li><b>Kart</b>: kapak foto + başlık + fiyat + <span class="em">match çipleri</span> (neden uygun) + canonical detaylar</li>
+        <li>Slot extraction Türkçe karakter fold + yaş aralığı + ısıtma türleri doğru filtreliyor</li></ul>
+      <ul><li><b>RAG cevabı</b>: yalnız retrieved ilanlardan (grounded)</li>
+        <li>Demo örneklemi <b>356 kiralık ilan</b> — niş sorgu 0 dönebilir (seyreklik, bug değil)</li></ul>
+    </div>
+    <div class="small" style="margin-top:.8rem">[Buraya canlı demo / ekran kaydı]</div>
+    <div class="tech"><span class="t">Tech</span><span class="chip">Streamlit</span><span class="chip">grounded RAG</span><span class="chip">deterministik çip</span></div>
+    <div class="speaker-notes">Canlı geç (kasada, internet şart — DeepSeek API). Öğrenci query'si alabiliriz; yaygın ilçe/özelliklere yönlendir. Yedekte ekran kaydı bulundur.</div>
+  </section>
+
+  <!-- 22 difficulties & opt -->
+  <section class="slide">
+    <div class="kicker"><span class="num">9</span> Zorluklar & optimizasyonlar</div>
+    <h2>Karşılaştık → <span class="hl">çözdük</span> (ve test yazdık)</h2>
+    <div class="grid2">
+      <div class="prob">Türkçe karakter: "Kadıköy" ≠ index "Kadikoy"</div><div class="sol">→ query-zamanı deterministik ASCII-fold</div>
+      <div class="prob">Satılık ilanlar kira sonucuna sızdı</div><div class="sol">→ default trade_type=kiralik scope</div>
+      <div class="prob">Slot enum uyuşmazlığı (yaş/ısıtma sessizce düşüyor)</div><div class="sol">→ prompt'a enum değerleri + range→liste</div>
+      <div class="prob">Kimi vision timeout (27 ilan)</div><div class="sol">→ dayanıklı resume + cost-cap + foto-parçalı fallback</div>
+      <div class="prob">any_of canlı LLM bazen iç-içe liste → çökme</div><div class="sol">→ savunmacı parse (TDD)</div>
+    </div>
+    <div style="margin-top:.9rem"><b>Optimizasyon:</b>
+      <span class="chip o">512px görsel</span><span class="chip o">multi-image tek çağrı</span><span class="chip o">cost-cap</span><span class="chip o">hard-filter→vektör→rerank</span><span class="chip o">HNSW</span><span class="chip o">CUDA (Blackwell cu128)</span><span class="chip o">LoRA %0.2 param</span>
+    </div>
+    <div class="speaker-notes">Her bug'ı dosyadan doğrulayıp <b>test yazarak</b> çözdük (118 test, skip yok). Deterministik dönüşümler (fold, scope, çip) koda; modele bırakmadık. "Çalışıyor sandık" değil, kanıtladık.</div>
+  </section>
+
+  <!-- 23 limits & close -->
+  <section class="slide">
+    <div class="kicker"><span class="num">10</span> Dürüst sınırlılıklar & kapanış</div>
+    <h2>Rigor = güven</h2>
+    <div class="cols">
+      <ul>
+        <li>716 demo ölçeği, üretim değil</li>
+        <li>Eval <b>sentetik sorgularla</b> (ilan alanlarından) — gerçek-kullanıcı relevansını insan-gold ile ölçmedik</li>
+        <li>LoRA: eğitim mean-pool, eval CLS-pool — küçük tutarsızlık; ama baseline+LoRA <b>aynı eval</b> → karşılaştırma adil</li>
+      </ul>
+      <div class="box"><div class="h">Future work</div>
+        <ul style="font-size:.96rem"><li>Gerçek relevance gold (insan-etiketli)</li><li>Yerel VLM olgun inference (vLLM)</li><li>ResNet/ViT image classifier vs VLM</li><li>Daha büyük dataset</li></ul></div>
+    </div>
+    <p class="lead em" style="margin-top:1.2rem; font-size:1.25rem">CLIP'i anlayıp bıraktık → text-text pivot → uçtan uca ölçülmüş sistem → kendi LoRA NN'imiz R@1 0.72→0.97.</p>
+    <p style="margin-top:.6rem; font-size:1.2rem; color:var(--teal); font-weight:800">AI'yı çok kullandık — ama anlayarak ve ölçerek. Teşekkürler · Sorular?</p>
+    <div class="speaker-notes">Sınırlılıkları saklamıyoruz; bilmek = anlamak. Kapanış güçlü: AI'yı efektif + anlayarak kullandık, her şeyi ölçtük.</div>
+  </section>
+
+  <!-- 24 OPEN DEMO -->
+  <section class="slide center">
+    <div style="max-width:82ch">
+      <div class="kicker"><span class="num">→</span> Sunum bitti — sistem açık</div>
+      <h1>Bize <span style="color:var(--orange)">zor bir emlak sorgusu</span> verin.</h1>
+      <p class="lead" style="margin:.8rem 0 1rem">Şimdi localhost'taki çalışan Streamlit ürününe geçiyoruz. İlçe, bütçe, oda, bina yaşı, ısınma, balkon, asansör, otopark, ulaşım veya serbest nitelemeleri aynı cümlede deneyebilirsiniz.</p>
+      <div class="invite">
+        <h3>Canlı sınıf testi</h3>
+        <p>Örnek: “Kadıköy'de 40 bin TL altı, metroya yakın, balkonlu, asansörlü 2+1; mümkünse ferah salonlu.”</p>
+      </div>
+      <div style="margin-top:1rem"><span class="chip">localhost · Streamlit</span><span class="chip">hard filter</span><span class="chip">semantic retrieval</span><span class="chip">match chip</span><span class="chip o">grounded RAG</span></div>
+    </div>
+    <div class="speaker-notes">Bu slaytta sunumu bitir. Streamlit sekmesine geç. Sınıftan doğal dilde zor sorgu iste. Sonuç boşsa saklama: veri seyrekliğini açıkla ve hangi hard filter'ın havuzu daralttığını göster.</div>
+  </section>
+
+</div>
+
+<div class="counter" id="counter">1 / 24</div>
+<div class="note-hint">← → gez · <b>N</b> notlar · <b>F</b> tam ekran</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const counter=document.getElementById('counter'), bar=document.getElementById('bar');
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    if(slides[i]) slides[i].scrollTop=0;
+    counter.textContent=(i+1)+' / '+slides.length;
+    bar.style.width=((i+1)/slides.length*100)+'%';
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'){show(i+1);e.preventDefault();}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){show(i-1);e.preventDefault();}
+    else if(e.key===' '){ // space: scroll içerik, sonu gelince sonraki slayt
+      const s=slides[i];
+      if(s.scrollTop+s.clientHeight < s.scrollHeight-4){s.scrollTop+=s.clientHeight*0.8;}
+      else show(i+1);
+      e.preventDefault();
+    }
+    else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(slides.length-1);}
+    else if(e.key==='n'||e.key==='N'){document.body.classList.toggle('notes-on');}
+    else if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement)document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+  });
+  document.getElementById('deck').addEventListener('click',e=>{
+    if(e.target.closest('.speaker-notes')) return;
+    if(e.clientX < window.innerWidth*0.16) show(i-1); else show(i+1);
+  });
+  const requestedSlide=Number(new URLSearchParams(location.search).get('slide')||0);
+  show(Number.isFinite(requestedSlide)?requestedSlide:0);
+</script>
+</body>
+</html>
