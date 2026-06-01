@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from llm.clients import CANDIDATES, candidate_by_id, complete_json, estimate_cost_usd, missing_environment
-from schema.emlakjet_filters import EMLAKJET_FILTERS
+from schema.emlakjet_filters import EMLAKJET_FILTERS, spec_for_slug
 
 
 SLOT_SYSTEM_PROMPT = """Sen Turkce emlak arama sorgularini JSON slotlarina ayiran bir asistansin.
@@ -42,7 +42,57 @@ FEW_SHOT_SLOT_EXAMPLES: list[dict[str, Any]] = [
             "free_form_tr": "genis salonlu denize yakin 2+1 asansorlu ev",
         },
     },
+    {
+        "query": "20 yas alti 2 banyolu 3+1",
+        "output": {
+            "hard_filters": {
+                "filters": {
+                    "room_count": ["3+1"],
+                    "bathroom_count": 2,
+                    "building_age": ["0_yeni", "1", "2", "3", "4", "5_10", "11_15", "16_20"],
+                }
+            },
+            "free_form_tr": "20 yas alti 2 banyolu 3+1",
+        },
+    },
+    {
+        "query": "dogalgazli 2+1",
+        "output": {
+            "hard_filters": {
+                "filters": {
+                    "room_count": ["2+1"],
+                    "heating_type": ["kombi_dogalgaz", "merkezi_dogalgaz", "dogalgaz_sobali"],
+                }
+            },
+            "free_form_tr": "dogalgazli 2+1",
+        },
+    },
+    {
+        "query": "site icinde otoparkli 3+1",
+        "output": {
+            "hard_filters": {
+                "filters": {"room_count": ["3+1"], "in_gated_complex": True},
+                "any_of": [{"has_open_parking": True, "has_closed_parking": True}],
+            },
+            "free_form_tr": "site icinde otoparkli 3+1",
+        },
+    },
 ]
+
+
+# Enum alanlar serbest/İngilizce değerle gelirse (örn. heating "natural_gas",
+# building_age "0-20") add_filter sessizce atıyor. LLM'e geçerli slug'ları ve
+# aralık/belirsiz ifadeleri eşleşen TÜM değerlerin listesi olarak vermesini öğretiyoruz.
+_ENUM_HINT_SLUGS = ("building_age", "heating_type", "building_condition", "balcony_type", "listing_age")
+
+
+def _enum_value_hints() -> str:
+    lines: list[str] = []
+    for slug in _ENUM_HINT_SLUGS:
+        spec = spec_for_slug(slug)
+        if spec is not None and spec.values:
+            lines.append(f"  {slug}: {list(spec.values.values())}")
+    return "\n".join(lines)
 
 
 # Canonical registry alanlarıyla slot benchmark. Generic "otoparklı" gibi birden
@@ -107,8 +157,12 @@ def build_slot_prompt(query: str, *, include_few_shot: bool = True) -> str:
         f"Sorgu: {query}\n\nBeklenen JSON semasi:\n{json.dumps(schema, ensure_ascii=False, indent=2)}\n\n"
         "Kurallar:\n"
         "- Kullanicinin acikca istedigi her filtreyi hard_filters icine koy.\n"
-        "- Tek canonical alana indirgenemeyen acik talepleri any_of OR grubu yap. Ornek: otoparkli -> has_open_parking veya has_closed_parking.\n"
-        "- Istek olmayan filtreleri null birak."
+        "- Tek canonical alana indirgenemeyen acik talepleri any_of icinde TEK bir OR nesnesi yap (alternatifler AYNI nesnede, AYRI nesneler degil). Ornek: otoparkli -> any_of: [{\"has_open_parking\": true, \"has_closed_parking\": true}].\n"
+        "- Istek olmayan filtreleri null birak.\n"
+        "- Enum alanlar SADECE asagidaki gecerli slug degerlerinden olmali (Ingilizce/serbest deger YAZMA):\n"
+        f"{_enum_value_hints()}\n"
+        "- Aralik veya belirsiz ifade icin eslesen TUM enum degerlerini liste ver. "
+        "Ornek: '20 yas alti' -> building_age tum <=20 kovalari; 'dogalgazli' -> heating_type tum dogalgaz turleri."
     )
     return "\n\n".join(sections)
 

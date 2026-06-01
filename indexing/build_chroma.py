@@ -35,6 +35,8 @@ def _batches(rows: list[dict[str, Any]], batch_size: int) -> Iterable[list[dict[
 def _device() -> str:
     import torch
 
+    if torch.cuda.is_available():
+        return "cuda"
     return "mps" if torch.backends.mps.is_available() else "cpu"
 
 

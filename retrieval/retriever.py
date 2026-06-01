@@ -6,7 +6,7 @@ from typing import Any, Callable
 
 from llm.clients import candidate_by_id, complete_json
 from llm.shootout import SLOT_SYSTEM_PROMPT, build_slot_prompt, flatten_slots
-from schema.emlakjet_filters import EMLAKJET_FILTERS, label_for, spec_for_slug
+from schema.emlakjet_filters import EMLAKJET_FILTERS, label_for, normalize_label, spec_for_slug
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +33,30 @@ def _list_value(value: Any) -> list[Any]:
     return value if isinstance(value, list) else [value]
 
 
+# Konum proper-noun'ları index'te ASCII title-case saklanır (örn. 'Kadikoy').
+# search_keyword serbest metindir; fold edilmez.
+_LOCATION_SLUGS = frozenset({"city", "district", "neighborhood"})
+
+
+def _canonical_location(value: Any) -> Any:
+    """Konum string'ini index-zamanı kanonik formuna çevir: Türkçe→ASCII fold + title-case.
+
+    Slot extractor 'Kadıköy' (Türkçe) veya 'kadıköy' (karışık case) dönebilir; index
+    'Kadikoy' saklar. Bu deterministik dönüşüm (Rule 5) hard-filter'ın eşleşmesini sağlar.
+    """
+    if not isinstance(value, str):
+        return value
+    return normalize_label(value).title()
+
+
+def _fold_location(slug: str, value: Any) -> Any:
+    if slug not in _LOCATION_SLUGS:
+        return value
+    if isinstance(value, list):
+        return [_canonical_location(item) for item in value]
+    return _canonical_location(value)
+
+
 def slots_to_where(slots: dict[str, Any]) -> dict[str, Any] | None:
     hard = slots.get("hard_filters") or {}
     conditions: list[dict[str, Any]] = []
@@ -52,6 +76,7 @@ def slots_to_where(slots: dict[str, Any]) -> dict[str, Any] | None:
                 return
             target.append({slug: {"$in": options}} if isinstance(value, list) else {slug: options[0]})
             return
+        value = _fold_location(slug, value)
         if isinstance(value, list):
             target.append({slug: {"$in": value}})
             return
@@ -60,6 +85,8 @@ def slots_to_where(slots: dict[str, Any]) -> dict[str, Any] | None:
     for slug, value in (hard.get("filters") or {}).items():
         add_filter(conditions, slug, value)
     for any_of in hard.get("any_of") or []:
+        if not isinstance(any_of, dict):
+            continue
         alternatives: list[dict[str, Any]] = []
         for slug, value in any_of.items():
             add_filter(alternatives, slug, value)
@@ -81,6 +108,20 @@ def slots_to_where(slots: dict[str, Any]) -> dict[str, Any] | None:
     if len(conditions) == 1:
         return conditions[0]
     return {"$and": conditions}
+
+
+# Bu bir KİRALIK arama uygulaması. Dataset'te satılık ilanlar da bulunabilir;
+# satılık fiyatı (toplam) ile kira (aylık) aynı eksende olduğundan satılık ilanlar
+# kira sonuçlarına sızmamalı. trade_type registry'de yalnız 'kiralik' enum'u içerir.
+_RENTAL_SCOPE = {"trade_type": "kiralik"}
+
+
+def _scope_to_rental(where: dict[str, Any] | None) -> dict[str, Any]:
+    if where is None:
+        return dict(_RENTAL_SCOPE)
+    if "$and" in where:
+        return {"$and": [*where["$and"], dict(_RENTAL_SCOPE)]}
+    return {"$and": [where, dict(_RENTAL_SCOPE)]}
 
 
 def matched_filter_labels(slots: dict[str, Any], metadata: dict[str, Any]) -> list[str]:
@@ -110,6 +151,7 @@ def matched_filter_labels(slots: dict[str, Any], metadata: dict[str, Any]) -> li
                 if label:
                     labels.append(label)
             return
+        value = _fold_location(slug, value)
         actual = metadata.get(slug)
         if actual is None:
             return
@@ -134,6 +176,8 @@ def matched_filter_labels(slots: dict[str, Any], metadata: dict[str, Any]) -> li
 def _device() -> str:
     import torch
 
+    if torch.cuda.is_available():
+        return "cuda"
     return "mps" if torch.backends.mps.is_available() else "cpu"
 
 
@@ -177,7 +221,7 @@ class Retriever:
 
     def retrieve(self, query: str, *, top_n: int = 50, top_k: int = 10) -> list[dict[str, Any]]:
         slots = self.slot_extractor(query)
-        where = slots_to_where(slots)
+        where = _scope_to_rental(slots_to_where(slots))
         query_embedding = _listify(self.embedder.encode([query], convert_to_numpy=True))
         response = self.collection.query(
             query_embeddings=query_embedding,

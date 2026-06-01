@@ -176,22 +176,22 @@ def test_retrieve_filters_out_over_budget_and_wrong_district_before_reranking():
             {
                 "id": "ok",
                 "document": "uygun ilan",
-                "metadata": {"title": "Uygun", "district": "Kadikoy", "price_amount": 30000, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
+                "metadata": {"title": "Uygun", "trade_type": "kiralik", "district": "Kadikoy", "price_amount": 30000, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
             },
             {
                 "id": "expensive",
                 "document": "butce ustu ilan",
-                "metadata": {"title": "Pahali", "district": "Kadikoy", "price_amount": 30001, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
+                "metadata": {"title": "Pahali", "trade_type": "kiralik", "district": "Kadikoy", "price_amount": 30001, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
             },
             {
                 "id": "wrong-district",
                 "document": "yanlis ilce ilan",
-                "metadata": {"title": "Yanlis", "district": "Besiktas", "price_amount": 20000, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
+                "metadata": {"title": "Yanlis", "trade_type": "kiralik", "district": "Besiktas", "price_amount": 20000, "price_currency": "TL", "room_count": "2+1", "has_elevator": True},
             },
             {
                 "id": "unknown-elevator",
                 "document": "asansor bilinmiyor",
-                "metadata": {"title": "Eksik", "district": "Kadikoy", "price_amount": 20000, "price_currency": "TL", "room_count": "2+1"},
+                "metadata": {"title": "Eksik", "trade_type": "kiralik", "district": "Kadikoy", "price_amount": 20000, "price_currency": "TL", "room_count": "2+1"},
             },
         ]
     )
@@ -212,6 +212,117 @@ def test_retrieve_filters_out_over_budget_and_wrong_district_before_reranking():
     assert [result["id"] for result in results] == ["ok"]
     assert results[0]["title"] == "Uygun"
     assert results[0]["price_amount"] == 30000
+
+
+def test_slots_to_where_folds_turkish_diacritic_locations_to_index_ascii_form():
+    """Konum filtreleri (district/neighborhood) index'in ASCII kanonik formuna çevrilir.
+
+    WHY (Rule 5): ASCII normalize deterministik bir dönüşüm — modele bırakılamaz.
+    Slot extractor 'Kadıköy' (Türkçe) döndürür ama index 'Kadikoy' saklar; fold
+    edilmezse hard-filter sessizce 0 sonuç döndürür (İstanbul ilçelerinin çoğu Türkçe
+    karakterli). Kod, query değerini index formuna (fold + title-case) çevirmeli.
+    """
+    where = slots_to_where(
+        {
+            "hard_filters": {
+                "filters": {
+                    "district": ["Kadıköy", "Şişli"],
+                    "neighborhood": ["Üsküdar Merkez"],
+                },
+            },
+        }
+    )
+
+    assert where == {
+        "$and": [
+            {"district": {"$in": ["Kadikoy", "Sisli"]}},
+            {"neighborhood": {"$in": ["Uskudar Merkez"]}},
+        ]
+    }
+
+
+def test_slots_to_where_canonicalizes_district_casing_to_index_title_case():
+    """Model küçük/karışık harf dönse de index'in title-case formuna sabitlenir.
+
+    WHY (Rule 9): fold yalnız diacritic'i değil casing'i de index'le eşlemeli; aksi
+    halde 'kadıköy' (küçük) yine 'Kadikoy' ile eşleşmez.
+    """
+    where = slots_to_where({"hard_filters": {"filters": {"district": "kadıköy"}}})
+
+    assert where == {"district": "Kadikoy"}
+
+
+def test_slots_to_where_does_not_fold_free_text_search_keyword():
+    """search_keyword serbest metindir; title-case/fold uygulanmaz (yalnız konum alanları).
+
+    WHY: fold konum proper-noun'larına özgüdür; serbest aramayı bozmamalı.
+    """
+    where = slots_to_where({"hard_filters": {"filters": {"search_keyword": "Bahçe İstanbul"}}})
+
+    assert where == {"search_keyword": "Bahçe İstanbul"}
+
+
+def test_matched_filter_labels_folds_turkish_district_before_matching_metadata():
+    """Çip de fold sonrası karşılaştırır: 'Kadıköy' istendi, index 'Kadikoy' → çip çıkar.
+
+    WHY (Rule 9): where-clause fold edilip çip edilmezse, eşleşen ilan için
+    'neden eşleşti' çipi tutarsız biçimde kaybolur.
+    """
+    slots = {"hard_filters": {"filters": {"district": ["Kadıköy"]}}}
+    metadata = {"district": "Kadikoy"}
+
+    assert matched_filter_labels(slots, metadata) == ["Kadikoy"]
+
+
+def test_slots_to_where_skips_malformed_non_dict_any_of_element():
+    """any_of elemanı dict değilse (canlı LLM bazen iç-içe liste döndürür) atla, çökme.
+
+    WHY (Rule 12): retrieve() canlı slot çağrısı any_of'u ara sıra liste olarak
+    döndürüyor; slots_to_where bunu AttributeError ile demoyu patlatmak yerine
+    sessizce atlamalı (geçerli alternatifler korunur).
+    """
+    where = slots_to_where(
+        {
+            "hard_filters": {
+                "filters": {"room_count": ["3+1"]},
+                "any_of": [["has_open_parking", True], {"has_closed_parking": True}],
+            },
+        }
+    )
+
+    assert where == {
+        "$and": [
+            {"room_count": {"$in": ["3+1"]}},
+            {"has_closed_parking": True},
+        ]
+    }
+
+
+def test_retrieve_scopes_results_to_rental_trade_type():
+    """Demo bir KİRALIK arama uygulaması: her sorgu trade_type=kiralik'e kapsanır.
+
+    WHY (Rule 12): dataset'te satılık ilanlar da var ve slot extractor sorguda
+    'kiralık' geçse bile trade_type üretmiyor. Deterministik rental scope olmadan
+    satılık ilanlar (toplam satış fiyatı, aylık kira ile aynı eksende) kira
+    sonuçlarına sızar. Scope, slots'a değil where'e eklenir → gereksiz çip çıkmaz.
+    """
+    collection = FakeCollection(
+        [
+            {"id": "rent", "document": "kiralik ilan", "metadata": {"title": "K", "trade_type": "kiralik", "room_count": "2+1"}},
+            {"id": "sale", "document": "satilik ilan", "metadata": {"title": "S", "trade_type": "satilik", "room_count": "2+1"}},
+        ]
+    )
+    retriever = Retriever(
+        collection=collection,
+        embedder=FakeEmbedder(),
+        reranker=FakeReranker(),
+        slot_extractor=lambda _query: {"hard_filters": {"filters": {"room_count": ["2+1"]}}},
+    )
+
+    results = retriever.retrieve("2+1 daire")
+
+    assert [result["id"] for result in results] == ["rent"]
+    assert {"trade_type": "kiralik"} in collection.last_where["$and"]
 
 
 def test_extract_query_slots_reads_selected_text_model_without_live_api(tmp_path, monkeypatch):
