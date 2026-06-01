@@ -137,6 +137,12 @@ def _openai_chat_temperature(candidate: ModelCandidate) -> float:
     return 0.0
 
 
+def _load_project_environment(dotenv_path: str | Path | None = None) -> None:
+    from dotenv import load_dotenv
+
+    load_dotenv(dotenv_path=dotenv_path)
+
+
 def missing_environment(candidate: ModelCandidate) -> list[str]:
     missing = []
     for key in candidate.env_keys:
@@ -153,6 +159,7 @@ def complete_json(candidate: ModelCandidate, system_prompt: str, user_prompt: st
     The method is intentionally thin: provider routing belongs here, while
     benchmark scoring stays deterministic in `llm.shootout`.
     """
+    _load_project_environment()
     if candidate.provider in {"deepseek", "moonshot", "openrouter"}:
         from openai import OpenAI
 
@@ -239,6 +246,7 @@ def complete_vision_json(
     Tüm fotoğraflar tek istekte gider; model tek bütünleşik JSON döndürür
     (per-image aggregate gerekmez). Tek elemanlı liste de çalışır.
     """
+    _load_project_environment()
     if not candidate.supports_vision:
         raise ValueError(f"Candidate {candidate.id} does not support vision")
     if not image_paths:

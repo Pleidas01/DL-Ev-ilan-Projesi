@@ -4,8 +4,10 @@ from schema.emlakjet_filters import (
     empty_filter_values,
     extract_scraper_filter_facts,
     normalize_label,
+    parse_filter_value,
     spec_for_info_label,
     spec_for_property_feature,
+    spec_for_slug,
 )
 
 
@@ -97,3 +99,10 @@ def test_info_table_label_resolution_does_not_overwrite_existing_value():
     values, _ = extract_scraper_filter_facts(attrs)
 
     assert values["bathroom_count"] == 3
+
+
+def test_multi_enum_parser_splits_scraper_delimited_values_before_normalizing():
+    spec = spec_for_slug("balcony_type")
+
+    assert parse_filter_value(spec, "Açık Balkon, Açık Teras") == ["acik_balkon", "acik_teras"]
+    assert parse_filter_value(spec, "Açık Balkon | Açık Teras") == ["acik_balkon", "acik_teras"]

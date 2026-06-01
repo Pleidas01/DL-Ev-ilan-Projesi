@@ -19,7 +19,7 @@
 ```bash
 # macOS / zsh. (Eski PowerShell komutları 2026-05-30'da bash'e çevrildi.)
 source .venv/bin/activate
-python3 -m pytest -q   # 68 passed beklenir (2026-05-31)
+python3 -m pytest -q   # 112 passed beklenir (2026-06-01)
 
 # .env kontrolü — Read tool'una GÜVENME, gerçek key doluluğu için:
 python3 -c "from dotenv import dotenv_values; v=dotenv_values('.env'); [print(f'{k}: {\"FILLED\" if val else \"EMPTY\"}') for k,val in v.items() if 'API_KEY' in k]"
@@ -53,80 +53,99 @@ M1 (slot shootout)    ✅ DONE — text=deepseek_v4_pro (A/B revize), vision=kim
 M2.0 (schema refactor)✅ DONE — schema sadeleştirme: kitchen_type çıktı, visual 12→7, imkanlar rename
 M2 (manuel kontrol)   🔄 AKTİF — yeni 10 ilanlık JSONL çıktıları kullanıcı göz kontrolünde
 M1.5 (vision shoot)   ✅ DONE — Kimi multi-image winner; description shootout açık
-M3 (labeling)         ✅ DONE iskele+pre-flight — run_labeling.py var; full build PENDING
-M4 (indexing+retr.)   ⚠️ ESKİ MİMARİ İSKELET — canonical uyarlama + gerçek build PENDING
-Canonical filters     ✅ scrape + download + cleaner + 10 ilan ölçüm DONE; 68 passed
-M5                    ⚠️ ESKİ MİMARİ İSKELET — canonical uyarlama PENDING
-M6, M8                ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
+M3 (labeling)         ✅ DONE — full 303 satır labeled.jsonl + clean_json.json hazır
+M4 (indexing+retr.)   ✅ BASELINE DONE — 303 Chroma row + checkpoint'li hafif eval
+Canonical filters     ✅ scrape + download + cleaner + full labeling DONE; 112 passed
+M5 (RAG+UI)           ✅ BASELINE DONE — browser ile canlı Streamlit smoke
+M6                    ▶️ SIRADAKİ — RTX 5070 Ti üzerinde ölçüm kapılı BGE-M3 LoRA
+M8                    ⏳ PENDING        M7 (time series) ⛔ KAPSAM DIŞI (arkadaş yaptı)
 ```
 
-**Acil sıradaki iş:** Kullanıcı şu iki 10-ilan çıktısını gözle incelesin:
-> 1. `data/processed/labeled_benchmark_deepseek_text_10.jsonl`
-> 2. `data/processed/labeled_benchmark_kimi_vision_10.jsonl`
+> **Mimari nesil ayrımı (önemli):** Bu projede üç mimari nesil var — Gen1 CLIP (terk), Gen2 el-yapımı JSON şema (tarihsel), Gen3 canonical Emlakjet registry (aktif). M4 ve M5 artık Gen3 baseline üzerinde tamamlandı. Detay: `docs/MIMARI_EVRIMI.md`.
 
-Tekrarsız göz kontrolü için doğrudan `data/processed/clean_json.json` aç. Bu dosya her labeling row append'inde otomatik yenilenir; görsel yolları içermez.
+**Acil sıradaki iş:** MacBook Air'de ağır süreç başlatma. RTX 5070 Ti makinede `docs/superpowers/plans/2026-06-01-bge-m3-lora-rtx.md` planını uygula; ardından `docs/SUNUM_AKISI.md` sayılarını final sonuçlarla güncelle.
 
-Yeterliyse full 303 ilan build için önce `--phase text`, sonra text çıktısını input alarak `--phase vision` koş. Kimi ayarı: `VISION_MAX_IMAGE_EDGE=512`, `--vision-chunk-size 0`, `--batch-size 10`. Yeni gold template rebuild **yapılmayacak**.
+> **MacBook Air sınırı:** Yerel PyTorch ortamı CPU-only (`mps_available=False`). Full `303` sorgu eval ve LoRA eğitimi burada koşulmaz. Küçük doğrulama gerekiyorsa eval limitleri ve checkpoint kullanılır.
 
-> **Ücret/onay:** Kullanıcı onaylamadan ücretli full 303 labeling başlatma. Historical JSON benchmark çıktıları ve mevcut gold dosyası silinmedi.
+### M6 MacBook hazırlığı (DONE — 2026-06-01)
 
-> **Karar verilebilir önce-işler (opsiyonel/paralel):** (1) `qwen3_vl_local` gold visual benchmark — yerel/ücretsiz vision alternatifi (Kimi ≥0.70 mu) — M3 kararını etkilemez. (2) NN gereksinimi (M6) — M7 dışarı çıktı, hocanın "kendi NN'iniz" şartı yeniden açık (STATUS Açık sorular #6). İkisi de kullanıcı kararı bekler.
+- `finetune/text_embed/prepare_pairs.py`: `seed=42`, listing-ID split, split-local deterministik farklı-ID negatif.
+- Üretilen pair çıktısı: `242` train, `61` validation, listing-ID overlap `0`.
+- `finetune/text_embed/evaluate_dense.py`: dense-only R@1/R@5/R@10/MRR; metadata hard filter ve reranker yok.
+- `finetune/text_embed/train_bge_m3_lora.py`: adapter-only PEFT, varsayılan `r=8`, `alpha=16`, `dropout=0.05`, `epochs=2`; explicit target doğrulama ve CUDA fail-loud kapısı.
+- MacBook doğrulaması: `cuda_available=False`, `mps_available=False`; tam paket `112 passed`, skip yok. Gerçek eğitim ve full dense eval çalıştırılmadı.
+
+RTX makinede sırayla:
+
+```bash
+python -m pytest -q
+python -m finetune.text_embed.prepare_pairs
+python -m finetune.text_embed.evaluate_dense \
+  --output finetune/text_embed/results/baseline_dense.json
+python -m finetune.text_embed.train_bge_m3_lora --inspect-target-modules
+python -m finetune.text_embed.train_bge_m3_lora \
+  --target-modules query key value
+python -m finetune.text_embed.evaluate_dense \
+  --adapter-path finetune/text_embed/checkpoints/bge_m3_lora \
+  --output finetune/text_embed/results/lora_dense.json
+python -m evaluation.run_retrieval_eval \
+  --known-limit 4 \
+  --benchmark-limit 3 \
+  --checkpoint-every 1
+```
+
+> `query key value` komutu inspection çıktısından sonra çalıştırılır. BGE-M3 modül adları farklıysa CLI sessizce devam etmez; eksik target için açık hata verir.
 
 ---
 
-## 2. TARİHSEL REFERANS — Eski manuel gold (yeni rebuild yok)
+## 1.5 M4/M5 baseline sonucu (DONE — 2026-06-01)
 
-**Workflow:** Kullanıcı fotoğraflara (`data/images/<ID>/`) bakar, her ilan için özellikleri seçer, supervisor'a `ID + özellik listesi` verir; supervisor JSON'a çevirip `labeling/gold_listings_manual_todo.jsonl`'a yazar.
-
-### 2a. Tek listing inceleme (opsiyonel)
-
+**Gerçek index:**
 ```bash
-python3 -m labeling.gold_helper --listing <ID>
+HF_HUB_OFFLINE=1 .venv/bin/python -m indexing.build_chroma \
+  --input data/processed/labeled.jsonl \
+  --batch-size 8
 ```
 
-Çıktı: 15 structured facts (otomatik dolu) + suggested hybrid + suggested visual + manuel TODO listesi.
+- Chroma collection count: `303`.
+- Metadata skaler-only; multi-enum exact flag'leri doğrulandı.
+- İki ilandaki `"Açık Balkon, Açık Teras"` parser birleşimi mekanik olarak düzeltildi; invalid birleşik Chroma flag sayısı `0`.
+- Batch `64` MacBook Air CPU-only ortamında bellek baskısı oluşturdu; varsayılan `8` yapıldı.
 
-**Doldurma kuralı (gold = ground truth):**
-- Gördüğün / emin olduğun → işaretle
-- Negatif kanıtla **emin** "yok" → `false` (bool) veya `[]` (multi-select)
-- Olabilir ama kanıt yok / görünmüyor → `null` (benchmark'ta skip edilir)
-
-**`facts_gold` user-fill (6 bool):** `has_balcony`, `has_elevator`, `has_parking`, `has_aircon`, `near_metro`, `near_metrobus`. (`kitchen_type` kaldırıldı; structured 15 alan otomatik dolu.)
-
-### 2b. Visual gold doldurma rehberi
-
-Her listing'in `data/images/<listing_id>/` klasöründeki fotoğraflara bak. **5 compatibility visual alan** (single-select: mutfak_tipi; diğerleri multi-select):
-
-| Alan | Tip | Değerler |
-|---|---|---|
-| balkon_ozellikleri | multi | cam_balkon, acik_balkon, fransiz_balkon, cikma_balkon, teras |
-| manzara | multi | deniz, bogaz, orman_yesil, park, sehir_panorama, dag, ic_avlu, komsu_duvari |
-| mutfak_tipi | single | amerikan_acik \| kapali_ayri |
-| banyo_ozellikleri | multi | dusakabin, kuvet, jakuzi, banyoda_pencere, birden_fazla_banyo |
-| imkanlar | multi | havuz, yesil_alan_peyzaj, guvenlik_kabini, kapali_otopark, acik_otopark, cocuk_parki, spor_alani |
-
-**Multi-select** alanlar JSON array, **single** alanlar string. `imkanlar` site dışı binalarda da geçerli (güvenlik/otopark site olmadan da olabilir).
-
-### 2c. Query için doğru ilan ID'leri bulma
-
+**Checkpoint'li gold-free eval:**
 ```bash
-python3 -m evaluation.gold_helper --query "Kadıköy'de 45 bin TL altı eşyalı 2+1"
+HF_HUB_OFFLINE=1 .venv/bin/python -m evaluation.run_retrieval_eval \
+  --known-limit 4 \
+  --benchmark-limit 3 \
+  --checkpoint-every 1
 ```
 
-Çıktı: top-10 candidate ID + title + price + URL. Kullanıcı en alakalı 1-3 ID'yi seçer.
+| Metrik | Hafif örneklem sonucu |
+|---|---:|
+| Synthetic known-item sorgu | 4 |
+| R@1 / R@5 / R@10 / MRR | 1.0000 / 1.0000 / 1.0000 / 1.0000 |
+| Canlı benchmark sorgu | 3 |
+| Query coverage | 1/3 = 0.3333 |
+| Filter satisfaction | 8/8 = 1.0000 |
 
-Kullanıcı:
-1. `evaluation/gold_queries_manual_todo.jsonl`'da satırı düzenle, `expected_listing_ids` doldur.
+Bu sayı **full relevance gold değildir**. MacBook Air'i yormamak için bounded proxy örneklemidir. İlk ve üçüncü canlı benchmark sorgularının tüm filtrelerini karşılayan ilan aktif batch'te yoktur; bu nedenle coverage düşüktür. `"denize yakın"` canonical semantiği `near_sea` olarak düzeltildi (`has_sea_view` değil).
 
-### 2d. Doluluk kontrolü
-
+**Canlı Streamlit QA:**
 ```bash
-python3 -c "import json; from llm.gold_benchmark import build_prefilled_visual_gold, build_prefilled_hybrid_facts; rows=[json.loads(l) for l in open('labeling/gold_listings_manual_todo.jsonl', encoding='utf-8')]; ph=build_prefilled_hybrid_facts(); pv=build_prefilled_visual_gold(); touched_facts=sum(1 for r in rows if any(r['facts_gold'].get(k)!=ph[k] for k in ph)); touched_visual=sum(1 for r in rows if r['visual_gold']!=pv); print(f'facts düzenlenmiş: {touched_facts}/30, visual düzenlenmiş: {touched_visual}/30')"
+HF_HUB_OFFLINE=1 .venv/bin/python -m streamlit run ui/app.py
 ```
 
-> Bir alan "düzenlenmiş" sayılır eğer prefilled string'den farklıysa (tek değer, null, boolean, veya kısaltılmış array). Hâlâ `"true | false"` veya `"amerikan_acik | kapali_ayri | ..."` ise dokunulmamış sayılır.
+Browser smoke sorgusu: `"geniş salonlu denize yakın 2+1 asansörlü ev"`. Sonuç: `8` kart, canonical detaylar, `2+1` / `Asansör` / `Denize Yakın` match çipleri ve yalnız retrieved ilanlara dayalı RAG cevabı.
 
-**Tahmini süre:** Listing başına ~6-8 dakika × 30 = ~3-4 saat. Query'ler için ~30 dk.
+**Sıradaki:** RTX LoRA planı: `docs/superpowers/plans/2026-06-01-bge-m3-lora-rtx.md`.
+
+---
+
+## 2. TARİHSEL — Gen 2 manuel gold workflow → taşındı
+
+Eski (Gen 2) manuel gold doldurma workflow'u (listing/visual gold) artık çalıştırılmıyor ve **`docs/MIMARI_EVRIMI.md` → "Tarihsel ek"** bölümüne taşındı. Canonical (Gen 3) akışta yeni gold template rebuild yapılmaz; değerlendirme 10-ilan göz kontrolü + M4 R@10 retrieval eval ile yapılır.
+
+> İsteğe bağlı güçlendirme: **query gold** (`expected_listing_ids`) doldurulursa gerçek relevance R@10 ayrıca ölçülebilir. Kritik teslim yolu gold-free proxy + filter satisfaction ile tamamlandı. Komut: `python3 -m evaluation.gold_helper --query "..."`.
 
 ---
 
@@ -176,6 +195,7 @@ labeling/run_labeling.py
   --input data/processed/dataset.jsonl
   --output data/processed/labeled_text.jsonl
   --phase text
+  --batch-size 3              # DeepSeek ölçümünde seçilen worker sayısı
   --resume                    # idempotent, ID bazlı
   --max-cost-usd <cap>        # cost cap, aşılınca dur
 
@@ -183,10 +203,12 @@ VISION_MAX_IMAGE_EDGE=512 python3 -m labeling.run_labeling \
   --input data/processed/labeled_text.jsonl \
   --output data/processed/labeled.jsonl \
   --phase vision \
-  --batch-size 10 \
+  --batch-size 5 \
   --vision-chunk-size 0 \
   --max-cost-usd <cap>
 ```
+
+Kimi operasyon notu: default `512px`, `chunk=0`, `5 worker`. Tekil bir ilan art arda timeout verirse yalnız o ilanı `--resume --vision-chunk-size 5 --batch-size 1` fallback ile tamamla. Timeout transient retry kapsamındadır; paralel batch diğer başarılı row'ları kaydetmeye devam eder ve başarısız ID'leri sonunda açıkça raporlar.
 
 Output şeması (her satır):
 ```json
@@ -236,7 +258,7 @@ PROJECT.md'nin section 4 (mimari) ve section 10 (milestone tablosu) ile STATUS.m
 7. **Ortam: macOS / zsh (2026-05-30'dan beri).** Konsol UTF-8 native; eski Windows cp1254 `→`/`…` crash sorunu artık geçerli değil. Venv: `source .venv/bin/activate`, yorumlayıcı `python3`. Bu dosyadaki eski PowerShell komutları bash'e çevrildi.
 8. **`archive/`** klasörü yedek, dokunma. `pre_scraper_fix/` ve `pre_schema_refactor/` farklı yedek noktaları.
 9. **Geçmiş ajan güvenilirlik dersi:** Cursor Composer 2.5 bu projede 4 kez yalan rapor verdi (yukarıda detay). Artık ana ajan Claude Code; yine de **bir ajan "X tamamlandı" derse dosyadan doğrula.**
-10. **`data/processed/` smoke kalıntıları:** `labeled_preflight*.jsonl` + boş `*_stdout/stderr.log` dosyaları M3 pre-flight denemelerinden kaldı; `labeled.jsonl` (gerçek build) henüz yok. Temizlik kullanıcı onayıyla yapılır (silme = geri alınamaz, bkz. §7).
+10. **`data/processed/` smoke kalıntıları:** `labeled_preflight*.jsonl` + boş `*_stdout/stderr.log` dosyaları M3 pre-flight denemelerinden kaldı; gerçek `labeled.jsonl` artık hazır. Temizlik kullanıcı onayıyla yapılır (silme = geri alınamaz, bkz. §7).
 
 ---
 

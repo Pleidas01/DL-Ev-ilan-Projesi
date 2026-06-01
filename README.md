@@ -6,7 +6,7 @@
 
 ---
 
-> **Uyarı — bu README güncel DEĞİL.** Aşağıdaki içerik eski mCLIP/CLIP fine-tuning tasarımını yansıtıyor. Proje, **VLM-etiketleme → BGE-M3 embedding → ChromaDB → RAG/Streamlit** mimarisine geçti. Kurulum/Kullanım bölümündeki bazı komutlar (`model/fine_tune.py`, `retrieval/indexer.py`, `ui/app.py`, `evaluation/metrics.py`) henüz mevcut olmayan dosyalara işaret eder. **Güncel mimari, şema ve durum için tek doğru kaynak: [`docs/PROJECT.md`](docs/PROJECT.md) + [`docs/STATUS.md`](docs/STATUS.md) + [`docs/HANDOFF.md`](docs/HANDOFF.md).** README'nin tam yeniden yazımı M8'e planlandı.
+> **Uyarı — bu README güncel DEĞİL.** Aşağıdaki içerik eski mCLIP/CLIP fine-tuning tasarımını yansıtıyor. Proje, **VLM-etiketleme → BGE-M3 embedding → ChromaDB → RAG/Streamlit** mimarisine geçti. Kurulum/Kullanım bölümündeki bazı komutlar (`model/fine_tune.py`, `retrieval/indexer.py`, `ui/app.py`, `evaluation/metrics.py`) henüz mevcut olmayan dosyalara işaret eder. **Güncel mimari, şema ve durum için tek doğru kaynak: [`docs/PROJECT.md`](docs/PROJECT.md) + [`docs/STATUS.md`](docs/STATUS.md) + [`docs/HANDOFF.md`](docs/HANDOFF.md).** README'nin tam yeniden yazımı M8'e planlandı. Bu README'nin yansıttığı mCLIP yaklaşımının neden terk edildiği (CLIP → el-yapımı şema → canonical registry evrimi) için: [`docs/MIMARI_EVRIMI.md`](docs/MIMARI_EVRIMI.md).
 
 ## Proje Özeti
 
@@ -64,7 +64,7 @@ python retrieval/indexer.py --data data/processed --model model/checkpoints/best
 
 ### Adım 5 — Arayüzü Başlat
 ```bash
-streamlit run ui/app.py
+python -m streamlit run ui/app.py
 ```
 
 ### Evaluation

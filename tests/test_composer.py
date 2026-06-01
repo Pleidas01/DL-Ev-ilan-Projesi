@@ -91,6 +91,14 @@ def test_to_metadata_joins_visual_lists_for_substring_post_filtering():
     assert "salon_ozellikleri" not in metadata
 
 
+def test_to_metadata_fails_loud_for_registry_outside_multi_enum_option():
+    record = _record()
+    record["filter_values"]["balcony_type"] = ["acik_balkon_acik_teras"]
+
+    with pytest.raises(ValueError, match="balcony_type"):
+        to_metadata(record)
+
+
 def test_build_index_resume_skips_existing_ids_without_reembedding(tmp_path, monkeypatch):
     from indexing import build_chroma
 
@@ -106,9 +114,11 @@ def test_build_index_resume_skips_existing_ids_without_reembedding(tmp_path, mon
     class FakeEmbedder:
         def __init__(self):
             self.encoded = []
+            self.batch_sizes = []
 
-        def encode(self, documents, **_kwargs):
+        def encode(self, documents, **kwargs):
             self.encoded.extend(documents)
+            self.batch_sizes.append(kwargs["batch_size"])
             return FakeEmbeddings([[1.0] for _document in documents])
 
     class FakeCollection:
@@ -131,4 +141,5 @@ def test_build_index_resume_skips_existing_ids_without_reembedding(tmp_path, mon
 
     assert written == 1
     assert embedder.encoded == ["Baslik: Yeni"]
+    assert embedder.batch_sizes == [8]
     assert collection.added[0]["ids"] == ["new"]

@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from llm.gold_benchmark import VISUAL_GOLD_FIELDS
 
 
@@ -712,3 +714,58 @@ def test_text_extraction_retries_transient_concurrency_rate_limit(monkeypatch):
     assert result["has_balcony"] is True
     assert result["near_metro"] is True
     assert result["imkanlar"] == ["spor_alani"]
+
+
+def test_provider_json_call_retries_timeout(monkeypatch):
+    from labeling import run_labeling
+
+    calls = []
+
+    def flaky_call():
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("Request timed out.")
+        return "{}"
+
+    monkeypatch.setattr(run_labeling.time, "sleep", lambda _seconds: None)
+
+    assert run_labeling._provider_json_call(flaky_call) == "{}"
+    assert len(calls) == 2
+
+
+def test_parallel_labeling_saves_successful_rows_before_reporting_failed_ids(tmp_path, monkeypatch):
+    from labeling import run_labeling
+
+    input_path = tmp_path / "input.jsonl"
+    output_path = tmp_path / "out.jsonl"
+    input_path.write_text(
+        "\n".join(json.dumps({**_sample_record(), "id": value}) for value in ("1", "2")) + "\n",
+        encoding="utf-8",
+    )
+
+    def fake_label_record(record, *_args, **_kwargs):
+        if record["id"] == "1":
+            raise RuntimeError("Request timed out.")
+        return {
+            "id": record["id"],
+            "url": record["url"],
+            "title": record["title"],
+            "description": record["description"],
+            "filter_values": {},
+            "filter_sources": {},
+        }
+
+    monkeypatch.setattr(run_labeling, "label_record", fake_label_record)
+
+    with pytest.raises(RuntimeError, match=r"1.*Request timed out"):
+        run_labeling.run_labeling(
+            input_path=input_path,
+            output_path=output_path,
+            text_model_id="kimi_k2_6",
+            vision_model_id="kimi_k2_6",
+            batch_size=2,
+            resume=False,
+            max_cost_usd=1.0,
+        )
+
+    assert [row["id"] for row in run_labeling.load_jsonl(output_path)] == ["2"]

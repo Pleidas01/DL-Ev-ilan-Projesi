@@ -1,6 +1,6 @@
 # PROJECT.md — Domain & Architecture (stable reference)
 
-Bu dosya proje vizyonunu, mimariyi ve "neden böyle" sorularını yanıtlar. Milestone'lar değiştikçe değişmez. Güncel ilerleme için `STATUS.md`, sıradaki somut iş için `HANDOFF.md` oku.
+Bu dosya proje vizyonunu, mimariyi ve "neden böyle" sorularını yanıtlar. Milestone'lar değiştikçe değişmez. Güncel ilerleme için `STATUS.md`, sıradaki somut iş için `HANDOFF.md` oku. Mimarinin neden bu şekilde evrildiği (CLIP → el-yapımı şema → canonical registry) ve hangi fikri neden terk ettiğimiz için `MIMARI_EVRIMI.md` oku.
 
 ---
 
@@ -182,7 +182,7 @@ Göz kontrolü için `data/processed/clean_json.json` kullanılır. Bu okunabili
 | Aşama | Metrik | Hedef | Gold kaynağı |
 |---|---|---|---|
 | Slot extraction | JSON-valid + slot accuracy | quality_score ≥ 0.85 | `llm/shootout.py:BENCHMARK_QUERIES` |
-| Description extraction | per-field accuracy (7 hybrid+desc alanı) | ≥ 0.75 | `labeling/gold_listings_manual_todo.jsonl:facts_gold` |
+| Description extraction | per-field accuracy (7 hybrid+desc alanı) — **TARİHSEL (Gen2 gold)** | ≥ 0.75 | `labeling/gold_listings_manual_todo.jsonl:facts_gold` |
 | Image labeling | 10 yeni ilanda doğrudan göz kontrolü | kullanıcı onayı | `data/processed/labeled_benchmark_kimi_vision_10.jsonl` |
 | Retrieval | R@5, R@10, MRR | R@10 ≥ 0.60 | `evaluation/gold_queries_manual_todo.jsonl` |
 | Time series | MAE / sMAPE | rapor (baseline'a göre) | sentetik gold |
@@ -202,14 +202,14 @@ DL-Ev-ilan-Projesi/
 ├── retrieval/         # retriever.py (M4, Codex) — slot extract + filter + rerank
 ├── model/             # (boş) — fine-tune scriptleri
 ├── finetune/          # (boş) — BGE-M3 LoRA + ResNet classifier (M6)
-├── chat/              # eski mimari M5 iskeleti; canonical entegrasyon bekliyor
-├── ui/                # eski mimari Streamlit iskeleti; canonical entegrasyon bekliyor
+├── chat/              # M5 RAG (Gen3 filters + grounded answer)
+├── ui/                # M5 Streamlit (Gen3 kartlar + match çipleri)
 │                      # timeseries/ KALDIRILDI — M7 kapsam dışı (arkadaş yaptı)
-├── tests/             # 68 test: registry, scraper, cleaner, labeling, composer, retriever, RAG
+├── tests/             # 104 test: registry, scraper, cleaner, labeling, retrieval, RAG, UI
 ├── data/
 │   ├── raw/           # Playwright çıktısı (listings.jsonl 305 ilan, 150 canonical slug)
 │   ├── processed/dataset.jsonl  (303 aktif satır, canonical filter_values)
-│   ├── processed/labeled.jsonl  (M3 full build çıktısı — HENÜZ YOK; sadece labeled_preflight* smoke var)
+│   ├── processed/labeled.jsonl  (M3 full build çıktısı — 303 aktif satır)
 │   ├── processed/chroma/  # vector store (M4 build sonrası; henüz yok)
 │   └── eval/manual_queries.jsonl  (eski auto-BM25 çıktısı, kullanma)
 ├── docs/              # llm_setup_tr.md, manual_gold_todo_tr.md, + bu dosya
@@ -225,9 +225,9 @@ DL-Ev-ilan-Projesi/
 | 1 | LLM slot shootout | `selected.json` text aday | **DONE** — text=deepseek_v4_pro (A/B revize), vision=kimi_k2_6 |
 | 2 | Manual kontrol | 10 ilanlık göz kontrolü | **AKTİF** — yeni gold template rebuild iptal |
 | 1.5 | Vision shootout | `vision_model` kararı | **DONE** — Kimi multi-image winner |
-| 3 | Labeling pipeline | `labeled.jsonl` | **DONE iskele + iki geçişli CLI**; full 303 build PENDING |
-| 4 | Indexing + retrieval | chroma + retriever | **ESKİ MİMARİ İSKELET** — canonical uyarlama + gerçek build PENDING |
-| 5 | RAG chat + UI | Streamlit demo | **ESKİ MİMARİ İSKELET** — canonical uyarlama PENDING |
+| 3 | Labeling pipeline | `labeled.jsonl` | **DONE** — iki geçişli CLI + full 303 build |
+| 4 | Indexing + retrieval | chroma + retriever | **BASELINE DONE** — 303 ilan index + checkpoint'li gold-free hafif eval |
+| 5 | RAG chat + UI | Streamlit demo | **BASELINE DONE** — Gen3 kartlar + match çipleri + canlı smoke |
 | 6 | Fine-tune NN'ler | BGE-M3 LoRA + ResNet | PENDING — **NN gereksinimi için kritik** (M7 dışarı çıktı) |
 | 7 | Time series | LSTM/GRU + notebook | ⛔ **KAPSAM DIŞI** (sınıf arkadaşı yaptı) |
 | 8 | Final report | rapor notebook + sunum | PENDING |

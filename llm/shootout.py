@@ -38,7 +38,7 @@ FEW_SHOT_SLOT_EXAMPLES: list[dict[str, Any]] = [
     {
         "query": "genis salonlu denize yakin 2+1 asansorlu ev",
         "output": {
-            "hard_filters": {"filters": {"room_count": ["2+1"], "has_elevator": True, "has_sea_view": True}},
+            "hard_filters": {"filters": {"room_count": ["2+1"], "has_elevator": True, "near_sea": True}},
             "free_form_tr": "genis salonlu denize yakin 2+1 asansorlu ev",
         },
     },
@@ -50,7 +50,7 @@ FEW_SHOT_SLOT_EXAMPLES: list[dict[str, Any]] = [
 # öğretilir; benchmark expected listesi yalnız tek anlamlı slotları puanlar.
 BENCHMARK_QUERIES: list[dict[str, Any]] = [
     {"query": "Kadikoy'de 30 bin alti 1+1 ogrenciye uygun daire", "expected": {"room_count": ["1+1"], "district": ["Kadikoy"], "max_price_amount": 30000}},
-    {"query": "genis salonlu denize yakin 2+1 asansorlu ev", "expected": {"room_count": ["2+1"], "has_elevator": True, "has_sea_view": True}},
+    {"query": "genis salonlu denize yakin 2+1 asansorlu ev", "expected": {"room_count": ["2+1"], "has_elevator": True, "near_sea": True}},
     {"query": "Besiktas 3+1 60 bin TL alti site icinde", "expected": {"room_count": ["3+1"], "district": ["Besiktas"], "max_price_amount": 60000, "in_gated_complex": True}},
     {"query": "metroya yakin esyali 1+1 kiralik", "expected": {"room_count": ["1+1"], "near_metro": True, "is_furnished": True}},
     {"query": "amerikan mutfakli modern 2+1", "expected": {"room_count": ["2+1"], "has_american_kitchen": True}},

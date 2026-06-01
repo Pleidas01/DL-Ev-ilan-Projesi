@@ -42,6 +42,8 @@ def to_metadata(record: dict[str, Any]) -> dict[str, Scalar]:
             metadata[spec.slug] = value
         if spec.value_type == "multi_enum":
             for option in filters.get(spec.slug) or []:
+                if option not in spec.values.values():
+                    raise ValueError(f"Metadata field {spec.slug!r} has unknown option {option!r}")
                 metadata[f"{spec.slug}__{option}"] = True
 
     return metadata

@@ -137,7 +137,12 @@ def _is_transient_provider_error(exc: Exception) -> bool:
     message = str(exc).lower()
     if "tpd rate limit" in message or "tokens per day" in message:
         return False
-    return "max organization concurrency" in message or "try again after" in message
+    return (
+        "max organization concurrency" in message
+        or "try again after" in message
+        or "timed out" in message
+        or "timeout" in message
+    )
 
 
 def _provider_json_call(call, *args, **kwargs) -> str:
@@ -883,12 +888,20 @@ def run_labeling(
 
     with ThreadPoolExecutor(max_workers=batch_size) as executor:
         futures = {executor.submit(process, record): record for record in pending}
+        failures: list[tuple[str, Exception]] = []
         for future in as_completed(futures):
-            row = future.result()
+            try:
+                row = future.result()
+            except Exception as exc:
+                failures.append((str(futures[future].get("id")), exc))
+                continue
             with write_lock:
                 _append_jsonl(output_path, row)
                 _refresh_clean_json(output_path, clean_json_path)
                 written.append(row)
+    if failures:
+        details = ", ".join(f"{listing_id} ({type(exc).__name__}: {exc})" for listing_id, exc in failures)
+        raise RuntimeError(f"Labeling failed for listing IDs: {details}")
     return written
 
 

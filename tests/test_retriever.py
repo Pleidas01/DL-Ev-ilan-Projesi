@@ -1,6 +1,11 @@
 import json
 
-from retrieval.retriever import Retriever, extract_query_slots, slots_to_where
+from retrieval.retriever import (
+    Retriever,
+    extract_query_slots,
+    matched_filter_labels,
+    slots_to_where,
+)
 
 
 class FakeEmbedder:
@@ -81,6 +86,88 @@ def test_slots_to_where_maps_canonical_numeric_enum_multi_enum_boolean_and_any_o
             {"gross_size_m2": {"$gte": 80}},
         ]
     }
+
+
+def test_slots_to_where_ignores_registry_outside_enum_values_from_llm():
+    where = slots_to_where(
+        {
+            "hard_filters": {
+                "filters": {
+                    "trade_type": "for_rent",
+                    "property_type": "apartment",
+                    "district": ["Kadikoy"],
+                },
+            },
+        }
+    )
+
+    assert where == {"district": {"$in": ["Kadikoy"]}}
+
+
+def test_slots_to_where_flattens_single_valid_any_of_alternative_for_real_chroma():
+    where = slots_to_where(
+        {
+            "hard_filters": {
+                "any_of": [{"has_open_parking": True}],
+            },
+        }
+    )
+
+    assert where == {"has_open_parking": True}
+
+
+def test_matched_filter_labels_render_satisfied_query_filters_as_turkish_chips():
+    """Match reason çipleri: sorgunun istediği VE ilanın karşıladığı filtreler.
+
+    WHY: PROJECT §2 her sonuç için 'neden eşleşti' ister. Bu deterministik (Rule 5:
+    kod cevaplıyor) — slot + metadata'dan türetilir, LLM'e bırakılmaz. Çip kullanıcıya
+    Türkçe etiket gösterir (slug/bool değil).
+    """
+    slots = {
+        "hard_filters": {
+            "filters": {
+                "room_count": ["2+1"],
+                "district": ["Kadikoy"],
+                "has_elevator": True,
+                "balcony_type": ["acik_balkon"],
+            },
+        },
+    }
+    metadata = {
+        "room_count": "2+1",
+        "district": "Kadikoy",
+        "has_elevator": True,
+        "balcony_type": "acik_balkon",
+        "balcony_type__acik_balkon": True,
+    }
+
+    labels = matched_filter_labels(slots, metadata)
+
+    assert labels == ["2+1", "Kadikoy", "Asansör", "Açık Balkon"]
+
+
+def test_matched_filter_labels_drops_a_filter_the_listing_does_not_satisfy():
+    """Çip yalnız gerçekten karşılanan filtre için çıkar.
+
+    WHY (Rule 9): where-clause gevşetilirse veya metadata değişirse çip yanlış
+    'neden eşleşti' iddia etmemeli. has_elevator metadata'da yoksa çip kaybolur.
+    """
+    slots = {"hard_filters": {"filters": {"district": ["Kadikoy"], "has_elevator": True}}}
+    metadata = {"district": "Kadikoy"}  # asansör bilgisi yok
+
+    labels = matched_filter_labels(slots, metadata)
+
+    assert labels == ["Kadikoy"]
+
+
+def test_matched_filter_labels_render_only_the_satisfied_any_of_alternative():
+    """any_of (otoparklı = açık VEYA kapalı): ilanda hangisi varsa o çip çıkar."""
+    slots = {"hard_filters": {"filters": {}, "any_of": [{"has_open_parking": True, "has_closed_parking": True}]}}
+    metadata = {"has_closed_parking": True, "has_closed_parking__x": False}
+
+    labels = matched_filter_labels(slots, metadata)
+
+    assert labels == ["Kapalı Otopark"]
 
 
 def test_retrieve_filters_out_over_budget_and_wrong_district_before_reranking():

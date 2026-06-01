@@ -32,7 +32,8 @@ def _build_user_prompt(query: str, results: list[dict[str, Any]]) -> str:
             "id": result.get("id"),
             "title": result.get("title"),
             "price_tl": result.get("price_tl"),
-            "facts": result.get("facts") or {},
+            "filters": result.get("filters") or {},
+            "matched_filters": result.get("matched_filters") or [],
             "enriched_doc": result.get("enriched_doc") or "",
         }
         for result in results

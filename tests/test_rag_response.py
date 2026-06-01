@@ -10,7 +10,8 @@ def _results():
             "score": 0.91,
             "title": "Moda'da balkonlu 2+1",
             "price_tl": 30000,
-            "facts": {"district": "Kadikoy", "room_count": "2+1", "has_balcony": True},
+            "filters": {"district": "Kadikoy", "room_count": "2+1", "has_balcony": True, "heating_type": "kombi_dogalgaz"},
+            "matched_filters": ["2+1", "Balkon"],
             "enriched_doc": "Baslik: Moda'da balkonlu 2+1\nAciklama: Metroya yakin.",
         }
     ]
@@ -62,6 +63,10 @@ def test_compose_answer_reads_selected_model_and_sends_grounded_prompt(tmp_path,
     assert "Moda'da balkonlu 2+1" in calls[0][2]
     assert "30000" in calls[0][2]
     assert "Metroya yakin" in calls[0][2]
+    # Gen3 sözleşmesi: RAG LLM'i retriever'ın `filters` çıktısını görmeli (eski `facts` değil).
+    # `kombi_dogalgaz` yalnız filters'ta var (query/title/enriched_doc'ta yok); prompt'ta
+    # görünmesi facts->filters göçünün gerçekten yapıldığını kanıtlar.
+    assert "kombi_dogalgaz" in calls[0][2]
 
 
 def test_ui_search_reports_missing_index_without_crashing():

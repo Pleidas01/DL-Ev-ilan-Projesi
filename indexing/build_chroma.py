@@ -12,6 +12,7 @@ DEFAULT_INPUT = Path("data/processed/labeled.jsonl")
 DEFAULT_PERSIST_DIR = Path("data/processed/chroma")
 DEFAULT_MODEL = "BAAI/bge-m3"
 DEFAULT_COLLECTION = "listings"
+DEFAULT_BATCH_SIZE = 8
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -48,7 +49,7 @@ def build_index(
     input_path: Path,
     persist_dir: Path,
     model_name: str = DEFAULT_MODEL,
-    batch_size: int = 64,
+    batch_size: int = DEFAULT_BATCH_SIZE,
     collection_name: str = DEFAULT_COLLECTION,
 ) -> int:
     if batch_size < 1:
@@ -85,7 +86,7 @@ def main() -> None:
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--persist-dir", type=Path, default=DEFAULT_PERSIST_DIR)
     parser.add_argument("--model", default=DEFAULT_MODEL)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     args = parser.parse_args()
 
     written = build_index(

@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable
 
+from schema.emlakjet_filters import label_for, spec_for_slug
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 IMAGE_ROOT = PROJECT_ROOT / "data" / "images"
@@ -11,6 +13,7 @@ DEMO_QUERIES = (
     "Metroya yakın eşyalı 1+1 kiralık",
     "Site içinde otoparklı aileye uygun 3+1",
 )
+# (canonical slug, kart etiketi). has_parking canonical DEĞİL; has_closed_parking kullanılır.
 CARD_FACTS = (
     ("district", "İlçe"),
     ("room_count", "Oda"),
@@ -18,8 +21,34 @@ CARD_FACTS = (
     ("heating_type", "Isıtma"),
     ("is_furnished", "Eşyalı"),
     ("has_balcony", "Balkon"),
-    ("has_parking", "Otopark"),
+    ("has_closed_parking", "Otopark"),
 )
+
+
+def _card_value(slug: str, value: Any) -> str | None:
+    spec = spec_for_slug(slug)
+    if spec is not None and spec.value_type == "bool":
+        return "Var" if value is True else None
+    if spec is not None and spec.value_type in ("enum", "multi_enum"):
+        return label_for(slug, value)
+    return str(value)
+
+
+def card_fact_lines(result: dict[str, Any]) -> list[str]:
+    """Retriever'ın `filters` çıktısını karta yazılacak okunabilir satırlara çevir.
+
+    Yalnız filters'ta dolu canonical slug'lar gösterilir; enum slug'lar Türkçe label'a,
+    bool True 'Var'a çevrilir. Eski `facts` anahtarı okunmaz (Gen3 göçü).
+    """
+    filters = result.get("filters") or {}
+    lines: list[str] = []
+    for slug, label in CARD_FACTS:
+        if slug not in filters:
+            continue
+        value = _card_value(slug, filters[slug])
+        if value is not None:
+            lines.append(f"{label}: {value}")
+    return lines
 
 
 def _create_retriever():
@@ -61,19 +90,21 @@ def _format_price(value: Any) -> str:
 
 
 def _render_listing_card(st, result: dict[str, Any]) -> None:
-    facts = result.get("facts") or {}
     with st.container(border=True):
         image_column, detail_column = st.columns([1, 3])
         image_path = _first_image(result.get("id"))
         if image_path:
-            image_column.image(str(image_path), use_container_width=True)
+            image_column.image(str(image_path), width="stretch")
         with detail_column:
             st.subheader(result.get("title") or f"İlan {result.get('id')}")
             st.write(_format_price(result.get("price_tl")))
             st.caption(f"İlan ID: {result.get('id')}")
-            visible_facts = [f"**{label}:** {facts[field]}" for field, label in CARD_FACTS if field in facts]
-            if visible_facts:
-                st.markdown(" · ".join(visible_facts))
+            matched = result.get("matched_filters") or []
+            if matched:
+                st.markdown("Neden uygun: " + " ".join(f"`{label}`" for label in matched))
+            fact_lines = card_fact_lines(result)
+            if fact_lines:
+                st.markdown(" · ".join(f"**{line}**" for line in fact_lines))
 
 
 def main() -> None:
@@ -90,7 +121,7 @@ def main() -> None:
     st.write("Demo sorgular")
     demo_query = None
     for column, query in zip(st.columns(len(DEMO_QUERIES)), DEMO_QUERIES):
-        if column.button(query, use_container_width=True):
+        if column.button(query, width="stretch"):
             demo_query = query
 
     for message in st.session_state.messages:

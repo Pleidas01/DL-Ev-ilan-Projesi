@@ -6,7 +6,7 @@ from typing import Any, Callable
 
 from llm.clients import candidate_by_id, complete_json
 from llm.shootout import SLOT_SYSTEM_PROMPT, build_slot_prompt, flatten_slots
-from schema.emlakjet_filters import EMLAKJET_FILTERS, spec_for_slug
+from schema.emlakjet_filters import EMLAKJET_FILTERS, label_for, spec_for_slug
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -46,6 +46,12 @@ def slots_to_where(slots: dict[str, Any]) -> dict[str, Any] | None:
                 if option in spec.values.values():
                     target.append({f"{slug}__{option}": True})
             return
+        if spec.value_type == "enum":
+            options = [option for option in _list_value(value) if option in spec.values.values()]
+            if not options:
+                return
+            target.append({slug: {"$in": options}} if isinstance(value, list) else {slug: options[0]})
+            return
         if isinstance(value, list):
             target.append({slug: {"$in": value}})
             return
@@ -57,7 +63,9 @@ def slots_to_where(slots: dict[str, Any]) -> dict[str, Any] | None:
         alternatives: list[dict[str, Any]] = []
         for slug, value in any_of.items():
             add_filter(alternatives, slug, value)
-        if alternatives:
+        if len(alternatives) == 1:
+            conditions.append(alternatives[0])
+        elif alternatives:
             conditions.append({"$or": alternatives})
     if hard.get("max_price_amount") is not None:
         conditions.append({"price_amount": {"$lte": hard["max_price_amount"]}})
@@ -73,6 +81,54 @@ def slots_to_where(slots: dict[str, Any]) -> dict[str, Any] | None:
     if len(conditions) == 1:
         return conditions[0]
     return {"$and": conditions}
+
+
+def matched_filter_labels(slots: dict[str, Any], metadata: dict[str, Any]) -> list[str]:
+    """Sorgunun istediği VE ilanın metadata'sında karşılanan filtreleri Türkçe çip olarak döndür.
+
+    Deterministik match reason (Rule 5: kod cevaplıyor). where-clause her sonucu zaten
+    elese de bu fonksiyon metadata'yı gerçekten kontrol eder; böylece çip asla
+    karşılanmamış bir filtreyi 'neden eşleşti' diye iddia etmez.
+    """
+    hard = slots.get("hard_filters") or {}
+    labels: list[str] = []
+
+    def collect(slug: str, value: Any) -> None:
+        spec = spec_for_slug(slug)
+        if spec is None or value is None:
+            return
+        if spec.value_type == "multi_enum":
+            for option in _list_value(value):
+                if metadata.get(f"{slug}__{option}") is True:
+                    label = label_for(slug, option)
+                    if label:
+                        labels.append(label)
+            return
+        if spec.value_type == "bool":
+            if value is True and metadata.get(slug) is True:
+                label = label_for(slug, True)
+                if label:
+                    labels.append(label)
+            return
+        actual = metadata.get(slug)
+        if actual is None:
+            return
+        if isinstance(value, list):
+            if actual in value:
+                label = label_for(slug, actual)
+                if label:
+                    labels.append(label)
+        elif actual == value:
+            label = label_for(slug, value)
+            if label:
+                labels.append(label)
+
+    for slug, value in (hard.get("filters") or {}).items():
+        collect(slug, value)
+    for group in hard.get("any_of") or []:
+        for slug, value in group.items():
+            collect(slug, value)
+    return labels
 
 
 def _device() -> str:
@@ -150,6 +206,7 @@ class Retriever:
                 "price_currency": metadata.get("price_currency"),
                 "price_tl": metadata.get("price_amount") if metadata.get("price_currency") == "TL" else None,
                 "filters": {spec.slug: metadata[spec.slug] for spec in EMLAKJET_FILTERS if spec.slug in metadata},
+                "matched_filters": matched_filter_labels(slots, metadata),
                 "enriched_doc": document,
             }
             for listing_id, document, metadata, score in ranked

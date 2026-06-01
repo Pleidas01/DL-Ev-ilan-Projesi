@@ -1,16 +1,29 @@
 import base64
 from io import BytesIO
+import os
 
 from PIL import Image
 
-from llm.clients import CANDIDATES, _image_data_url, _openai_chat_temperature, candidate_by_id, estimate_cost_usd
+from llm.clients import CANDIDATES, _image_data_url, _load_project_environment, _openai_chat_temperature, candidate_by_id, estimate_cost_usd
 from llm.shootout import (
+    BENCHMARK_QUERIES,
     FEW_SHOT_SLOT_EXAMPLES,
     build_slot_prompt,
     choose_winners,
     run_text_slot_benchmark,
     score_expected_slots,
 )
+
+
+def test_denize_yakin_slot_uses_proximity_not_sea_view():
+    query = "genis salonlu denize yakin 2+1 asansorlu ev"
+    example = next(item for item in FEW_SHOT_SLOT_EXAMPLES if item["query"] == query)
+    benchmark = next(item for item in BENCHMARK_QUERIES if item["query"] == query)
+
+    assert example["output"]["hard_filters"]["filters"]["near_sea"] is True
+    assert "has_sea_view" not in example["output"]["hard_filters"]["filters"]
+    assert benchmark["expected"]["near_sea"] is True
+    assert "has_sea_view" not in benchmark["expected"]
 
 
 def test_build_slot_prompt_includes_few_shot_examples():
@@ -93,6 +106,16 @@ def test_image_data_url_downsizes_large_images(tmp_path):
     decoded = base64.b64decode(data_url[len(prefix):])
     resized = Image.open(BytesIO(decoded))
     assert max(resized.size) == VISION_MAX_IMAGE_EDGE
+
+
+def test_project_environment_loader_reads_dotenv_for_runtime_api_calls(tmp_path, monkeypatch):
+    (tmp_path / ".env").write_text("DEEPSEEK_API_KEY=runtime-secret\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+
+    _load_project_environment(tmp_path / ".env")
+
+    assert os.environ["DEEPSEEK_API_KEY"] == "runtime-secret"
 
 
 def test_score_expected_slots_accepts_scalar_actual_for_list_fields():

@@ -263,7 +263,7 @@ def parse_filter_value(spec: FilterSpec, value: Any, *, strict: bool = False) ->
     if spec.value_type == "int":
         return _parse_int(value)
     if spec.value_type == "multi_enum":
-        raw_values = value if isinstance(value, list) else [value]
+        raw_values = value if isinstance(value, list) else re.split(r"\s*[,|]\s*", str(value))
         values = [_parse_enum(spec, item, strict=strict) for item in raw_values]
         return [item for item in values if item] or None
     if spec.value_type == "enum":
@@ -273,6 +273,26 @@ def parse_filter_value(spec: FilterSpec, value: Any, *, strict: bool = False) ->
 
 def spec_for_slug(slug: str) -> FilterSpec | None:
     return _SPEC_BY_SLUG.get(slug)
+
+
+def label_for(slug: str, value: Any) -> str | None:
+    """Canonical slug + değeri kullanıcıya gösterilecek Türkçe etikete çevir.
+
+    enum/multi_enum: slug değerini registry'deki orijinal etikete ters-çevirir.
+    bool: True -> özelliğin adı (labels[0]); False -> None (pozitif çip değil).
+    str/int: metin olarak döner. Bilinmeyen slug veya None değer -> None.
+    """
+    spec = _SPEC_BY_SLUG.get(slug)
+    if spec is None or value is None:
+        return None
+    if spec.value_type == "bool":
+        return spec.labels[0] if value is True else None
+    if spec.value_type in ("enum", "multi_enum"):
+        for label, enum_value in spec.values.items():
+            if enum_value == value:
+                return label
+        return str(value)
+    return str(value)
 
 
 def specs_for_source(source: str) -> tuple[FilterSpec, ...]:

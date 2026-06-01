@@ -1,9 +1,10 @@
 # STATUS.md — Mevcut Durum (snapshot)
 
-> Son güncelleme: 2026-05-31, **canonical filter enrichment ilk batch doğrulaması DONE**: 305 ham ilan, `4804/4804` görsel indirme, cleaner sonrası **303 aktif ilan** (`%99.3` retention), iki geçişli `--phase text|vision` labeling CLI ve 10 ilanlık DeepSeek/Kimi ölçümü tamamlandı. Full suite `68 passed`. Sıradaki: 10 örnek çıktıyı kullanıcı gözle incelesin; yeterliyse full 303 DeepSeek → Kimi build, sonra eski mimari M4/M5 iskeletlerini canonical sözleşmeye uyarla.
+> Son güncelleme: 2026-06-01, **M6 MacBook hazırlığı DONE**: pair dataset, dense-only evaluator ve CUDA-gated PEFT LoRA CLI hazır. Full suite `112 passed`, skip yok. Sıradaki: RTX 5070 Ti makinede ölçüm kapılı BGE-M3 LoRA deneyi + sunum.
 > Önceki (2026-05-30): canonical Emlakjet filter enrichment Task 6 pre-scrape checkpoint, `62 passed`, registry-first mimari belgeleri senkronize.
 > Önceki (2026-05-29): vision multi-image refactor (tek çağrı/ilan), Kimi multi-image gold testi geçti (bkz. M1.5).
 > Bu dosyayı sıradaki agent her milestone bitince güncellemeli.
+> **Doküman-hijyeni:** Üç nesil (Gen1 CLIP → Gen2 el-yapımı şema → Gen3 canonical) ve "neden terk ettik" için `MIMARI_EVRIMI.md`. 2026-06-01 itibariyle M4 ve M5 Gen3 baseline tamamlandı.
 
 ---
 
@@ -14,9 +15,9 @@
 - **M2.0 (helper + schema refactor)** — **DONE** (2026-05-26 13:00): heating_type + is_furnished STRUCTURED'a taşındı, `has_aircon` hybrid alan eklendi, `_normalize_blob` Türkçe büyük harf bug'ı fix, visual gold prefilled regen.
 - **M2 (manuel kontrol)** — **AKTİF**: önceki gold tarihsel referans olarak korunuyor. Canonical registry için yeni template rebuild yapılmayacak; zaman maliyeti yerine yeni 10 ilanlık benchmark çıktısı kullanıcı tarafından gözle incelenecek.
 - **M1.5 (vision shootout)** — **VISION DONE** (2026-05-29, multi-image refactor): Kimi multi-image (tek çağrı/ilan, tüm foto) **10/10 ilan tamamladı**, accuracy **0.748** (10 ilan); per-image ile ortak 3 ilanda **0.931 ≥ 0.917** → dilution yok, robust, **~3x ucuz ($0.036/ilan)**. Karar: M3 multi-image+Kimi. (Description shootout kısmı hâlâ açık — heating_type haksızlığı düzeltilmeli.)
-- **M3 (labeling pipeline)** — **DONE iskele + iki geçişli CLI**: `--phase text` yalnız DeepSeek'i, `--phase vision` yalnız Kimi'yi çalıştırıyor; ara JSONL ikinci geçiş girdilerini koruyor. **Full 303-ilan build henüz çalıştırılmadı.**
-- **M4 (indexing + retrieval)** — **ESKİ MİMARİ İSKELET**: canonical metadata kodu kısmen eklendi ancak yeni full labeled output ile entegrasyon ve gerçek index build doğrulanmadı.
-- **M5 (RAG + UI)** — **ESKİ MİMARİ İSKELET**: `chat/rag_response.py` ve `ui/app.py` var; retriever'ın yeni `filters` çıktısına uyarlama bekliyor. M6/M8 pending; M7 kapsam dışı.
+- **M3 (labeling pipeline)** — **DONE**: iki geçişli CLI + full **303-ilan** build tamamlandı. `labeled.jsonl`: scraper `10443`, DeepSeek `2140`, Kimi `638` kaynak damgası; Kimi kaynaklı değerlerin tamamı positive-only `true`.
+- **M4 (indexing + retrieval)** — **BASELINE DONE (2026-06-01)**: Gen3 index gerçek `labeled.jsonl` ile kuruldu (`303` collection row). Metadata kontratı ve birleşik multi-enum flag düzeltmesi doğrulandı. MacBook Air M4 üzerinde bounded eval: synthetic known-item `n=4`, `R@1/R@5/R@10/MRR=1.0`; canlı benchmark `n=3`, coverage `1/3`, filter satisfaction `8/8=1.0`. Bu full relevance gold değildir; kontrollü proxy örneklemidir.
+- **M5 (RAG + UI)** — **BASELINE DONE (2026-06-01)**: `chat/rag_response.py` + `ui/app.py` Gen3 `filters` çıktısını okuyor. Canonical label ve deterministik match çipleri render oluyor. Browser smoke'ta tek canlı sorgu `8` kart döndürdü; RAG cevap yalnız retrieved ilanları kullandı. M6/M8 pending; M7 kapsam dışı.
 - **Canonical filter enrichment** — **ilk batch doğrulaması DONE (2026-05-31)**: 305 raw → 303 cleaned. Raw'da ortalama 34.47 dolu canonical filtre/ilan; cleaner sonrası ortalama 15.81 yerel görsel/ilan. DeepSeek 10 ilanda 38, Kimi 10 ilanda 15 ek alan doldurdu.
 
 Veri yedeği: `archive/pre_schema_refactor/` (önceki 1430 ilanlık dataset). Not: `archive/hw6` + `pre_scraper_fix` + `data/_*` temizlikte silindi (bkz. checkpoint 6b019f7).
@@ -163,13 +164,13 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 - `python -m labeling.gold_helper --listing <ID>` — listing detayı + 15 structured facts (otomatik dolu) + 7 suggested hybrid facts + suggested visual fields cross-validation + manual TODO listesi
 - `python -m evaluation.gold_helper --query "..."` — query için BM25 + hard-filter top-K candidate
 
-### M3 — Labeling pipeline (DONE iskele + iki geçişli CLI, full build PENDING)
+### M3 — Labeling pipeline (DONE — full 303 build hazır)
 
 - `labeling/run_labeling.py` **mevcut**: `--phase text` yalnız DeepSeek'i, `--phase vision` yalnız Kimi'yi, varsayılan `--phase combined` ikisini sırayla çalıştırır. Eşzamanlı çağrı, resume, cost cap ve pre-flight gold gate korunur.
 - Kanıt kuralı: scraper fact'leri ezilmez. DeepSeek yalnız başlık+açıklamadan kalan null alanlara açık kanıtla `true` veya `false` yazabilir. Kimi yalnız görsellerden kalan null boolean alanlara açık kanıtla `true` yazabilir; görünmeyen özellik `false` olmaz.
 - Tarihsel pre-flight kapısı `facts_all` idi. Yeni canonical batch için gold rebuild yapılmayacak; kullanıcı iki 10-ilan JSONL çıktısını doğrudan gözle inceleyecek.
 - Output şeması: dataset.jsonl + 21 facts (boş hybrid+desc alanları LLM ile dolar) + visual_qualities (7 alan VLM ile dolar) + enriched_doc (embedding metni) + labeling_metadata.
-- **Full 303-ilan build henüz çalıştırılmadı.** Manuel kontrol için `data/processed/labeled_benchmark_deepseek_text_10.jsonl` ve `data/processed/labeled_benchmark_kimi_vision_10.jsonl` üretildi. `labeled.jsonl` yok; M4 gerçek index buna bağlı.
+- **Full 303-ilan build tamamlandı:** `data/processed/labeled.jsonl`. İlk benchmark 10 ilan ile kalan 293 ilan aktif dataset sırasına göre birleştirildi; duplicate ve missing ID yok.
 - Göz kontrolü için `data/processed/clean_json.json` üretildi. `run_labeling.py`, asıl output JSONL'ye her row append edildiğinde bu okunabilir JSON listesini yeniden senkronlar. Listede görsel yolu yoktur; yalnız bağlam alanları ile source bazında `scraper`, `deepseek`, `kimi` fact grupları bulunur.
 
 **10 ilan ölçümü (2026-05-31):**
@@ -181,25 +182,40 @@ Helper'lar (yeni schema'ya göre çalışıyor):
 | Kimi chunk deneyi | 512px, chunk=5, 3 worker, 3 ilan | 259.62s | — | — |
 | Kimi seçilen ayar | 512px, chunk=0, 10 worker, 10 ilan | 144.34s | $0.040671 | 15 |
 
-Karar: chunk=5 yavaşlattı. İlk full build adayı `VISION_MAX_IMAGE_EDGE=512`, `--vision-chunk-size 0`, `--batch-size 10`.
+Karar: DeepSeek text geçişi `--batch-size 3` ile koşuldu. Kimi benchmark'ında 10 worker hızlıydı ancak full batch'te timeout baskısı yarattı; operasyonel ayar `VISION_MAX_IMAGE_EDGE=512`, `--vision-chunk-size 0`, `--batch-size 5`. Yalnız timeout veren 20-görselli `19416208` ilanı `--vision-chunk-size 5`, `--batch-size 1` fallback ile tamamlandı.
 
-### M4 — Indexing + retrieval (ESKİ MİMARİ İSKELET; canonical uyarlama PENDING)
+### M4 — Indexing + retrieval (BASELINE DONE — 2026-06-01)
+
+> **Tasarım:** `docs/superpowers/specs/2026-05-31-m4-m5-canonical-design.md` (komponent C1–C6). Gold doldurulmadığı için final relevance gold yerine kontrollü proxy + filtre regresyon ölçümü kullanıldı.
 
 - `indexing/composer.py`: `embedding_text(record)` enriched_doc'u aynen döner (eksikse hata verir); `to_metadata(record)` canonical `filter_values` + title'ı **skalar** Chroma metadata'ya düzleştirir. List alanlar deterministik sıralı `|` ile birleşir; multi-enum alanlar ayrıca seçenek başına exact-match flag üretir.
-- `indexing/build_chroma.py`: ChromaDB persistent collection builder (CLI).
+- `indexing/build_chroma.py`: ChromaDB persistent collection builder (CLI). MacBook Air CPU-only ortamında varsayılan batch `8`; daha büyük batch bellek baskısı oluşturdu.
 - `retrieval/retriever.py`: query → slot extract (`selected.json` text_model, read-only) → registry-backed metadata hard filter (`filters`, `any_of`, fiyat/m² range) → vektör arama (BGE-M3) → CrossEncoder reranker (bge-reranker-v2-m3). `null` metadata yazılmadığı için explicit filtreyi karşılamaz. DI ile test edilebilir (collection/embedder/reranker/slot_extractor enjekte).
-- Testler: `tests/test_composer.py`, `tests/test_retriever.py`, `tests/test_llm_shootout.py` (embedder/reranker/API mocklu). Task 5 ilgili testleri: **18 passed**. **Gerçek full index build M3 labeled.jsonl hazır olunca koşulacak.**
+- Gerçek build: `data/processed/labeled.jsonl` üzerinden collection count `303`; metadata skaler-only; birleşik `acik_balkon_acik_teras` flag kalmadı (`0` invalid row).
+- Gold-free eval: `evaluation/run_retrieval_eval.py` limit, progress ve sorgu-başı checkpoint destekli. MacBook Air'de ağır full koşu yapılmadı. Kaydedilen hafif örneklem: synthetic `n=4`, `R@1/R@5/R@10/MRR=1.0`; canlı benchmark `n=3`, coverage `1/3`, dönen kısıtlı sonuç `8`, filter satisfaction `8/8=1.0`.
+- Not: `coverage=1/3` retrieval bug'ı değil. İlk ve üçüncü sorgunun tüm hard filter'larını sağlayan ilan aktif `303` satırda yok. Ayrıca `"denize yakın"` semantiği benchmark'ta yanlışlıkla `has_sea_view` idi; canonical `near_sea` olarak TDD ile düzeltildi.
 
-### M5 — RAG chat + Streamlit (ESKİ MİMARİ İSKELET; canonical uyarlama PENDING)
+### M5 — RAG chat + Streamlit (BASELINE DONE — 2026-06-01)
+
+**Yapıldı (2026-05-31, TDD):**
+- `schema/emlakjet_filters.py::label_for(slug, value)`: enum slug→Türkçe label, bool True→özellik adı, False/None→None. (`tests/test_filter_labels.py`, 6 test)
+- `retrieval/retriever.py::matched_filter_labels(slots, metadata)` + sonuç-dict'e `matched_filters`: sorgunun istediği VE ilanın karşıladığı filtreler, deterministik Türkçe çip (Rule 5). (`tests/test_retriever.py`, +3 test)
+- `chat/rag_response.py`: `_build_user_prompt` artık `result["filters"]` + `matched_filters` okuyor (eski `facts` boş kalıyordu — bug). (`tests/test_rag_response.py`)
+- `ui/app.py::card_fact_lines()`: `filters`'tan okunabilir kart satırları; `CARD_FACTS` `has_parking`→`has_closed_parking`; enum slug→label; match çipleri render. (`tests/test_ui_app.py`, 5 test)
+- Browser QA: `python3 -m streamlit run ui/app.py` ile canlı demo açıldı. `"geniş salonlu denize yakın 2+1 asansörlü ev"` sorgusu `8` kart render etti; kartlarda `2+1`, `Asansör`, `Denize Yakın` çipleri ve canonical detaylar görüldü. RAG cevap yalnız retrieved ilanlardan üretildi.
+- Streamlit güncel API uyumu: `use_container_width=True` kaldırıldı, `width="stretch"` kullanılıyor.
+- Full suite: **104 passed**, skip yok.
 
 - `chat/rag_response.py`: retrieved listings + soru → LLM ile cevap kompozisyonu.
 - `ui/app.py`: chat box + listing cards + 3 demo senaryo.
 
-### M6 — Fine-tune (PENDING — NN gereksinimi için yeniden kritik, bkz. Açık sorular #6)
+### M6 — Fine-tune (SIRADAKİ — RTX 5070 Ti)
 
-- `finetune/bge_lora.py`: BGE-M3 LoRA on listing pairs.
-- `finetune/image_classifier.py`: ResNet-18 / ViT-small on `visual_gold` labels (3-4 alan: balkon_tipi, manzara, zemin_tipi).
-- **Önceki "M6 atlanabilir" notu artık geçersiz**: M7 LSTM/GRU dışarıdan geldiği için hocanın "kendi NN'iniz olsun" gereksinimi bu projede M6 (veya başka bir öz-eğitimli NN) ile karşılanmalı. Kullanıcı kararı bekleniyor.
+- MacBook Air hazırlık kodu tamamlandı: `finetune/text_embed/prepare_pairs.py`, `evaluate_dense.py`, `train_bge_m3_lora.py`.
+- Pair çıktısı üretildi: `242` train, `61` validation, listing-ID overlap `0`, `seed=42`. Hafif negatif fallback aynı split içindeki sıradaki farklı listing ID'dir; ağır mining MacBook'ta çalıştırılmadı.
+- Dense-only evaluator metadata hard filter ve reranker kullanmaz; sahte embedder DI ile test edildi. LoRA CLI adapter-only PEFT kullanır, target modüllerini explicit doğrular ve CUDA yoksa model yüklemeden önce açık hata verir.
+- MacBook doğrulaması: `cuda_available=False`, `mps_available=False`; yeni hedefli unit testler `8 passed`, tam paket `112 passed`, skip yok.
+- Eğitim MacBook Air'de koşulmaz. Adapter yalnız held-out R@K/MRR artarsa demo adayı olur; artmazsa dürüst negatif deney sonucu raporlanır.
 
 ### M7 — Time series (**KAPSAM DIŞI** — sınıf arkadaşı yaptı, 2026-05-30)
 
@@ -219,7 +235,7 @@ Karar: chunk=5 yavaşlattı. İlk full build adayı `VISION_MAX_IMAGE_EDGE=512`,
 3. **Scrape genişletme:** 303 aktif ilan demo için yeterli mi? — Full M3 + canonical M4 retrieval sonuçlarına göre incremental büyütme kararı verilecek.
 4. **Gemini free tier:** 429 sebebiyle shootout'larda kullanılamadı. Billing açma kararı? — şu an Kimi+Gemma yeterli.
 5. **DeepSeek negatif kanıt — KARAR (2026-05-31):** DeepSeek başlık+açıklamada açık negatif kanıt varsa kalan null alanı `false` yapabilir; kanıt yoksa `null` bırakır. Kimi için bu geçerli değildir: görselde görünmeyen özellik `false` olmaz.
-6. **NN gereksinimi — AÇIK (2026-05-30):** Hocanın "kendi eğittiğiniz NN olsun" şartı önceden M7 (LSTM/GRU) ile karşılanıyor sayılıyordu. M7 artık dışarıdan (arkadaş) geldiği için bu proje **kendi öz-eğitimli NN'ini içermeli**: ya M6 BGE-M3 LoRA, ya ResNet/ViT görsel sınıflandırıcı (M6 image_classifier). Hangi NN, ne zaman, hangi gold ile? — kullanıcı kararı gerekiyor. Sessizce atlama.
+6. **NN gereksinimi — KARAR (2026-06-01):** Baharat olarak tek NN deneyi yapılacak: BGE-M3 LoRA adapter. Eğitim MacBook Air'de değil, RTX 5070 Ti makinede koşacak. Adapter yalnız held-out synthetic R@K/MRR baseline'ı iyileştirirse demo adayı olacak; aksi halde baseline korunacak.
 7. **Qwen3-VL local vision testi — ERTELENDİ (2026-05-30):** `qwen3_vl_local` (qwen3-vl:8b) MacBook Air M4 16GB'ı darlıyor (mouse takılıyor); probe: tek 8-fotolu çağrı **62.5s** + boş `{}` çıktı (format=json olsa da). 16GB çok-fotoğraflı vision'a yetmiyor. Kullanıcının asıl makinesi (ev kasası: 32GB DDR5 + RTX 5070 Ti) ev wifi'si gelince kullanılacak; test oraya **ertelendi**, rapora "future work / dipnot". **Sonuç: vision_model = kimi_k2_6 ile devam (zorunlu).** Yeni canonical 10-ilan Kimi ölçümü `$0.040671`; full 303 koşusu maliyet limitiyle başlatılacak.
 8. **`imkanlar` modalite uyuşmazlığı — TARİHSEL NOT (2026-05-29):** Eski gold hata analizi `imkanlar` alanında image+text karışımı olduğunu gösterdi. Canonical akış bu karışımı kaldırır: scraper `İlan Özellikleri` bullet'larını deterministik fact olarak yazar; DeepSeek yalnız başlık+açıklamayı okur; Kimi yalnız görsellerden kalan null boolean alanlara positive-only `true` ekler.
 
@@ -227,7 +243,11 @@ Karar: chunk=5 yavaşlattı. İlk full build adayı `VISION_MAX_IMAGE_EDGE=512`,
 
 10. **JSON çıktı formatı — KARAR (2026-05-31): `filter_values` DÜZ kalır (150 slug), canvas hiyerarşisine GÖMÜLMEZ.** Gerekçe: labeling (`run_labeling.py`) düz slug→değer okuyup monotonik null-only merge yapıyor; indexing (`composer.to_metadata`) Chroma için yalnızca düz skaler metadata yazabiliyor. Canvas (Ana/İç/Dış/Konum) bir *sunum* meselesi — `spec.group` zaten taşıyor, gerekirse görüntüleyici üretilir. Raw aşamada her dolu slot'un kaynağının `scraper_info`/`scraper_property_feature` olması hata değil: yalnız scraper koştu; DeepSeek/Kimi labeling'de null'ları doldurup kendi damgalarını (`deepseek_description`/`kimi_image`) basar. Dolum monotonik ve null-only (önceden dolu değer ezilmez).
 
-11. **Kimi hız ayarı — KARAR (2026-05-31):** Görsel sayısını kısıtlama. `512px`, chunk kapalı (`--vision-chunk-size 0`) ve worker artışı kullan. Ölçümde chunk=5 yavaşlattı (`3 ilan: 259.62s`); chunk kapalı 10 worker ile `10 ilan: 144.34s`.
+11. **Kimi hız ayarı — KARAR (2026-05-31):** Görsel sayısını kısıtlama. `512px`, varsayılan chunk kapalı (`--vision-chunk-size 0`) ve `5 worker` kullan. Benchmark'ta chunk kapalı 10 worker hızlıydı (`10 ilan: 144.34s`) fakat full batch'te timeout baskısı yarattı. Tekil 20-görselli `19416208` timeout verdiğinde yalnız o ilan `chunk=5`, `1 worker` fallback ile tamamlandı.
+
+12. **Timeout dayanıklılığı — DONE (2026-05-31):** Provider timeout transient retry kapsamına alındı. Paralel batch'te tek ilan hata verirse diğer başarılı row'lar yazılmaya devam eder; batch sonunda başarısız ID'ler açıkça raporlanır ve `--resume` yalnız eksikleri yeniden işler.
+
+13. **MacBook Air eval sınırı — KARAR (2026-06-01):** BGE-M3 + reranker CPU-only çalışıyor (`mps_available=False`). Full `303` sentetik sorgu eval bu cihazda tekrar koşulmayacak. Yerel doğrulama `--known-limit`, `--benchmark-limit` ve sorgu-başı checkpoint ile küçük örneklem; uzun koşu RTX makineye taşınacak.
 
 ---
 
@@ -239,7 +259,7 @@ Karar: chunk=5 yavaşlattı. İlk full build adayı `VISION_MAX_IMAGE_EDGE=512`,
 | Gemma4 vision Türkçe ev fotoğrafında zayıf çıkabilir | M3 labeling kalitesiz | Gold ile ölç, gerekirse Kimi'ye geç ($25-30 ek maliyet) |
 | 303 ilan fine-tune için az olabilir | LoRA underfit/overfit | Synthetic pair generation veya hard-negative mining; pre/post karşılaştırma |
 | Time series için gerçek veri yok | Tek snapshot'tan trend yok | Sentetik + scraped ortalamayı calibration anchor |
-| Hocaya teslim deadline yaklaşıyor | Zaman baskısı | M5 minimal yap. **M6'yı atlama** — M7 dışarı çıktığı için NN gereksinimi M6'ya bağlı (bkz. Açık sorular #6); en hafif öz-eğitimli NN'i (BGE-M3 LoRA veya ResNet sınıflandırıcı) koru |
+| Hocaya teslim deadline yaklaşıyor | Zaman baskısı | M5 baseline tamamlandı. **M6'yı tek deney tut:** yalnız BGE-M3 LoRA; eğitim RTX makinede |
 
 ---
 
@@ -252,7 +272,7 @@ Karar: chunk=5 yavaşlattı. İlk full build adayı `VISION_MAX_IMAGE_EDGE=512`,
 | M1.5 vision multi-image (2026-05-29) | **$0.36** | — | Kimi, 10 ilan, 161 foto, bakiye farkıyla ölçüldü |
 | M3 yeni batch 10 ilan DeepSeek | ~$0.0077 tahmini | — | text-only, 3 worker |
 | M3 yeni batch 10 ilan Kimi | ~$0.0407 tahmini | — | 512px, chunk=0, 10 worker |
-| M3 full 303 ilan | — | ölçülecek | kullanıcı 10 ilan göz kontrolü sonrası |
+| M3 full 303 ilan | ölçülmedi | — | kesinti + resume nedeniyle tek wall-clock/maliyet ölçümü yok; çıktı tamamlandı |
 | **TOPLAM** | ~$2.55 + önceki ölçümler | ölçülecek | $100 bütçenin altında |
 
 ---
@@ -269,31 +289,37 @@ tests/test_cleaner_preserves_fields.py
 tests/test_run_labeling.py        # M3 pre-flight + facts_all gate testi dahil
 tests/test_composer.py            # M4 (Codex)
 tests/test_retriever.py           # M4 (Codex)
+tests/test_retrieval_eval.py      # M4 gold-free proxy + checkpoint
+tests/test_rag_response.py        # M5 grounded prompt
+tests/test_ui_app.py              # M5 Gen3 kartlar + güncel Streamlit API
+tests/test_prepare_pairs.py       # M6 deterministik listing-ID split + hafif negatif
+tests/test_evaluate_dense.py      # M6 saf dense-only metrik + embedder DI
+tests/test_train_bge_m3_lora.py   # M6 CUDA ve explicit target kapıları
 ```
 
-Komut (macOS/zsh): `source .venv/bin/activate && python3 -m pytest -q` — **68 passed** (2026-05-31; iki-geçişli labeling testleri dahil).
+Komut (macOS/zsh): `source .venv/bin/activate && python3 -m pytest -q` — **112 passed** (2026-06-01; skip yok).
 
 ---
 
-## Sıradaki adımlar (2026-05-30 itibariyle)
+## Sıradaki adımlar (2026-06-01 itibariyle)
 
-Tamamlanan: M0 canonical scrape+clean, M1 (+text revize), M1.5 vision, M3 iki-geçişli iskele ve 10-ilan benchmark. M2 yeni gold rebuild iptal; M4/M5 canonical uyarlama bekliyor.
+Tamamlanan: M0 canonical scrape+clean, M1 (+text revize), M1.5 vision, M3 full 303 labeling, M4 baseline index + hafif eval, M5 Gen3 canlı demo. M2 yeni gold rebuild iptal.
 
 | # | İş | Kim | Wall-clock | Bağımlılık | Durum |
 |---|---|---|---|---|---|
 | Canonical batch | 305 raw → görseller → cleaner → **303 aktif ilan DONE** | Agent | download 106s, cleaner 5s | — | **DONE** |
-| 10 ilan göz kontrolü | `labeled_benchmark_deepseek_text_10.jsonl` + `labeled_benchmark_kimi_vision_10.jsonl` incele | Kullanıcı | — | — | **sıradaki** |
-| M3-build | Full 303 ilan: `--phase text`, sonra `--phase vision` (`512px`, chunk=0, worker=10) | Agent | ölçülecek | kullanıcı göz kontrolü + ücretli full batch onayı | — |
+| 10 ilan göz kontrolü | `labeled_benchmark_deepseek_text_10.jsonl` + `labeled_benchmark_kimi_vision_10.jsonl` incele | Kullanıcı | — | — | **DONE** |
+| M3-build | Full 303 ilan: DeepSeek `worker=3`; Kimi `512px`, varsayılan `chunk=0`, `worker=5`; tekil timeout fallback `chunk=5` | Agent | kesintili/resume | kullanıcı göz kontrolü + ücretli full batch onayı | **DONE** |
 | Qwen | `qwen3_vl_local` gold visual benchmark | Agent (ev kasası) | ~30-60 dk | ev wifi + 32GB makine | **ERTELENDİ** (16GB MacBook darlıyor; future work) |
-| M5-iskele | Eski `chat/rag_response.py` + `ui/app.py` canonical retriever sözleşmesine uyarla | Agent | ~1 saat | M4 uyarlama | — |
-| M4-build | Gerçek index build (composer → BGE-M3 → Chroma) + retriever smoke + 30 query gold | Agent + Sen | ~2.5 saat | M3-build | — |
-| M5 | RAG chat + Streamlit UI + 3 demo | Agent | ~3 saat | M4-build | — |
-| M6 | Öz-eğitimli NN (BGE-M3 LoRA **veya** ResNet/ViT görsel sınıflandırıcı) | Agent | ~6 saat (training dahil) | M3-build | **NN gereksinimi için kritik (Açık sorular #6)** |
+| M5-göç | `chat/rag_response.py` + `ui/app.py` Gen3 sözleşmesine göç (facts->filters, has_parking->canonical, slug->label, deterministik match çipleri) | Agent | ~1 saat | — | **DONE** |
+| M4-build | Gerçek index build + retriever smoke + checkpoint'li gold-free hafif eval | Agent | — | M3-build | **DONE** |
+| M5 | RAG chat + Streamlit UI canlı browser smoke | Agent | — | M4-build | **DONE** |
+| M6 | BGE-M3 LoRA held-out deneyi | Agent (RTX 5070 Ti) | ~2-4 saat | M4 baseline | **SIRADAKİ** |
 | M8 | Final rapor notebook + README + sunum taslağı | Agent + Sen | ~4 saat | hepsi | — |
 
 **Not:** M7 (time series) tablodan çıkarıldı — kapsam dışı (arkadaş yaptı).
 
 ### Acil teslim için scope kesme önerileri
-- **M5 UI'ı minimal yap** (chat box + 3 demo senaryo, kart süslemesi yok). ~2 saat tasarruf.
-- **M6'yı atlama ama hafiflet:** En küçük öz-eğitimli NN'i koru (örn. sadece BGE-M3 LoRA *veya* sadece ResNet görsel sınıflandırıcı, ikisi birden değil). M7 dışarı çıktığı için NN gereksinimini bu karşılayacak — tamamen atlanırsa hocanın "kendi NN'iniz" şartı boşta kalır.
-- **Minimum viable demo:** M3-build + M4-build + M5(minimal) + M6(hafif) + M8.
+- **M6'yı hafif tut:** yalnız BGE-M3 LoRA; ResNet/ViT ekleme.
+- **MacBook'ta ağır iş başlatma:** full eval ve eğitim RTX makineye taşınır.
+- **Minimum kalan teslim:** M6 LoRA deneyi + M8 sunum.
